@@ -1,0 +1,50 @@
+
+
+{
+    "task":{
+        "list": [
+            "zzlh",
+            "hkgy",
+            "jdcg"
+        ],
+        "run_time": "",
+        "run_last_time": ""
+    },
+    "module1": {
+        "web_sign": "zzlh",
+        "time_web_close": "",
+        "time_web_open": "",
+        "bid_prj_newest_time": "",
+        "bid_prj_newest_name": "",
+        "bid_prj_recent_time": "",
+        "bid_prj_recent_name": "",
+        "bid_prj_task_time": "",
+        "bid_prj_task_name": "",
+        "bid_prj_task_page": "",
+        "": "",
+        "": "",
+        "": ""
+    },
+    "module2": {
+        "web_sign": "zzlh",
+        "time_web_close": "",
+        "time_web_open": "",
+        "bid_prj_newest": ["name","time"],
+        "bid_prj_recent": ["name","time"]
+    },
+    "zzlh": {
+
+    },
+    "hkgy":{
+
+    },
+    "jdcg":{
+
+    }
+    
+
+
+}
+
+
+
