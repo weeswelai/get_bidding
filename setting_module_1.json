@@ -1,0 +1,77 @@
+{
+    "task": {
+        "queue": [
+            "zzlh",
+            "hkgy",
+            "jdcg"
+        ],
+        "run_time": "",
+        "task_now_name": "",
+        "start_time": "",
+        "complete_time": ""
+    },
+    "last_task": {
+        "run_time": "",
+        "complete_time": "",
+        "queue": []
+    },
+    "module1": {
+        "web_sign": "zzlh",
+        "last_task_complete": "",
+        "time_web_open": "",
+        "time_web_close": "",
+        "last_task_newest_time": "",
+        "last_task_newest_name": "",
+        "last_task_read_time": "",
+        "last_task_read_name": "",
+        "last_task_read_page": "",
+        "last_task_end_time": "",
+        "last_task_end_name": "",
+        "last_task_end_page": ""
+    },
+    "module2": {
+        "web_site": "",
+        "time_web_open": "",
+        "newest_task": {
+            "flag": "",
+            "name": "",
+            "time": "",
+            "url": ""
+        },
+        "recent_task": {
+            "flag": "",
+            "name": "",
+            "time": "",
+            "url": ""
+        },
+        "task_end": {
+            "name": "",
+            "time": "",
+            "url": ""
+        }
+    },
+    "zzlh": {
+        "web_site": "zzlh",
+        "time_web_open": "",
+        "newest_task": {
+            "flag": "",
+            "name": "",
+            "date": "",
+            "url": ""
+        },
+        "recent_task": {
+            "flag": "",
+            "name": "",
+            "date": "",
+            "url": ""
+        },
+        "task_end": {
+            "flag": "",
+            "name": "",
+            "date": "",
+            "url": ""
+        }
+    },
+    "hkgy": {},
+    "jdcg": {}
+}
