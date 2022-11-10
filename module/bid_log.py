@@ -114,8 +114,9 @@ logger.set_file_logger()
 logger.rule = rule
 logger.hr = hr
 
-# import bid_log 时启动
-logger.hr('Start', level=0)
+# from module.bid_log import logger 时输出日志"start",多个import只会执行一次
+logger.hr('start', level=0)
 
 if __name__ == "__main__":
-    show() # 输出示例
+    # show() # 输出示例
+    pass
