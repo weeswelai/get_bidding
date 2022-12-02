@@ -1,41 +1,56 @@
+"""
+启动任务
+读取配置, 初始化运行环境
+初始化 任务调度对象，网页浏览对象， 读取配置文件，将配置文件和网页浏览对象交给任务调度对象
+"""
 
-import bid_task,get_url
-import json
-from threading import Timer
-import datetime as dt
 
-def class_creat(website,url="url"):
-    return ("get_url.%s_get(\"%s\")"%(website,url))
-#setting
-json_file_name = r"H:\Hasee_Desktop\vscode\python\get_zhaobiao\get_bidding_1\json\module_1_run.json"
-html_file = r"H:\Hasee_Desktop\vscode\python\get_zhaobiao\get_bidding_1\zzlh.txt"
-run_flag = True
-test_flag = True
+# import module.bid_task as bid_task
+# import module.get_url as get_url
+# from module.bid_web_brows import web_brows
+from time import sleep
+from module.bid_log import logger
+from module.bid_task import *
+from module.utils import *
+
+# 读取配置json
+# settings_json = "./bid_settings/bid_settings_t.json"
+settings_json = "./bid_settings/bid_settings_t_2022_11_30-13_37_32_358.json"
+logger.info(f"load json settings file")
+
+runFlag = True
+testFlag = False
+fileTest = True
+
+task_continue = 0
+web_brows_continue = 0
+# 初始化任务
+# try:
+#     bidTaskManager = TaskManager(settings_json,
+#                                  creat_new=(True if test_flag else False))
+# except Exception as e:
+#     logger.error(e)
+bidTaskManager = TaskManager(settings_json,
+                             creat_new=(True if testFlag else False))
+
+# TODO
+# 写一个死循环,任务调度器不断读取任务队列，进行翻页，读取网页内容
 if __name__ == "__main__":
-    if(run_flag):
-        #初始化任务列表
-        task_mg = bid_task.task_manager(json_file_name,False)
-        task_mg.build_task()
-        if(task_mg.task_now_name == "zzlh"):
-            # task_run = get_url.zzlh_get("file",html_file)
-            task_run = get_url.zzlh_get()
-            task_mg.upload_newest(data = task_run.get_search_list())
-        # TODO 开始过滤每一页的招标信息
-
-    if(test_flag):
-        print(task_mg.data["zzlh"])
-        pass
-
-#判断任务状态
-# if(task_prj.check_complete() == True):
-#     #读取已保存的循环列表
-#     pass
-# elif(task_prj.check_complete() == False):
-#     #继续上一次任务
-#     pass
-# elif(task_prj):
-#     #以一周为界限开始爬取
-#     pass
-
-
-
+    # try:
+    if runFlag:
+        while task_continue < 1:
+            # bidTaskManager.start_task()
+            bidTaskManager.build_new_task()
+            while web_brows_continue < 2:
+                # 创建项目列表页面,或进行翻页
+                bidTaskManager.build_list_pages_brows()
+                # 打开项目列表网址
+                bidTaskManager.open_list_url()
+                # 获得网页招标项目list,完成后有 bid_list
+                bidTaskManager.get_list_from_list_web_html()
+                # TODO 判断当前list
+                bidTaskManager.process_bid_list()
+                # TODO 依次打开match_list中的网页, 爬取、判断内容
+                sleep(3)  # TODO 后期换成定时器
+                web_brows_continue += 1
+            task_continue += 1
