@@ -1,105 +1,121 @@
+"""
+url打开模块
+打开网页
+"""
 
-
-import urllib.request as urlreq
 import re
-import xml.dom.minidom
+import urllib.request as urlreq
+import urllib.error as urlerr
+
+from sys import exit
+
+from module.bid_log import logger
+from module.utils import *
 
 
+class UrlOpen:
+    def __init__(self, headers) -> None:
+        self.headers = headers
+        self.url_response = ""
+        self.REQ = None
+        self.url = ""
+        self.method = "GET"  # 会在每次读取完网页后重置为 GET
 
-
-class message_html:
-    #信息保存在html源码中
-    def __init__(self) -> None:
-        self.page = 1
-        self.source_reponse = urlreq.urlopen(self.url)
-        self.source_reponse_read = self.source_reponse.read().decode('utf-8')
-    
-    def get_reponse(self):
-        self.source_reponse = urlreq.urlopen(self.url)
-        self.source_reponse_read = self.source_reponse.read().decode('utf-8')
-
-class message_js:
-    #信息保存在java script 的动态内容中
-    pass
-
-
-class get_html(message_html):
-
-    def __init__(self,url) -> None:
+    def init_req(self, url, headers="", method=""):
+        """封装请求头,默认模式为GET
+        Args:
+            url (str): 请求网址
+            headers (dict):
+            method (str): 请求模式,默认为GET
+        saves:
+            : urlreq封装的请求头
+        """
+        if not headers:  # 若无输入则用自己的header
+            headers = self.headers
+        if not method:
+            method = self.method
+        self.REQ = urlreq.Request(url=url, headers=headers, method=method)
         self.url = url
-        super().__init__()
-        
 
-
-class zzlh_get():
-    data_list = [{
-        "url": "",
-        "name": "",
-        "date": "",
-        "type": ""
-    }]
-    def __init__(self,file="url",url="") -> None:
-        '''
-        file: "url" or "file"
-        url: zzlh url or html file path ,
-        if url = "" -> url = "http://www.365trade.com.cn/zbgg/index_1.jhtml"
-        '''
-        self.page = 1
-        self.root_url = "www.365trade.com.cn"
-        self.data_list = []
-        if(file == "url"):  #url不为空为本地文件测试用
-            if(url == ""):
-                self.url = r"http://www.365trade.com.cn/zbgg/index_1.jhtml"
+    def update_req(self, **kwargs):
+        """ 可选 url , headers, method, cookie
+        Args:
+            **kwargs (dict): url , headers, method, cookie
+        """
+        log = ""
+        for k in kwargs:  # 遍历列表
+            if hasattr(self, k):
+                setattr(self, k, kwargs[k])
+                log = f"{log}update {k} to {kwargs[k]}:\n"  # 打印log
             else:
-                self.url = url
-            self.source_reponse = urlreq.urlopen(self.url).read().decode('utf-8')
-        elif(file == "file"):
-            self.url = "html_file"
-            self.source_reponse = open(url,"r",encoding="utf-8").read()
+                logger.warning(f"{k} not in {self.__class__.__name__}")
+        logger.info(f"update req:\n{log.strip()}")
 
-    #TODO 
+    def open_url_get_response(self):
+        """ 打开self.REQ的网页,保存源码到内存中
+        self.url_response (str): 经过urlopen返回的response.read().decode()后的源码
+        """
+        try:
+            url_response: bytes = urlreq.urlopen(self.REQ).read()
+        except urlerr.HTTPError as http_error:
+            logger.error(
+                f"open {self.REQ.full_url} failed HTTPError: {http_error}\n" +
+                f"REQ: url: {self.url}\nheaders: {self.headers}\n" +
+                f"method: {self.method}")
+            exit(1)  # 未来可能不终止
+        except urlerr.URLError as url_error:
+            # REQ.full_url: open 的 url
+            logger.error(
+                f"open {self.REQ.full_url} failed: {url_error}\n" +
+                f"REQ: url: {self.url}\nheaders: {self.headers}\n" +
+                f"method: {self.method}")
+            exit(1)  # 未来可能不终止
+        decoding = "utf-8"
+        try:
+            self.url_response = url_response.decode(decoding)
+        except UnicodeDecodeError:
+            decoding = "gbk"
+            self.url_response = url_response.decode(decoding)
+        self.method = "GET"  # 重置访问方法为GET
 
+    def save_response(self, rps="", url="", path="./html_save/",
+                      save_date=False):
+        """保存response
+        目前需要适配的网址:
+        http://www.365trade.com.cn/zbgg/index_1.jhtml
+        >  365trade.com.cn、zbgg、index_1.jhtml
 
-    def get_search_list(self):
+        Args:
+            rps (str): response,为空时使用self.url_response
+            url (str): 网页url,为空时使用self.url
+            path (str): html文件相对路径,默认为 ./html_save
+            save_date (bool): 是带有保存带时间的新文件,仅在浏览列表页面出错时保存使用
+        """
+        if not url:
+            url = self.url
+        if not rps:
+            rps = self.url_response
+        file_name = path + url_to_filename(url)
+        if save_date:
+            file_name = file_name.split(".")
+            file_name.insert(-1, date_now_s(file_new=True))
+            file_name = ".".join(file_name)
+        logger.info(f"save html as {file_name}")
+        save_file(file_name, rps)
 
-        def get_content(node,tag_name): #xml中tag的内容
-            data = node.getElementsByTagName(tag_name)[0].childNodes[0].data
-            return data
-        def get_class(node,tag_name,class_name): #xml中tag中属性的值 
-            data = node.getElementsByTagName(tag_name)[0].getAttribute(class_name)
-            return data
-        html_data = re.findall('<ul class="searchList">(.*?)</ul>',self.source_reponse,flags = re.S)[0]
-        self.source_reponse = r'<note name="zzlh">' + html_data + r'</note>'    #加根节点，转为xml文档
-        dom_tree = xml.dom.minidom.parseString(self.source_reponse)
-        li_tag = dom_tree.getElementsByTagName("li")
-        for node in li_tag:
-            dict_data = {
-                "url": self.root_url + get_class(node,"a","href"),
-                "name": get_class(node,"span","title"),
-                "date": get_content(node,"i").replace("发布日期：",""),
-                "type": get_content(node,"em")
-            }
-            self.data_list.append(dict_data)
-        return self.data_list[0]
-
-        #去除多余标签
-    def upload(self):
-        # self.url = 
-        pass
-
-    def next_page():
-        # TODO 实现翻页
-        pass
-
-
-    pass
-
-
-if __name__ == "__main__":
-    json_file_name = r"H:\Hasee_Desktop\vscode\python\get_zhaobiao\get_bidding_1\json\module_1_2022-05-10_17-57-30-559346.json"
-    html_file = r"H:\Hasee_Desktop\vscode\python\get_zhaobiao\get_bidding_1\zzlh.txt"
-    task_run = zzlh_get("file",html_file)
-    task_run.get_search_list()
-    print(task_run.data_list[0])
-
-
+    def get_response_from_file(self, file):
+        """ 将文件读取的数据赋给self.url_response
+        Args:
+            file (str): file路径或html字符串
+        Returns:
+            (str):  file 是文件还是 字符串
+        """
+        try:
+            with open(file, "r", encoding="utf-8") as f:
+                self.url_response = f.read()
+            logger.info(f"read html from file: {file}")
+            return "file"
+        except (FileNotFoundError, OSError):
+            self.url_response = file
+            logger.info(f"read html from str: {file[:30]}...")
+            return "html_read"
