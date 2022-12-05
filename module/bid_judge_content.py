@@ -91,11 +91,11 @@ class BidTitleTrie:
                 self.child = json.loads(f_read)
         logger.info(f"init from file: {file_read}")
 
-    def save_local(self, file_save="./bid_settings/trie_dict.b"):
+    def save_local(self, file_save="./bid_settings/title_trie.json"):
         folder = os.path.dirname(file_save)
         if not os.path.exists(folder):
             os.mkdir(folder)
-        if file_save.split()[-1] == ".":
+        if file_save.split()[-1] == "b":
             with open(file_save, "wb") as f_w:
                 pickle.dump(self.child, f_w)
         else:
@@ -207,15 +207,15 @@ class BidTitleTrie:
                 slow = fast + 1
         return word_match
 
-inti_file = "./bid_settings/trie.json"
+init_file = "./bid_settings/title_trie.json"
 
 try:
-    title_trie = BidTitleTrie(inti_file)
-except FileNotFoundError:
+    title_trie = BidTitleTrie(init_file)
+except FileNotFoundError as e:
+    logger.warning(f"{e}")
     title_trie = BidTitleTrie()
 
 if __name__ == "__main__":
     title_trie.insert_from_file("./test/前缀树.txt")
-    title_trie.save_local(inti_file)
-    # trie.insert_from_str("L:ED:面板 屏")
-    logger.info(title_trie.search_all("哈尔滨音乐学院led食堂大宗食品面饼屏采购项目（二次）-招标公告"))
+    title_trie.save_local(init_file)
+    # logger.info(title_trie.search_all("食堂led大宗食品面饼屏采购项目（二次）-招标公告"))
