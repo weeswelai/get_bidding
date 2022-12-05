@@ -4,22 +4,17 @@
 初始化 任务调度对象，网页浏览对象， 读取配置文件，将配置文件和网页浏览对象交给任务调度对象
 """
 
-
-# import module.bid_task as bid_task
-# import module.get_url as get_url
-# from module.bid_web_brows import web_brows
 from time import sleep
 from module.bid_log import logger
 from module.bid_task import *
 from module.utils import *
 
 # 读取配置json
-# settings_json = "./bid_settings/bid_settings_t.json"
-settings_json = "./bid_settings/bid_settings_t_2022_11_30-13_37_32_358.json"
-logger.info(f"load json settings file")
+settings_json = "./bid_settings/bid_settings_t.json"
+logger.info(f"load json settings file from {settings_json}")
 
 runFlag = True
-testFlag = False
+newFlag = False
 fileTest = True
 
 task_continue = 0
@@ -31,7 +26,7 @@ web_brows_continue = 0
 # except Exception as e:
 #     logger.error(e)
 bidTaskManager = TaskManager(settings_json,
-                             creat_new=(True if testFlag else False))
+                             creat_new=(True if newFlag else False))
 
 # TODO
 # 写一个死循环,任务调度器不断读取任务队列，进行翻页，读取网页内容

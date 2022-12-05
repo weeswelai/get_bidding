@@ -178,7 +178,7 @@ class WebBrows(WebFromUrlOpen):
         logger.info("bid_web_brows.cut_html")
         if isinstance(_cut_rule, dict):
             self.html_list_match = re.search(
-                                    _cut_rule["cut_rule"], 
+                                    _cut_rule["re_rule"], 
                                     self.url_response,
                                     _cut_rule["rule_option"]).group()
         else:
@@ -229,12 +229,15 @@ class WebBrows(WebFromUrlOpen):
 
     def get_next_pages(self, page_url, next_pages_rule=None):
         """
+        Args:
+            page_url (str): 项目列表网址
+            next_pages_rule (str): 项目列表网址下一页规则,仅在测试时使用
         """
         if not next_pages_rule:
             next_pages_rule = self.next_pages_rule
         page_idx = int(next_pages_rule.search(page_url).group())
         next_pages_url = next_pages_rule.sub(str(page_idx + 1), page_url)
-        logger.info(f"get next pages url: {next_pages_url}")
+        logger.info(f"bid_web_brows.get_next_pages: {next_pages_url}")
         return next_pages_url
 
 

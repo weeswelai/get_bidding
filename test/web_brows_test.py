@@ -18,6 +18,7 @@ from bid_start import bidTaskManager
 bidTaskManager.build_new_task()
 
 """
+对于bid_settings.json中的解释
 cut_rule 取出列表网页中列表所在的tag源码
     cut_rule: 正则表达式
     rule_option: re.S的整型值,可使用 module.utils 中的print_re_options打印
@@ -85,22 +86,21 @@ def open_save_html(url):
     # 打开网址
     web_brows.open_url_get_response()
     # 保存decode后的源码
-    web_brows.save_response()
+    web_brows.save_response(save_date=True)
 
 
-path = "./"
 web_page = r"http://www.365trade.com.cn/zbgg/index_1.jhtml"
 page_html_f = r"./html_save/365trade.com.cn zbgg index_1.html"
 
 if __name__ == "__main__":
-    openAndSaveUrl = 0
+    openAndSaveUrl = 1
     taskManagerFromFile = 0
     reTest = {
-        "test": 1,
+        "test": 0,
         "test_new_rule": 0,
-        "cut_html": 1,
+        "cut_html": 0,
         "date": 0,
-        "next_pages": 1
+        "next_pages": 0
     }
 
     with open(page_html_f, "r", encoding="utf-8") as page_f:
@@ -109,38 +109,42 @@ if __name__ == "__main__":
         if openAndSaveUrl:
             open_save_html(web_page)  # 保存html
 
-        # 日期字符串的正则表达式测试
+        # 正则表达式测试
         if reTest["test"]:
             if reTest["cut_html"]:
                 # getsizeof page 最好不要小于51, ""的内存占用为51
-                logger.info(f"page memory size: {getsizeof(page)}")
+                logger.info(f"test: page memory size: {getsizeof(page)}")
                 # 将源码str输入web_brows对象
                 web_brows.get_response_from_file(file=page)  
-                if reTest["test_new_rule"]:
-                    web_brows.cut_html(rule["re"]["ut_rule"])  # 裁剪源码
+                if reTest["test_new_rule"]:  # 使用本文件中的测试rule
+                    web_brows.cut_html(rule["re"]["cut_rule"])  # 裁剪源码
+                    web_brows.get_list(list_rule=rule["list_rule"])
                 else:
                     web_brows.cut_html()
-                web_brows.get_list(page="html_list_match")  # 得到list
+                    web_brows.get_list()  # 得到list
                 
-            if reTest["date"]:
+            if reTest["date"]:  # 日期字符串的正则测试
                 date_test = "发布日期：2022-11-14"  # 测试文本
                 date_cut_rule = rule["date_cut_rule"]  # 测试的正则表达式
                 default = True  # 是否使用默认正则
-                date_output = (web_brows.re_get_time_str(  # 调用方法
+                date_output = web_brows.re_get_time_str(  # 调用方法
                     date_str=date_test,
                     time_cut_rule=date_cut_rule,
-                    default=default
-                ))
+                    default=default )
+
                 if default:
                     date_cut_rule = r"\d{4}([_\-年])\d{2}([_\-月])\d{2}(|日)"
                 logger.info(  # 打印结果
-                    f"时间的正则测试: \"{date_test}\" becomes \"{date_output}\" " +
+                    f"reTest time: \"{date_test}\" becomes \"{date_output}\" " +
                     f"through re: \"{date_cut_rule}\"")
-        if reTest["next_pages"]:
-            web_brows.get_next_pages(web_page)
-            pass
 
-        if taskManagerFromFile:
+        if reTest["next_pages"]:  # 下一页测试
+            if rule["re"]["test_new_rule"]:
+                web_brows.get_next_pages(web_page, rule["re"]["next_pages_rule"])
+            else:
+                web_brows.get_next_pages(web_page)
+
+        if taskManagerFromFile:  # 通过 bid_start 使用 bid_task对象
             newFlag = False
             # 创建项目列表页面,或进行翻页
             bidTaskManager.build_list_pages_brows()
@@ -154,7 +158,7 @@ if __name__ == "__main__":
 
 
     except Exception:
-        logger.error(traceback.format_exc())
+        logger.error(f"test: {traceback.format_exc()}")
 
 
 

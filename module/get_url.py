@@ -49,7 +49,7 @@ class UrlOpen:
                 log = f"{log}update {k} to {kwargs[k]}:\n"  # 打印log
             else:
                 logger.warning(f"{k} not in {self.__class__.__name__}")
-        logger.info(f"update req:\n{log.strip()}")
+        logger.info(f"get_url.update_req:\n{log.strip()}")
 
     def open_url_get_response(self):
         """ 打开self.REQ的网页,保存源码到内存中
@@ -89,7 +89,8 @@ class UrlOpen:
             rps (str): response,为空时使用self.url_response
             url (str): 网页url,为空时使用self.url
             path (str): html文件相对路径,默认为 ./html_save
-            save_date (bool): 是带有保存带时间的新文件,仅在浏览列表页面出错时保存使用
+            save_date (bool): 是带有保存带时间的新文件
+            仅在浏览列表页面出错时或测试时保存使用
         """
         if not url:
             url = self.url
@@ -110,6 +111,7 @@ class UrlOpen:
         Returns:
             (str):  file 是文件还是 字符串
         """
+        logger.hr("get_url.get_response_from_file", 3)
         try:
             with open(file, "r", encoding="utf-8") as f:
                 self.url_response = f.read()
@@ -117,5 +119,5 @@ class UrlOpen:
             return "file"
         except (FileNotFoundError, OSError):
             self.url_response = file
-            logger.info(f"read html from str: {file[:30]}...")
+            logger.info(f"read html from str: {file[:100]}...")
             return "html_read"
