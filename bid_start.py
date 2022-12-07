@@ -18,7 +18,7 @@ newFlag = False
 fileTest = True
 
 task_continue = 0
-web_brows_continue = 0
+web_brows_continue = True
 # 初始化任务
 # try:
 #     bidTaskManager = TaskManager(settings_json,
@@ -35,8 +35,10 @@ if __name__ == "__main__":
     if runFlag:
         while task_continue < 1:
             # bidTaskManager.start_task()
-            bidTaskManager.build_new_task()
-            while web_brows_continue < 2:
+            task_name = bidTaskManager.build_new_task()
+            while web_brows_continue:# != "next_task":
+                # if bidTaskManager.state == "complete":
+                #     bidTaskManager.build_new_task(task_name)
                 # 创建项目列表页面,或进行翻页
                 bidTaskManager.build_list_pages_brows()
                 # 打开项目列表网址
@@ -44,8 +46,8 @@ if __name__ == "__main__":
                 # 获得网页招标项目list,完成后有 bid_list
                 bidTaskManager.get_list_from_list_web_html()
                 # TODO 判断当前list
-                bidTaskManager.process_bid_list()
+                web_brows_continue = bidTaskManager.process_bid_list()
                 # TODO 依次打开match_list中的网页, 爬取、判断内容
                 sleep(3)  # TODO 后期换成定时器
-                web_brows_continue += 1
+                # web_brows_continue += 1
             task_continue += 1

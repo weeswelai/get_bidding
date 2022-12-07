@@ -92,22 +92,20 @@ class BidTitleTrie:
         logger.info(f"init from file: {file_read}")
 
     def save_local(self, file_save="./bid_settings/title_trie.json"):
-        folder = os.path.dirname(file_save)
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+        creat_folder(file_save)
         if file_save.split()[-1] == "b":
             with open(file_save, "wb") as f_w:
                 pickle.dump(self.child, f_w)
         else:
             save_json(self.child, file_save)
-        logger.info(f"save byte file: {file_save}")
+        logger.info(f"save file: {file_save}")
 
     def insert_from_file(self, trie_file):
         """ 从文本文件中遍历每行,插入前缀树
         Args:
             trie_file (str): 前缀树文件路径
         """
-        
+
         with open(trie_file, "r", encoding="utf-8") as f_r:
             for line in f_r:
                 self.insert_from_str(line.strip())
@@ -133,7 +131,7 @@ class BidTitleTrie:
             if wd in c:
                 c = c[wd]
             else:
-                if wd in ("", " ", "："):  #TODO 错误检查,检查是否有符号,符号是否符合要求
+                if wd in ("", " ", "："):  # TODO 错误检查,检查是否有符号,符号是否符合要求
                     warning_list.append(wd)
                 else:
                     c[wd] = {}
@@ -198,7 +196,7 @@ class BidTitleTrie:
                 if "end" in c:
                     second = True
                     word_match.append(text[slow: fast + 1])
-                    c_next = c
+                    c_next = c  # 检索第二关键词
             else:
                 if second:
                     c = c_next
@@ -206,6 +204,7 @@ class BidTitleTrie:
                     c = self.child  # 若第一关键词未匹配则回到上次节点
                 slow = fast + 1
         return word_match
+
 
 init_file = "./bid_settings/title_trie.json"
 
@@ -216,6 +215,7 @@ except FileNotFoundError as e:
     title_trie = BidTitleTrie()
 
 if __name__ == "__main__":
+    title_trie.child = {}
     title_trie.insert_from_file("./test/前缀树.txt")
     title_trie.save_local(init_file)
     # logger.info(title_trie.search_all("食堂led大宗食品面饼屏采购项目（二次）-招标公告"))

@@ -6,7 +6,7 @@ url打开模块
 import re
 import urllib.request as urlreq
 import urllib.error as urlerr
-
+from bs4.element import Tag
 from sys import exit
 
 from module.bid_log import logger
@@ -79,7 +79,7 @@ class UrlOpen:
         self.method = "GET"  # 重置访问方法为GET
 
     def save_response(self, rps="", url="", path="./html_save/",
-                      save_date=False):
+                      save_date=False, extra=""):
         """保存response
         目前需要适配的网址:
         http://www.365trade.com.cn/zbgg/index_1.jhtml
@@ -98,9 +98,13 @@ class UrlOpen:
             rps = self.url_response
         file_name = path + url_to_filename(url)
         if save_date:
-            file_name = file_name.split(".")
-            file_name.insert(-1, date_now_s(file_new=True))
-            file_name = ".".join(file_name)
+            point_idx = file_name.rindex('.') 
+            file_name = f"{file_name[: point_idx]}_{date_now_s(True)}" + \
+                        f"{file_name[point_idx :]}"
+        if extra:
+            point_idx = file_name.rindex('.') 
+            file_name = f"{file_name[: point_idx]}_{extra}" + \
+                        f"{file_name[point_idx :]}"
         logger.info(f"save html as {file_name}")
         save_file(file_name, rps)
 
@@ -121,3 +125,77 @@ class UrlOpen:
             self.url_response = file
             logger.info(f"read html from str: {file[:100]}...")
             return "html_read"
+
+class WebFromUrlOpen(UrlOpen):
+    bs: Tag = None
+    bs_tag: Tag = None
+
+    def parse_bs_rule(self, bs_tag: Tag, rule):
+        """
+        解析规则,找到tag或tagList(bs4.element.ResultSet),或符合规则的属性值或tag中的文本
+        Args:
+            bs_tag (bs4.element.Tag): 要检索的tag
+            rule (str): 检索规则
+        Returns:
+            bs_tag or text or None, 可能有三种返回
+            None: not rule 为 True时返回None
+            bs_tag (bs4.element.Tag, bs4.element.ResultSet): find或find_all的检索结果
+            text (str): tag的内容文本, 或tag中符合规则的属性的值
+        """
+        if not rule:  # 无rule返回None
+            return None
+        find_all_idx = None
+        tag_find, tag_name, value_name, value, tag_gets_r, value_gets_r = "", "", "", "", "", ""
+        # 预处理分割rule
+        if rule.count("|") == 2:  # 2个|认为有 find_all_idx, 用于find_all的索引
+            tag_gets_r, value_gets_r, find_all_idx = rule.split("|")
+        elif rule.count("|") == 1:  # 必须有1个 |
+            tag_gets_r, value_gets_r = rule.split("|")
+        if tag_gets_r:
+            tag_find, tag_name = tag_gets_r.split(":")
+        if value_gets_r:
+            value_name, value = value_gets_r.split(":")
+        # 检索tag
+        if tag_find == "tagName_all":
+            if value_name and value:  # 若有value检索要求,则find_all加上参数attrs
+                bs_tag = bs_tag.find_all(tag_name, attrs={value_name: value})
+            # 无value要求,直接用find_all搜索
+            # 使用find_all(tag_name, attrs={"":""}) 会返回None,所以这里额外调用语句
+            else:
+                bs_tag = bs_tag.find_all(tag_name)
+            if find_all_idx:  # 若有find_all 的索引要求,则返回该索引对应的tag
+                bs_tag = bs_tag[int(find_all_idx)]
+        elif tag_find == "tagName_find":  # 使用tagName,find方式检索
+            bs_tag = self.bs_deep_get(bs_tag, tag_name)  # 调用额外函数返回Tag
+        self.bs_tag = bs_tag
+        # 检索属性值
+        if value_name:  # value_name有值 则检索属性值
+            if value_name == "class":
+                if "".join(bs_tag.get("class")) == value.replace(" ",
+                                                                 ""):  # class=value 的 text值
+                    return bs_tag.text.strip()  # tag内容文本
+                else:  # 若当前tag的class不符合则用find
+                    return bs_tag.find(class_=value).text.strip()  # tag内容文本
+            elif value_name == "_Text":  # 没有属性只有text的标签
+                return bs_tag.text.strip()  # tag内容文本
+            else:
+                return bs_tag.get(value_name)  # tag属性值
+        else:  # 若不检索属性值则直接返回tag或
+            return bs_tag
+
+    def bs_deep_get(self, s_tag: Tag, rule) -> Tag or None:
+        """
+        Args:
+            s_tag (bs4.element.Tag): 要检索的tag
+            rule (str, list): 检索规则,用 "." 分开
+        Returns:
+            tag (bs4.element.Tag)
+        """
+        if isinstance(rule, str):
+            rule = rule.split(".")
+        assert type(rule) is list
+        if s_tag is None:
+            return None
+        if not rule:
+            return s_tag
+        return self.bs_deep_get(s_tag.find(rule[0]), rule[1:])

@@ -68,7 +68,7 @@ def date_days(change_days=0):
         str : 返回计算后日期的字符串
     """
     return (dt.datetime.now() + dt.timedelta(days=change_days)).strftime(
-        '%Y-%m-%d')
+        '%Y-%m-%d %H:%M:%S')
 
 
 def read_json(file):
@@ -94,9 +94,7 @@ def save_json(data, json_file, indent=2, creat_new=False):
     Returns:
         json_file (str): 保存的json文件路径
     """
-    folder = os.path.dirname(json_file)
-    if not os.path.exists(folder):
-        os.mkdir(folder)
+    creat_folder(json_file)
 
     if creat_new:  # 是否创建新文件保存
         json_file = f"{json_file.split('.json')[0]}{date_now_s(creat_new)}.json"
@@ -109,13 +107,11 @@ def save_json(data, json_file, indent=2, creat_new=False):
     return json_file
 
 
-def save_file(file, data):
+def save_file(file, data, mode="w"):
     """ 保存文件
     """
-    folder = os.path.dirname(file)
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-    with open(file, "w", encoding="utf-8") as f:
+    creat_folder(file)
+    with open(file, mode, encoding="utf-8") as f:
         f.write(data)
 
 
@@ -137,16 +133,6 @@ def url_to_filename(url: str):
     elif html_find > 0:  # 另类的html后缀 , 如 jhtml
         url = f"{url[:idx]}.html"
     return url
-
-
-def re_options_print(options):
-    """
-    打印 re.S re.M 的值
-    Args:
-        options (re.options): S M
-    """
-
-    print(int(eval(f"re.{options}")))
 
 
 def str_list(output_list, level=1, add_idx=False):
@@ -175,15 +161,35 @@ def str_list(output_list, level=1, add_idx=False):
     #         output = f"{output}\n"
     return output, len(output)
 
-def init_re(re_rule):
+
+def re_options_print(options):
+    """
+    打印 re.S re.M 的值
+    Args:
+        options (re.options): S M
+    """
+    logger.info(int(eval(f"re.{options}")))
+
+
+def init_re(re_rule, flag=16):
     """ 返回编译好的正则表达式
     Args:
         re_rule (dict or str): 
+        flag (int): 默认为16, "." 将选取换行符, 16 = re.S
     """
     if isinstance(re_rule, str):
         return re.compile(re_rule)
     elif isinstance(re_rule, dict):
-        return re.compile(re_rule["re_rule"], flags=re_rule["rule_option"])
+        if re_rule["rule_option"]:
+            flag = re_rule["rule_option"]
+        return re.compile(re_rule["re_rule"], flags=flag)
+
+
+def creat_folder(file):
+    folder = os.path.dirname(file)
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
 
 if __name__ == "__main__":
     # 本模块测试

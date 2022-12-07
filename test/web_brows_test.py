@@ -89,7 +89,8 @@ def open_save_html(url):
     web_brows.save_response(save_date=True)
 
 
-web_page = r"http://www.365trade.com.cn/zbgg/index_1.jhtml"
+# web_page = r"http://www.365trade.com.cn/zbgg/index_1.jhtml"
+web_page = "http://www.weain.mil.cn/cggg/jdgg/list.shtml"
 page_html_f = r"./html_save/365trade.com.cn zbgg index_1.html"
 
 if __name__ == "__main__":
