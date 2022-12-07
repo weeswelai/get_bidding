@@ -98,13 +98,13 @@ class UrlOpen:
             rps = self.url_response
         file_name = path + url_to_filename(url)
         if save_date:
-            point_idx = file_name.rindex('.') 
+            point_idx = file_name.rindex('.')
             file_name = f"{file_name[: point_idx]}_{date_now_s(True)}" + \
-                        f"{file_name[point_idx :]}"
+                        f"{file_name[point_idx:]}"
         if extra:
-            point_idx = file_name.rindex('.') 
+            point_idx = file_name.rindex('.')
             file_name = f"{file_name[: point_idx]}_{extra}" + \
-                        f"{file_name[point_idx :]}"
+                        f"{file_name[point_idx:]}"
         logger.info(f"save html as {file_name}")
         save_file(file_name, rps)
 
@@ -125,6 +125,7 @@ class UrlOpen:
             self.url_response = file
             logger.info(f"read html from str: {file[:100]}...")
             return "html_read"
+
 
 class WebFromUrlOpen(UrlOpen):
     bs: Tag = None

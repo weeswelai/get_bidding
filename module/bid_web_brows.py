@@ -53,7 +53,6 @@ class WebBrows(WebFromUrlOpen):
     url_root = {}
     cutHtml: bool
 
-
     def init(self, settings):
         # 若有cookie 需求(使用第一个cookie)
         cookie = deep_get(settings, "url_open_cookie")

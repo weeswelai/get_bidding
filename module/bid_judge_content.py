@@ -7,7 +7,7 @@ TODO
 
 import json
 import pickle
-from re import L
+
 # 根据内存地址获得变量
 from _ctypes import PyObj_FromPtr
 
@@ -25,8 +25,8 @@ class BidTitleTrie:
 
     def insert_from_list(self, insert_list):
         if isinstance(insert_list[0], list):
-            for l in insert_list:
-                self._insert_from_list(l)
+            for li in insert_list:
+                self._insert_from_list(li)
         else:
             self._insert_from_list(insert_list)
 
@@ -74,13 +74,13 @@ class BidTitleTrie:
             self.insert_from_list(word_list)
         else:
             word_list = word_insert.split(split)
-            for l in word_insert:
-                self.insert_from_list()
+            for li in word_insert:
+                self.insert_from_list(li)
 
     def init_from_file(self, file_read="./bid_settings/trie_dict.b"):
         """ 读取二进制文件中的dict变量, 赋给self.child
         Args:
-            file_byte (str): 要读取的二进制文件
+            file_read (str): 要读取的文件
         """
         if file_read.split()[-1] == ".":
             with open(file_read, "rb") as f_r:
