@@ -108,7 +108,7 @@ class TaskManager:
             logger.error(f"{traceback.format_exc()}")
             web_brows.save_response(save_date=True, extra="list_Error")
             logger.info(f"cut html error,open {self.list_url} again" + \
-                f"\nreOpen: {reOpen}")
+                        f"\nreOpen: {reOpen}")
             if reOpen < 3:
                 reOpen += 1
                 sleep(1.5)
@@ -118,20 +118,21 @@ class TaskManager:
                 logger.error(f"{self.list_url} open more than {reOpen} time")
         try:
             web_brows.get_list()
-        except AttributeError as e:
+        except Exception as e:
             output, temp = str_list(web_brows.bid_list)
             logger.info(f"error bid list now is {output}")
             logger.error(f"error at li_tag[{web_brows.list_idx}]\n" +
-                        f"error tag: \"{web_brows.bs_tag}\"")
+                         f"error tag: \"{web_brows.bs_tag}\"")
             logger.error(f"{traceback.format_exc()}")
-            
+
             web_brows.save_response(save_date=True, extra="list_Error")
-            web_brows.save_response(rps=web_brows.html_list_match, 
-                save_date=True, extra="cut_list_Error")
-        
+            web_brows.save_response(rps=web_brows.html_list_match,
+                                    save_date=True, extra="cut_list_Error")
+
         if self.state in ("", " ", None) and not self.last_newest:  # 任务上次状态未记录
             newest = _bid_list_element_to_dict(web_brows.bid_list, 0)
-            newest["date"] = deep_get(self.settings, "task.run_time")  # 日期改为当前运行时间
+            newest["date"] = deep_get(self.settings,
+                                      "task.run_time")  # 日期改为当前运行时间
             deep_set(self.settings, f"{self.task_name}.last.newest", newest)
             logger.info(f"{self.task_name}.last.newest: {newest}")
 
@@ -140,13 +141,14 @@ class TaskManager:
         """
         logger.hr("bid_task.process_bid_list", 3)
 
-        # TODO 遍历列表中的标题，对于标题，招标类型符合条件的(调用判断模块),这里符合条件的是 标题、不为已记录过的，日期大于停止条件的、类型为货物的(暂不判断类型)
-        # 遍历列表,找到符合项
+        # TODO 遍历列表中的标题，对于标题，招标类型符合条件的(调用判断模块),这里符合条件的是
+        #  标题、不为已记录过的，日期大于停止条件的、类型为货物的(暂不判断类型) 遍历列表,找到符合项
         self.match_list = []
         idx_list = []
         task_next = True  # complete, break
         with open(self.list_file, "a", encoding="utf-8") as f_bid_list, \
-            open(self.match_list_file, "a", encoding="utf-8") as f_match_list:
+                open(self.match_list_file, "a",
+                     encoding="utf-8") as f_match_list:
             # TODO 区分 break 和 complete 和 None的状态
             if self.state in ("", None, "complete"):
                 for idx, bid in enumerate(web_brows.bid_list):
@@ -234,8 +236,8 @@ class TaskManager:
         else:
             logger.error(f"error complete flag: {state}")
             sys.exit(1)
-        
-         # 上次任务未记录
+
+        # 上次任务未记录
         self.last_newest = False if last_task["newest"]["name"] == "" else True
         logger.info(f"{self.task_name}.last.complete is: {state}")
         logger.info(f"end_rule : {end_rule}")
@@ -286,8 +288,9 @@ def _bid_to_dict(bid):
     return {
         "name": bid[0],
         "date": bid[1],
-        "url": bid[2] 
+        "url": bid[2]
     }
+
 
 if __name__ == "__main__":
     json_file_name = r"json\module_1_2022-05-10_17-57-30-559346.json"
