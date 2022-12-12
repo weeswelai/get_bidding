@@ -2,10 +2,11 @@
 工具类模块
 """
 
+import re
 import os
 import datetime as dt
 from json import loads, dumps
-import re
+from bs4 import Tag
 
 from module.bid_log import logger
 
@@ -47,6 +48,24 @@ def deep_get(d: dict, keys: list or str, default=None):
     if not keys:
         return d
     return deep_get(d.get(keys[0]), keys[1:], default)
+
+
+def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
+    """
+    Args:
+        s_tag (bs4.element.Tag): 要检索的tag
+        rule (str, list): 检索规则,用 "." 分开
+    Returns:
+        tag (bs4.element.Tag)
+    """
+    if isinstance(rule, str):
+        rule = rule.split(".")
+    assert type(rule) is tuple or list
+    if s_tag is None:
+        return None
+    if not rule:
+        return s_tag
+    return bs_deep_get(s_tag.find(rule[0]), rule[1:])
 
 
 def date_now_s(file_new=False):
@@ -176,11 +195,12 @@ def init_re(re_rule, flag=16):
     Args:
         re_rule (dict or str): 
         flag (int): 默认为16, "." 将选取换行符, 16 = re.S
+        re.S 的值 可通过 utils.re_options_print 打印
     """
     if isinstance(re_rule, str):
         return re.compile(re_rule)
     elif isinstance(re_rule, dict):
-        if re_rule["rule_option"]:
+        if isinstance(re_rule["rule_option"], int):
             flag = re_rule["rule_option"]
         return re.compile(re_rule["re_rule"], flags=flag)
 

@@ -15,8 +15,6 @@ from bid_start import bidTaskManager
 # sys.stderr = logger.handlers[1].stream
 
 
-bidTaskManager.build_new_task()
-
 """
 对于bid_settings.json中的解释
 cut_rule 取出列表网页中列表所在的tag源码
@@ -94,8 +92,7 @@ web_page = "http://www.weain.mil.cn/cggg/jdgg/list.shtml"
 page_html_f = r"./html_save/365trade.com.cn zbgg index_1.html"
 
 if __name__ == "__main__":
-    openAndSaveUrl = 1
-    taskManagerFromFile = 0
+    openAndSaveUrl = 0
     reTest = {
         "test": 0,
         "test_new_rule": 0,
@@ -103,6 +100,7 @@ if __name__ == "__main__":
         "date": 0,
         "next_pages": 0
     }
+    taskManagerFromFile = 1
 
     with open(page_html_f, "r", encoding="utf-8") as page_f:
             page = page_f.read()
@@ -147,15 +145,15 @@ if __name__ == "__main__":
 
         if taskManagerFromFile:  # 通过 bid_start 使用 bid_task对象
             newFlag = False
+            bidTaskManager.build_new_task()
             # 创建项目列表页面,或进行翻页
             bidTaskManager.build_list_pages_brows()
             # 打开项目列表网址,保存html, 这里读取文件内容
             web_brows.url_response = page  # bidTaskManager.open_list_url()
+            web_brows.cut_html()
             web_brows.url = page_html_f
             bidTaskManager.get_list_from_list_web_html()
-            
-
-
+            bidTaskManager.close()
 
 
     except Exception:

@@ -36,7 +36,7 @@ if __name__ == "__main__":
         while task_continue < 1:
             # bidTaskManager.start_task()
             task_name = bidTaskManager.build_new_task()
-            while web_brows_continue:# != "next_task":
+            while bidTaskManager.state != "complete":
                 # if bidTaskManager.state == "complete":
                 #     bidTaskManager.build_new_task(task_name)
                 # 创建项目列表页面,或进行翻页
@@ -46,8 +46,9 @@ if __name__ == "__main__":
                 # 获得网页招标项目list,完成后有 bid_list
                 bidTaskManager.get_list_from_list_web_html()
                 # TODO 判断当前list
-                web_brows_continue = bidTaskManager.process_bid_list()
-                # TODO 依次打开match_list中的网页, 爬取、判断内容
-                sleep(3)  # TODO 后期换成定时器
+                logger.info("sleep 3s , you can stop now")
+                for t in range(3):
+                    logger(f"sleep {t}s ")
+                    sleep(1)  # TODO 后期换成定时器
                 # web_brows_continue += 1
             task_continue += 1
