@@ -146,6 +146,10 @@ class TaskManager:
         self._state()
 
     def process_bid(self, bid_prj):
+        """
+        Args:
+            bid_prj (bid_web_brows.Bid): 保存 bid 信息的对象
+        """
         self.list_file.write(f"{str(bid_prj.message)}\n")
         result = title_trie.search_all(bid_prj.name)
         if result:
