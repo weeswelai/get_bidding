@@ -7,71 +7,73 @@
       "test1"
     ],
     "name": "zzlh",
-    "last_complete": null,
+    "last_complete": "",
     "end_rule": {
       "name": "",
-      "date": "2022-12-07 00:00:00",
+      "date": "2022-12-12 00:00:00",
       "url": ""
     },
     "web_list": {
       "first_name": "",
       "first_date": "",
-      "list_url": "http://www.365trade.com.cn/zbgg/index_8.jhtml?typeId=102"
+      "url": "http://www.365trade.com.cn/zbgg/index_4.jhtml?typeId=102"
     },
     "bid_now": {
       "name": "",
       "date": ""
     },
-    "run_time": "2022-12-07 17:12:45",
+    "run_time": "2022-12-12 14:27:45",
     "save_data": "./data/bid_list.txt",
-    "match_data": "./data/match_list.txt"
+    "match_data": "./data/match_list.txt",
+    "outDateContinue": false
   },
   "zzlh": {
     "state": "",
-    "url_open": {
-      "list_url": [
-        "http://www.365trade.com.cn/zbgg/index_8.jhtml?typeId=102"
+    "url": {
+      "list": [
+        "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
+        "http://www.365trade.com.cn/zbgg/index_1.jhtml"
       ],
-      "url_root": {
-        "root": "http://www.365trade.com.cn"
+      "root": {
+        "default": "http://www.365trade.com.cn"
       },
       "cookie": []
     },
-    "brows_rule": {
-      "re": {
-        "cut_rule": {
-          "re_rule": "(<ul class=\"searchList\">).*?(</ul>)",
-          "rule_option": 16
-        },
-        "next_pages_rule": "(?<=_)\\d{1,3}(?<=\\d)",
-        "date_cut_rule": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
+    "rule": {
+      "cut": {
+        "re_rule": "(<ul class=\"searchList\">).*?(</ul>)",
+        "rule_option": 16
       },
-      "list_rule": {
+      "next_pages": "(?<=_)\\d{1,3}(?<=\\d)",
+      "bid_tag": {
         "li_r": "tagName_all:li|",
         "name_r": "tagName_find:a.p.span|title:",
         "date_r": "tagName_find:i|class:fl dis_block release_date ",
         "url_r": "tagName_find:a|href:",
         "type_r": "tagName_find:a.p.em|_Text:"
+      },
+      "bid": {
+        "date_cut": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
       }
     },
     "last": {
       "newest": {
-        "name": "某医院一批医疗设备采购项目（第1包二次公告）招标公告",
-        "date": "2022-12-07 17:12:45",
-        "url": "http://www.365trade.com.cn/zhwzb/401286.jhtml"
+        "name": "",
+        "date": "",
+        "url": ""
       },
-      "taskBreakUrl": "http://www.365trade.com.cn/zbgg/index_8.jhtml?typeId=102",
+      "taskBreakUrl": "",
       "task_break": {
         "name": "",
         "date": "",
         "url": ""
       },
       "end_rule": {
-        "name": "某医院一批医疗设备采购项目（第1包二次公告）招标公告",
-        "date": "2022-12-07 17:12:45",
-        "url": "http://www.365trade.com.cn/zhwzb/401286.jhtml"
+        "name": "",
+        "date": "",
+        "url": ""
       },
-      "complete": "complete"
+      "complete": ""
     }
   },
   "hkgy": {},
