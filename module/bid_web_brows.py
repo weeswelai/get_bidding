@@ -20,14 +20,15 @@
 """
 import re
 import traceback
-from bs4 import BeautifulSoup as btfs
-from bs4 import Tag
 from sys import getsizeof
 
+from bs4 import BeautifulSoup as btfs
+from bs4 import Tag
+
+from module.bid_judge_content import title_trie
+from module.bid_log import logger
 from module.get_url import UrlOpen
 from module.utils import *
-from module.bid_log import logger
-from module.bid_judge_content import title_trie
 
 HEADER = {
     "User-Agent": r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
