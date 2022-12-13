@@ -4,10 +4,11 @@ url打开模块
 """
 
 import re
-import urllib.request as urlreq
 import urllib.error as urlerr
-from bs4.element import Tag
+import urllib.request as urlreq
 from sys import exit
+
+from bs4.element import Tag
 
 from module.bid_log import logger
 from module.utils import *

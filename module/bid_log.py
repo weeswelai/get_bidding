@@ -3,8 +3,8 @@
 借鉴于 https://github.com/LmeSzinc/AzurLaneAutoScript/blob/master/module/logger.py
 """
 
-import logging
 import datetime
+import logging
 import os
 import sys
 

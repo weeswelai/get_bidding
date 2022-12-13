@@ -8,8 +8,7 @@ TODO
 import json
 import pickle
 
-# 根据内存地址获得变量
-from _ctypes import PyObj_FromPtr
+from _ctypes import PyObj_FromPtr  # 根据内存地址获得变量
 
 from module.bid_log import logger
 from module.utils import *

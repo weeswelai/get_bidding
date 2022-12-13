@@ -211,6 +211,9 @@ def creat_folder(file):
         os.mkdir(folder)
 
 
+# def _import_logger():
+#     if 
+
 if __name__ == "__main__":
     # 本模块测试
     web_page = r"http://www.365trade.com.cn/zhwzb/390964.jhtml"
