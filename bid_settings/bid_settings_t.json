@@ -6,22 +6,22 @@
       "jdcg",
       "test1"
     ],
-    "name": "zzlh",
+    "name": "",
     "end_rule": {
       "name": "",
-      "date": "2022-12-07 14:19:54",
+      "date": "",
       "url": ""
     },
     "web_list": {
       "first_name": "",
       "first_date": "",
-      "url": "http://www.365trade.com.cn/zbgg/index_38.jhtml?typeId=103"
+      "url": ""
     },
     "bid_now": {
       "name": "",
       "date": ""
     },
-    "run_time": "2022-12-13 15:17:08",
+    "run_time": "",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt",
     "outDateContinue": false
@@ -30,7 +30,6 @@
     "state": "",
     "url": {
       "list": [
-        "http://www.365trade.com.cn/zbgg/index_17.jhtml?typeId=103",
         "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=103",
         "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
         "http://www.365trade.com.cn/zbgg/index_1.jhtml"
@@ -59,24 +58,23 @@
     },
     "last": {
       "newest": {
-        "name": "渭城区公共卫生中心项目文物发掘劳务服务-竞争性磋商公告",
-        "date": "2022-12-13 14:19:54",
-        "url": "http://www.365trade.com.cn/zfwzb/404082.jhtml"
+        "name": "",
+        "date": "",
+        "url": ""
       },
-      "taskBreakUrl": "http://www.365trade.com.cn/zbgg/index_38.jhtml?typeId=103",
+      "taskBreakUrl": "",
       "break": {
-        "name": "哈尔滨工业大学电子邮件系统升级项目招标公告",
+        "name": "",
         "date": "",
         "url": ""
       },
       "end_rule": {
-        "name": "渭城区公共卫生中心项目文物发掘劳务服务-竞争性磋商公告",
-        "date": "2022-12-13 14:19:54",
-        "url": "http://www.365trade.com.cn/zfwzb/404082.jhtml"
+        "name": "",
+        "date": "",
+        "url": ""
       },
-      "complete": "complete"
-    },
-    "taskBreakUrl": "http://www.365trade.com.cn/zbgg/index_17.jhtml?typeId=103"
+      "complete": ""
+    }
   },
   "hkgy": {},
   "jdcg": {},
@@ -145,8 +143,5 @@
       "end_rule": "",
       "complete": ""
     }
-  },
-  "f{self": {
-    "name},state": "break"
   }
 }
