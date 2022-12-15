@@ -18,6 +18,7 @@
  3. 返回任务调度，任务调度执行翻到下一页(涉及访问频率)
  4. 由任务调度来循环 1~3
 """
+import json
 import re
 import traceback
 from sys import getsizeof
@@ -43,7 +44,7 @@ class BidTag:
     name_r: tuple 
     tag: Tag
 
-    def init(self, settings):
+    def __init__(self, settings):
         rule = settings["rule"]["bid_tag"]
         for li_r in rule:
             self._init_list_rule(li_r, rule[li_r])
@@ -64,13 +65,17 @@ class BidTag:
         setattr(
             self, li_r, (tag_find, tag_name, find_all_idx, value_name, value))
 
-    def get(self, bid_tag):
+    def get(self, bid_tag: Tag) -> list:
+        """ return [name, date, url, b_type]
         """
-        """
-        b_type = self.parse_bs_rule(bid_tag, *self.type_r)  # 项目类型 货物 工程 服务
-        url = self.parse_bs_rule(bid_tag, *self.url_r)
-        date = self.parse_bs_rule(bid_tag, *self.date_r) # 正则过滤,取出数字部分
-        name = self.parse_bs_rule(bid_tag, *self.name_r)  # 标题
+        try:
+            b_type = self.parse_bs_rule(bid_tag, *self.type_r)  # 项目类型 货物 工程 服务
+            url = self.parse_bs_rule(bid_tag, *self.url_r)
+            date = self.parse_bs_rule(bid_tag, *self.date_r) # 正则过滤,取出数字部分
+            name = self.parse_bs_rule(bid_tag, *self.name_r)  # 标题
+        except Exception:
+            logger.error(f"error tag: {bid_tag}\n{traceback.format_exc()}")
+            return None
         return [name, date, url, b_type]
 
     def parse_bs_rule(self, tag: Tag,
@@ -114,7 +119,7 @@ class BidTag:
             else:
                 return tag.get(value_name)  # tag属性值
         else:  # 若不检索属性值则直接返回tag或
-            return tag   
+            return tag
 
 
 class Bid:
@@ -126,7 +131,7 @@ class Bid:
     url_root: dict
     message: list = None
 
-    def init(self, settings):
+    def __init__(self, settings):
         rule = settings["rule"]["bid"]
         for r in rule:
             setattr(self, r, init_re(rule[r]))
@@ -137,7 +142,7 @@ class Bid:
         self.date = self.re_get_date_str(date)
         self.get_bid_url(b_type, url)
         self.b_type = b_type
-        bid.message = [self.name, self.date, self.url, self.b_type]
+        self.message = [self.name, self.date, self.url, self.b_type]
 
     def re_get_date_str(self, date_str, date_cut_rule=None):
         """
@@ -178,19 +183,27 @@ class WebBrows(UrlOpen):
     cut_rule: re.Pattern = None  # init_re
     next_pages_rule: re.Pattern = None  # init_re
     html_list_match = ""
-    cutHtml: bool
-    bs: Tag = None
+    bs: Tag or dict = None
+    tag_rule: str
 
-    def init(self, settings):
+    def __init__(self, settings):
+        super().__init__()
+        """ cookie, cut_rule, next_pages_rule 初始化
+        """
         # 若有cookie 需求(使用第一个cookie)
         cookie = deep_get(settings, "url.cookie")
+        user_agent = deep_get(settings, "url.User-Agent")
         if cookie:
-            self.update_req(cookie=cookie[0])
+            self.headers["cookie"] = cookie[0]
+        if user_agent:
+            self.headers["User-Agent"] = user_agent[0]
         # init rule
         self.cut_rule = init_re(deep_get(settings, "rule.cut"))
         self.next_pages_rule = init_re(deep_get(settings, "rule.next_pages"))
+        self.tag_rule = deep_get(settings, "rule.tag_list")
+        
 
-    def get_bs_tag_list(self, page=None, parse="html.parser"):
+    def get_bs_tag_list(self, page=None, parse="html.parser", json_read=False):
         """
         输入 str 调用 bs生成self.bs 从self.bs 里根据list_rule提取list
         Args:
@@ -201,15 +214,16 @@ class WebBrows(UrlOpen):
             bid_list (list): 提取到的list
         """
         logger.hr("bid_web_brows.get_bs_tag_list", 3)
+
         if isinstance(page, str):
-            self.bs = btfs(page, features=parse)  # 获得bs解析结果
+            self.html_list_match = page
+            logger.info(f"get tag list from {page[: 100]}")
+        if json_read:
+            self.bs = json.loads(self.html_list_match)
+            return deep_get(self.bs, self.tag_rule)
         else:
             self.bs = btfs(self.html_list_match, features=parse)  # bs解析结果
-
-        logger.info("get tag list from " +
-                    f"{page[: 100] if page  else 'html read'} parse={parse}")
-        
-        return bid_tag.parse_bs_rule(self.bs, *bid_tag.li_r)
+            return self.bs.find_all(self.tag_rule)
 
     def cut_html(self, _cut_rule: dict = None):
         """
@@ -219,7 +233,6 @@ class WebBrows(UrlOpen):
         Returns:
             self.list_match (str): 匹配结果
         """
-        self.cutHtml = False
         logger.info("bid_web_brows.cut_html")
         if isinstance(_cut_rule, dict):
             self.html_list_match = re.search(
@@ -229,20 +242,6 @@ class WebBrows(UrlOpen):
         else:
             self.html_list_match = \
                 self.cut_rule.search(self.url_response).group()
-        self.cutHtml = True
-
-    def init_rule(self, rule):
-        """
-        初始化规则
-        # TODO 正则表达式初始化并保存,而不是每次都重新初始化
-        Args:
-            rule (dict):
-        Returns:
-            bool: rule有值返回 True,无值返回 False
-        """
-        pass
-        # logger.info("bid_web_brows.init_rule")
-        # logger.info(f"rule: {dumps(rule, indent=2, ensure_ascii=False)}")
 
     def get_next_pages(self, page_url, next_pages_rule=None):
         """
@@ -259,11 +258,10 @@ class WebBrows(UrlOpen):
 
 
 class BidHtml(UrlOpen):
-    pass
+    def __init__(self, settings):
+        pass
 
-
-bid_tag = BidTag()
-bid = Bid()
-web_brows = WebBrows(headers=HEADER)
-bid_web = BidHtml(headers=HEADER)
-
+# bid_tag = BidTag("")
+# bid = Bid("")
+# web_brows = WebBrows(headers=HEADER)
+# bid_web = BidHtml(headers=HEADER)

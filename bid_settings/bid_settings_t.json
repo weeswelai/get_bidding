@@ -6,37 +6,26 @@
       "jdcg",
       "test1"
     ],
-    "name": "",
-    "end_rule": {
-      "name": "",
-      "date": "",
-      "url": ""
-    },
-    "web_list": {
-      "first_name": "",
-      "first_date": "",
-      "url": ""
-    },
-    "bid_now": {
-      "name": "",
-      "date": ""
-    },
     "run_time": "",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt",
     "outDateContinue": false
   },
   "zzlh": {
-    "state": "",
-    "url": {
-      "list": [
-        "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=103",
-        "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
-        "http://www.365trade.com.cn/zbgg/index_1.jhtml"
+    "task": {
+      "queue": [
+        "state1",
+        "state2"
       ],
+      "complete": []
+    },
+    "url": {
       "root": {
         "default": "http://www.365trade.com.cn"
       },
+      "User-Agent": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+      ],
       "cookie": []
     },
     "rule": {
@@ -45,8 +34,8 @@
         "rule_option": 16
       },
       "next_pages": "(?<=_)\\d{1,3}(?<=\\d)",
+      "tag_list": "li",
       "bid_tag": {
-        "li_r": "tagName_all:li|",
         "name_r": "tagName_find:a.p.span|title:",
         "date_r": "tagName_find:i|class:fl dis_block release_date ",
         "url_r": "tagName_find:a|href:",
@@ -56,14 +45,35 @@
         "date_cut": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
       }
     },
-    "last": {
+    "state1": {
+      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml",
       "newest": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "taskBreakUrl": "",
-      "break": {
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": ""
+    },
+    "state2": {
+      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptkUrl": "",
+      "interrupt": {
         "name": "",
         "date": "",
         "url": ""
@@ -77,71 +87,5 @@
     }
   },
   "hkgy": {},
-  "jdcg": {},
-  "module1": {
-    "web_sign": "zzlh",
-    "last_task_complete": "",
-    "time_web_open": "",
-    "time_web_close": "",
-    "last_task_newest_time": "",
-    "last_task_newest_name": "",
-    "last_task_read_time": "",
-    "last_task_read_name": "",
-    "last_task_read_page": "",
-    "last_task_end_time": "",
-    "last_task_end_name": "",
-    "last_task_end_page": ""
-  },
-  "module2": {
-    "list_url": [],
-    "now": {
-      "web_list": {
-        "first_name": "",
-        "first_date": ""
-      },
-      "read_name": ""
-    },
-    "last": {
-      "web_list": {
-        "first_name": "",
-        "first_date": ""
-      },
-      "task": {
-        "name": "",
-        "date": ""
-      },
-      "complete": ""
-    }
-  },
-  "module3": {
-    "list_url": [],
-    "brows_rule": {
-      "cut_rule": {
-        "cut_rule": "",
-        "rule_option": "",
-        "cut_idx": ""
-      },
-      "date_cut_rule": "",
-      "list_rule": {
-        "li_r": "",
-        "name_r": "",
-        "date_r": "",
-        "url_r": "",
-        "type_r": ""
-      }
-    },
-    "last": {
-      "web_list": {
-        "first_name": "",
-        "first_date": "",
-        "list_url": ""
-      },
-      "task": {
-        "name": "",
-        "date": ""
-      },
-      "end_rule": "",
-      "complete": ""
-    }
-  }
+  "jdcg": {}
 }

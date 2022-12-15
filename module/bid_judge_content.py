@@ -88,7 +88,7 @@ class BidTitleTrie:
             with open(file_read, "r", encoding="utf-8") as f_r:
                 f_read = f_r.read()
                 self.child = json.loads(f_read)
-        logger.info(f"init from file: {file_read}")
+        logger.info(f"title trie init from file: {file_read}")
 
     def save_local(self, file_save="./bid_settings/title_trie.json"):
         creat_folder(file_save)

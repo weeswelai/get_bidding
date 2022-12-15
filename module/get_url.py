@@ -15,12 +15,17 @@ from module.utils import *
 
 
 class UrlOpen:
-    def __init__(self, headers) -> None:
-        self.headers = headers
+    def __init__(self, headers=None) -> None:
+        
+        self.headers = {"User-Agent": ""} if headers is None else headers
         self.url_response = ""
         self.REQ = None
         self.url = ""
         self.method = "GET"  # 会在每次读取完网页后重置为 GET
+
+    def open(self, **kwargs):
+        self.init_req(**kwargs)
+        self.open_url_get_response()
 
     def init_req(self, url, headers="", method=""):
         """封装请求头,默认模式为GET
@@ -38,24 +43,11 @@ class UrlOpen:
         self.REQ = urlreq.Request(url=url, headers=headers, method=method)
         self.url = url
 
-    def update_req(self, **kwargs):
-        """ 可选 url , headers, method, cookie
-        Args:
-            **kwargs (dict): url , headers, method, cookie
-        """
-        log = ""
-        for k in kwargs:  # 遍历列表
-            if hasattr(self, k):
-                setattr(self, k, kwargs[k])
-                log = f"{log}update {k} to {kwargs[k]}:\n"  # 打印log
-            else:
-                logger.warning(f"{k} not in {self.__class__.__name__}")
-        logger.info(f"get_url.update_req:\n{log.strip()}")
-
-    def open_url_get_response(self):
+    def open_url_get_response(self, **kwargs):
         """ 打开self.REQ的网页,保存源码到内存中
         self.url_response (str): 经过urlopen返回的response.read().decode()后的源码
         """
+        logger.info(f"open {self.REQ.full_url}")
         try:
             url_response: bytes = urlreq.urlopen(self.REQ).read()
         except urlerr.HTTPError as http_error:
@@ -63,14 +55,14 @@ class UrlOpen:
                 f"open {self.REQ.full_url} failed HTTPError: {http_error}\n" +
                 f"REQ: url: {self.url}\nheaders: {self.headers}\n" +
                 f"method: {self.method}")
-            exit(1)  # 未来可能不终止
+            # exit(1)  # 未来可能不终止
         except urlerr.URLError as url_error:
             # REQ.full_url: open 的 url
             logger.error(
                 f"open {self.REQ.full_url} failed: {url_error}\n" +
                 f"REQ: url: {self.url}\nheaders: {self.headers}\n" +
                 f"method: {self.method}")
-            exit(1)  # 未来可能不终止
+            # exit(1)  # 未来可能不终止
         decoding = "utf-8"
         try:
             self.url_response = url_response.decode(decoding)
