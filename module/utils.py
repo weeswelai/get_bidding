@@ -2,6 +2,7 @@
 工具类模块
 """
 
+import json
 import re
 import os
 import datetime as dt
@@ -71,7 +72,7 @@ def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
 def date_now_s(file_new=False):
     """ 返回当前日期
     Args:
-        file_new (bool): 为True时返回小数点精确到
+        file_new (bool): 为True时返回小数点精确到三位微秒
     """
     if file_new:
         return dt.datetime.now().strftime('_%Y_%m_%d-%H_%M_%S_%f')[:-3]
@@ -211,8 +212,9 @@ def creat_folder(file):
         os.mkdir(folder)
 
 
-# def _import_logger():
-#     if 
+def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
+    return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii ,
+        sort_keys=sort_keys)
 
 if __name__ == "__main__":
     # 本模块测试
