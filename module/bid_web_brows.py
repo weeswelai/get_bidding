@@ -31,12 +31,8 @@ from module.bid_log import logger
 from module.get_url import UrlOpen
 from module.utils import *
 
-HEADER = {
-    "User-Agent": r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-}
 
-
-# 仅对WebBrows中的li_tag进行操作
+# 仅对li_tag进行操作
 class BidTag:
     type_r: tuple 
     url_r: tuple 
@@ -68,16 +64,14 @@ class BidTag:
     def get(self, bid_tag: Tag) -> list:
         """ return [name, date, url, b_type]
         """
-        try:
-            b_type = self.parse_bs_rule(bid_tag, *self.type_r)  # 项目类型 货物 工程 服务
-            url = self.parse_bs_rule(bid_tag, *self.url_r)
-            date = self.parse_bs_rule(bid_tag, *self.date_r) # 正则过滤,取出数字部分
-            name = self.parse_bs_rule(bid_tag, *self.name_r)  # 标题
-        except Exception:
-            logger.error(f"error tag: {bid_tag}\n{traceback.format_exc()}")
-            return None
+        b_type = self.parse_bs_rule(bid_tag, *self.type_r)  # 项目类型 货物 工程 服务
+        url = self.parse_bs_rule(bid_tag, *self.url_r)
+        date = self.parse_bs_rule(bid_tag, *self.date_r) # 正则过滤,取出数字部分
+        name = self.parse_bs_rule(bid_tag, *self.name_r)  # 标题
+        
         return [name, date, url, b_type]
 
+    # TODO 写的太*了，记得重写
     def parse_bs_rule(self, tag: Tag,
                       tag_find="", tag_name="", find_all_idx=None,
                       value_name="", value="",) -> Tag or None or str:
@@ -175,9 +169,6 @@ class Bid:
     def return_bid(self):
         return self.message
 
-    def is_end(self, end_rule):
-        pass
-
 
 class WebBrows(UrlOpen):
     cut_rule: re.Pattern = None  # init_re
@@ -201,7 +192,6 @@ class WebBrows(UrlOpen):
         self.cut_rule = init_re(deep_get(settings, "rule.cut"))
         self.next_pages_rule = init_re(deep_get(settings, "rule.next_pages"))
         self.tag_rule = deep_get(settings, "rule.tag_list")
-        
 
     def get_bs_tag_list(self, page=None, parse="html.parser", json_read=False):
         """
@@ -213,7 +203,7 @@ class WebBrows(UrlOpen):
         Returns:
             bid_list (list): 提取到的list
         """
-        logger.hr("bid_web_brows.get_bs_tag_list", 3)
+        logger.info("bid_web_brows.get_bs_tag_list")
 
         if isinstance(page, str):
             self.html_list_match = page
@@ -260,8 +250,3 @@ class WebBrows(UrlOpen):
 class BidHtml(UrlOpen):
     def __init__(self, settings):
         pass
-
-# bid_tag = BidTag("")
-# bid = Bid("")
-# web_brows = WebBrows(headers=HEADER)
-# bid_web = BidHtml(headers=HEADER)

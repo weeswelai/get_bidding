@@ -5,6 +5,7 @@
       "hkgy",
       "jdcg",
       "test1"
+
     ],
     "run_time": "",
     "save_data": "./data/bid_list.txt",
@@ -21,7 +22,7 @@
     },
     "url": {
       "root": {
-        "default": "http://www.365trade.com.cn"
+        "default": ""
       },
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -46,7 +47,8 @@
       }
     },
     "state1": {
-      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml",
+
+      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
       "newest": {
         "name": "",
         "date": "",
@@ -60,19 +62,20 @@
       },
       "end_rule": {
         "name": "",
-        "date": "",
+        "date": "2022-12-16 00:00:00",
         "url": ""
       },
-      "complete": ""
+
+      "complete": "complete"
     },
     "state2": {
-      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
+      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=103",
       "newest": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "interruptkUrl": "",
+      "interruptUrl": "",
       "interrupt": {
         "name": "",
         "date": "",
@@ -80,10 +83,11 @@
       },
       "end_rule": {
         "name": "",
-        "date": "",
+
+        "date": "2022-12-16",
         "url": ""
       },
-      "complete": ""
+      "complete": "complete"
     }
   },
   "hkgy": {},
