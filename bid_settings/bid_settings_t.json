@@ -7,7 +7,7 @@
       "test1"
 
     ],
-    "run_time": "2022-12-16 19:13:43",
+    "run_time": "",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt",
     "outDateContinue": false
@@ -18,9 +18,7 @@
         "state1",
         "state2"
       ],
-      "complete": [
-
-      ]
+      "complete": []
     },
     "url": {
       "root": {
@@ -49,6 +47,7 @@
       }
     },
     "state1": {
+
       "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
       "newest": {
         "name": "",
@@ -66,6 +65,7 @@
         "date": "2022-12-16 00:00:00",
         "url": ""
       },
+
       "complete": "complete"
     },
     "state2": {
@@ -83,6 +83,7 @@
       },
       "end_rule": {
         "name": "",
+
         "date": "2022-12-16",
         "url": ""
       },
