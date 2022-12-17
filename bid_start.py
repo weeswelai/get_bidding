@@ -46,3 +46,5 @@ if __name__ == "__main__":
                     sleep(30)
             
             task_continue += 1
+
+    # bidTaskManager.loop()

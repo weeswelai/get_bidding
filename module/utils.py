@@ -69,7 +69,7 @@ def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
     return bs_deep_get(s_tag.find(rule[0]), rule[1:])
 
 
-def date_now_s(file_new=False):
+def date_now_s(file_new=False) -> str:
     """ 返回当前日期
     Args:
         file_new (bool): 为True时返回小数点精确到三位微秒

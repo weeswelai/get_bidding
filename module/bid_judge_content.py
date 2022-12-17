@@ -35,6 +35,7 @@ class BidTitleTrie:
         2: first关键词 字符后可能的字符,用空格分隔 如 载 上, 与 1相连就是 机载 机上,
         2中每个字符最后一个=子dict添加"end"=True,表示结束
         3: second关键词 使用空格分隔, 3根据 1和2的组合插入进second树
+
         Examples:
             l_in : ["机","载 上","设备 系统"]
             l_in : ["l","ed","面板 屏"]
@@ -63,6 +64,7 @@ class BidTitleTrie:
     def insert_from_str(self, word_insert, split=""):
         """ 传入str, 使用分隔符将输入的多行字符串分隔成list, 再分别存入前缀树中
         需要保证list的每个元素为 "first:second" 形式
+
         Args:
             word_insert (str): 要插入的字符串
             split (str): 分隔符,默认为 "", 为 ""时不分割元素,将字符串变为单个元素的list
@@ -78,6 +80,7 @@ class BidTitleTrie:
 
     def init_from_file(self, file_read="./bid_settings/trie_dict.b"):
         """ 读取二进制文件中的dict变量, 赋给self.child
+
         Args:
             file_read (str): 要读取的文件
         """
@@ -101,6 +104,7 @@ class BidTitleTrie:
 
     def insert_from_file(self, trie_file):
         """ 从文本文件中遍历每行,插入前缀树
+
         Args:
             trie_file (str): 前缀树文件路径
         """
@@ -112,6 +116,7 @@ class BidTitleTrie:
 
     def _insert(self, word: str, root=True, child_p=-1) -> int:
         """ 将字符串插入前缀树
+
         Args:
             word (str): 要插入的字符串
             child_p (int): child节点的内存地址,需要使用id()获得
@@ -142,6 +147,7 @@ class BidTitleTrie:
 
     def search(self, word: str) -> bool:
         """ 查找字符串是否在前缀树中 , 需要被查找的字符的节点有 "end"
+
         Args:
             word (str): 要查找的字符串
         Returns:
@@ -160,6 +166,7 @@ class BidTitleTrie:
 
     def startsWith(self, prefix: str) -> bool:
         """ 该字符串是否存在于前缀树中,不考虑 "end" 位
+        
         Args:
             prefix:
         Returns:
@@ -174,10 +181,10 @@ class BidTitleTrie:
         return True
 
     def search_all(self, text):
-        """
+        """ 输入一个字符串, 在树中查找是否有符合条件的分支
+
         Args:
             text:
-
         Returns:
             word_match (list): 返回符合规则的关键词,当有第二关键词时 len > 2
         """

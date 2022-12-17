@@ -13,12 +13,11 @@
     "outDateContinue": false
   },
   "zzlh": {
-    "task": {
-      "queue": [
+    "stateQueue": [
         "state1",
         "state2"
       ],
-      "complete": [
+    "stateComplete": [
 
       ]
     },
