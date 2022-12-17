@@ -3,6 +3,7 @@ url打开模块
 打开网页
 """
 
+import json
 import re
 import urllib.error as urlerr
 import urllib.request as urlreq
@@ -25,7 +26,8 @@ class UrlOpen:
 
     def open(self, **kwargs):
         self.init_req(**kwargs)
-        self.open_url_get_response()
+        self.open_url()
+        self.get_response()
 
     def init_req(self, url, headers="", method=""):
         """封装请求头,默认模式为GET
@@ -43,17 +45,19 @@ class UrlOpen:
         self.REQ = urlreq.Request(url=url, headers=headers, method=method)
         self.url = url
 
-    def open_url_get_response(self, **kwargs):
-        """ 打开self.REQ的网页,保存源码到内存中
-        self.url_response (str): 经过urlopen返回的response.read().decode()后的源码
+    def open_url(self, timeout=2):
+        """ 打开self.REQ的网页,保存源码(bytes)
+        
         """
         logger.info(f"open {self.REQ.full_url}")
+        self.url_response = None
         try:
-            url_response: bytes = urlreq.urlopen(self.REQ).read()
+            self.url_response = urlreq.urlopen(self.REQ).read()
+        # TODO 超时的异常捕获
         except urlerr.HTTPError as http_error:
             logger.error(
                 f"open {self.REQ.full_url} failed HTTPError: {http_error}\n" +
-                f"REQ: url: {self.url}\nheaders: {self.headers}\n" +
+                f"REQ: url: {self.url}\nheaders: {jsdump(self.headers)}\n" +
                 f"method: {self.method}")
             # exit(1)  # 未来可能不终止
         except urlerr.URLError as url_error:
@@ -62,13 +66,15 @@ class UrlOpen:
                 f"open {self.REQ.full_url} failed: {url_error}\n" +
                 f"REQ: url: {self.url}\nheaders: {self.headers}\n" +
                 f"method: {self.method}")
-            # exit(1)  # 未来可能不终止
+
+    def get_response(self):
+        # self.url_response (str): 经过urlopen返回的response.read().decode()后的源码
         decoding = "utf-8"
         try:
-            self.url_response = url_response.decode(decoding)
+            self.url_response = self.url_response.decode(decoding)
         except UnicodeDecodeError:
             decoding = "gbk"
-            self.url_response = url_response.decode(decoding)
+            self.url_response = self.url_response.decode(decoding)
         self.method = "GET"  # 重置访问方法为GET
 
     def save_response(self, rps="", url="", path="./html_save/",
