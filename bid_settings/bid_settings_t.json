@@ -7,7 +7,7 @@
       "test1"
 
     ],
-    "run_time": "",
+    "run_time": "2022-12-16 19:13:43",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt",
     "outDateContinue": false
@@ -18,7 +18,9 @@
         "state1",
         "state2"
       ],
-      "complete": []
+      "complete": [
+
+      ]
     },
     "url": {
       "root": {
