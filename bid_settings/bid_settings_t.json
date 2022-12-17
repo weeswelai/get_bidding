@@ -47,7 +47,6 @@
       }
     },
     "state1": {
-
       "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
       "newest": {
         "name": "",
@@ -65,7 +64,6 @@
         "date": "2022-12-16 00:00:00",
         "url": ""
       },
-
       "complete": "complete"
     },
     "state2": {
@@ -83,7 +81,6 @@
       },
       "end_rule": {
         "name": "",
-
         "date": "2022-12-16",
         "url": ""
       },
