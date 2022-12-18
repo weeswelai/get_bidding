@@ -207,8 +207,8 @@ class BidTask:
         self.list_file = open(list_save, "a", encoding="utf-8")
         self.match_list_file = open(match_list_save, "a", encoding="utf-8")
         # 写入一行运行时间
-        self.list_file.write(date_now_s())
-        self.match_list_file.write(date_now_s())
+        self.list_file.write(f"{date_now_s()}\n")
+        self.match_list_file.write(f"{date_now_s()}\n")
 
     def _get_state_idx(self, queue: list):
         """ 从queue中取第一个state 赋给 self.state_idx(str)
@@ -272,7 +272,7 @@ class BidTask:
             return False
         return True
 
-    def complete_task(self):
+    def complete_state(self):
         """ 将json中 queue 头元素出队,添加到complete中
         """
         queue = deep_get(self.settings, "stateQueue")
@@ -296,7 +296,7 @@ class BidTask:
         self.tag_list = self.web_brows.get_bs_tag_list()
         self.process_tag_list()
         if self.State.state == "complete":
-            self.complete_task()
+            self.complete_state()
             return "complete"
         # need save json
         return "continue"
@@ -368,6 +368,7 @@ class BidTask:
         self.list_file.close()
         self.match_list_file.close()
 
+
 def _date_is_end(date: str, end_date: str, date_len):
     if date_len > 10:
         date_format = "%Y-%m-%d %H:%M:%S"
@@ -400,90 +401,3 @@ def _bid_to_dict(bid_prj=None):
         }
     else:
         return {key: "" for key in ("name", "date", "url")}
-
-
-class TaskManager:
-
-    task_name: str = None
-    match_list: list = None
-    state: str = None
-
-    def __init__(self, json_file, save=True, creat_new=False):
-        """ 读取json_file; 设置 settings, json_file , queue
-        Args:
-            json_file (str):
-            save (bool): True: 是否保存到json中
-            creat_new (bool): True: 保存到新的配置文件，默认为False
-        """
-        logger.hr("TaskManager.__init__", 3)
-        self.task_dict = {}
-        self.settings = read_json(json_file)  # json文件内容
-        self.json_file = json_file  # json文件路径
-        self.queue = deep_get(self.settings, "task.queue")
-
-        logger.info(f"task queue = {self.queue}")
-        if save:  # 当前文件，可选是否保存新副本
-            self.json_file = save_json(self.settings, json_file,
-                creat_new=creat_new)
-
-    def new_task(self, new_name=""):
-        """ 从queue取一个任务名,配置任务,修改管理器的当前任务,修改json_file并保存
-        Args:
-            new_name (str): 设置新开始的网站任务 必须在task.queue中
-        """
-        logger.hr("TaskManager.new_task", 3)
-        self._return_task_name(new_name)
-        deep_set(self.settings, "task.run_time", date_now_s())  # 写入运行时间
-        self._build_task()
-        save_json(self.settings, self.json_file)
-
-    def _build_task(self):
-        logger.info("TaskManager._build_task")
-        if self.task_name not in self.task_dict:
-            self.task_dict[self.task_name] = \
-                BidTask(self.settings[self.task_name], self.task_name)
-
-    def _return_task_name(self, new_name):
-        """ 若new_name有值且在queue中,将new_name排到最前面
-        # TODO 创建新任务
-        Args:
-            new_name (str): 要排到最前面的队列
-        """
-        if not new_name and new_name in self.queue:
-            idx = self.queue.index(new_name)
-            for i in range(idx):
-                self.queue.append(self.queue.pop(0))
-            logger.info(f"new task start at {new_name}")
-        else:
-            if self.task_name:
-                self.queue.append(self.queue.pop(0))
-                deep_set(self.settings, "task.queue", self.queue)
-            else:
-                self.task_name = self.queue[0]
-
-    def task_run(self):
-        """ 获得任务, 初始化 state
-        """
-        logger.hr("TaskManager.task_run", 3)
-        task: BidTask = self.task_dict[self.task_name]
-        if task.settings["stateQueue"] == []:
-            task.restart()  # TODO
-        while task.init_state():  # 若 queue中还有state
-            state = ""
-            while state != "complete": 
-                state = task.get_url_list()  # 继续state任务
-                save_json(self.settings, self.json_file)
-                print("sleep 3s , you can stop now")
-                if state != "complete":
-                    for t in range(1, 4):
-                        print(f"sleep {t}s now")
-                        sleep(1)  # TODO 后期换成定时器
-        logger.info(f"task {self.task_name} is complete")
-        return "complete"
-        
-    def task_complete(self):
-        logger.hr("TaskManager.task_complete", 3)
-        self.queue.append(self.queue.pop(0))
-        deep_set(self.settings, "task.queue", self.queue)
-        save_json(self.settings, self.json_file)
-        return self.queue[0]
