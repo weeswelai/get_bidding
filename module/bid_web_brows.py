@@ -39,6 +39,7 @@ class BidTag:
     date_r: tuple 
     name_r: tuple 
     tag: Tag
+    get_now: str = None
 
     def __init__(self, settings):
         rule = settings["rule"]["bid_tag"]
@@ -64,12 +65,13 @@ class BidTag:
     def get(self, bid_tag: Tag) -> list:
         """ return [name, date, url, b_type]
         """
-        b_type = self.parse_bs_rule(bid_tag, *self.type_r)  # 项目类型 货物 工程 服务
-        url = self.parse_bs_rule(bid_tag, *self.url_r)
-        date = self.parse_bs_rule(bid_tag, *self.date_r) # 正则过滤,取出数字部分
-        name = self.parse_bs_rule(bid_tag, *self.name_r)  # 标题
-        
-        return [name, date, url, b_type]
+        self.tag = bid_tag
+        message = []
+        for key in ("name_r", "date_r", "url_r", "type_r"):
+            self.get_now = key
+            message.append(self.parse_bs_rule(
+                bid_tag, *getattr(self, key)))
+        return message
 
     # TODO 写的太*了，记得重写
     def parse_bs_rule(self, tag: Tag,
@@ -87,7 +89,7 @@ class BidTag:
         """
         if not tag_find:  # 无rule返回None
             return None
-        
+
         # 检索tag
         if tag_find == "tagName_all":
             if value_name and value:  # 若有value检索要求,则find_all加上参数attrs
@@ -100,7 +102,6 @@ class BidTag:
                 tag = tag[int(find_all_idx)]
         elif tag_find == "tagName_find":  # 使用tagName,find方式检索
             tag = bs_deep_get(tag, tag_name)  # 调用额外函数返回Tag
-        self.tag = tag
         # 检索属性值
         if value_name:  # value_name有值 则检索属性值
             if value_name == "class":
