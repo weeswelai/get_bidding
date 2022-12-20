@@ -10,7 +10,7 @@ import pickle
 
 from _ctypes import PyObj_FromPtr  # 根据内存地址获得变量
 
-from module.bid_log import logger
+from module.log import logger
 from module.utils import *
 
 _get_p = PyObj_FromPtr

@@ -26,8 +26,8 @@ from sys import getsizeof
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
 
-from module.bid_judge_content import title_trie
-from module.bid_log import logger
+from module.judge_content import title_trie
+from module.log import logger
 from module.get_url import UrlOpen
 from module.utils import *
 

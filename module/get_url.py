@@ -11,7 +11,7 @@ from sys import exit
 
 from bs4.element import Tag
 
-from module.bid_log import logger
+from module.log import logger
 from module.utils import *
 
 

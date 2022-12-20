@@ -11,7 +11,7 @@ from json import loads, dumps
 from time import sleep
 from bs4 import Tag
 
-from module.bid_log import logger
+from module.log import logger
 
 
 def deep_set(d: dict, keys: list or str, value):

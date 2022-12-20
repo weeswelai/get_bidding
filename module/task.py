@@ -11,9 +11,9 @@ from time import sleep
 
 from bs4 import Tag
 
-from module.bid_judge_content import title_trie
-from module.bid_log import logger
-from module.bid_web_brows import *
+from module.judge_content import title_trie
+from module.log import logger
+from module.web_brows import *
 from module.utils import *
 
 data_path = r"./data"
