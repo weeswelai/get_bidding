@@ -19,7 +19,7 @@ class UrlOpen:
     def __init__(self, headers=None) -> None:
         
         self.headers = {"User-Agent": ""} if headers is None else headers
-        self.url_response = ""
+        self.url_response = None
         self.REQ = None
         self.url = ""
         self.method = "GET"  # 会在每次读取完网页后重置为 GET
@@ -94,7 +94,7 @@ class UrlOpen:
         if not url:
             url = self.url
         if not rps:
-            rps = self.url_response
+            rps = str(self.url_response)
         file_name = path + url_to_filename(url)
         if save_date:
             point_idx = file_name.rindex('.')
