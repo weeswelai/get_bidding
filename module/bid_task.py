@@ -1,13 +1,10 @@
 """
-任务调度模块
-功能为
- 打开 .json配置文件
- 判断时间，判断访问频率是否合适
- 调度网页的打开、项目列表页面的翻页
-# TODO 将 state task 拆成两个对象
-
+任务类
+包含三个类:
+1. State : 表示Task在普通情况下, 上次运行无记录,或上次运行完成
+2. InterruptState : 表示Task 上次运行时中断
+3. Task : 表示任务, 保存有该任务所必须的规则, 能爬取完一个具体的网站
 """
-import sys
 import traceback
 from datetime import datetime
 from time import sleep
@@ -173,14 +170,15 @@ class BidTask:
     web_brows: WebBrows
     bid_web: BidHtml
     tag_list = None  # 源码解析后的 list
-    bid_list: list
     list_file = None
     match_list_file = None
     list_url: str = None
+    bid_tag_error = 0
 
     def __init__(self, settings, task_name="test") -> None:
         self.settings = settings  # zzlh:{}
         self.task_name = task_name  # 当前任务名
+        self.match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
         logger.info(f"init task {self.task_name}")
         self._init_brows(settings)
         self._creat_save_file()
@@ -207,11 +205,15 @@ class BidTask:
         self.list_file = open(list_save, "a", encoding="utf-8")
         self.match_list_file = open(match_list_save, "a", encoding="utf-8")
         # 写入一行运行时间
-        self.list_file.write(f"{date_now_s()}\n")
-        self.match_list_file.write(f"{date_now_s()}\n")
+        self.list_file.write(f"start at {date_now_s()}\n")
+        self.match_list_file.write(f"start at {date_now_s()}\n")
+
+    def close(self):
+        self.list_file.close()
+        self.match_list_file.close()
 
     def _get_state_idx(self, queue: list):
-        """ 从queue中取第一个state 赋给 self.state_idx(str)
+        """ 从stateQueue中取第一个state 赋给 self.state_idx(str)
         若 queue 为空返回False
         """
         if queue:
@@ -235,8 +237,10 @@ class BidTask:
                     f"\"{setting['complete']}\"")
         self.State.print_state()
 
-    def init_state(self, settings=None):
-        """ 若 task.stateQueue 中还有state, 初始化State
+    def init_state(self):
+        """ 用_get_state_idx 判断 task.stateQueue 中是否还有state
+        有则用 _init_state 初始化State 并返回 True,
+        无则返回 False
         
         Returns:
             (bool): 初始化完成返回 True ,失败返回 False 
@@ -248,7 +252,45 @@ class BidTask:
             return True
         return False
 
-    def _get_ist_url(self):
+    def restart(self):
+        """ 将json中 complete 添加到 queue中
+        """
+        logger.info("BidTask.restart")
+        queue = deep_get(self.settings, "stateQueue")
+        complete = deep_get(self.settings, "stateComplete")
+        queue += complete
+        deep_set(self.settings, "stateComplete", [])
+        logger.info(f"queue: {queue}")
+
+    def process_next_list_web(self):
+        """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
+        """
+        logger.info("BidTask.get_url_list")
+        self.match_num = 0  # 开始新网址置为0
+        
+        # 下次要打开的项目列表url
+        self._get_next_list_url()
+        
+        # 打开项目列表页面, 获得 self.web_brows.html_list_match
+        try:
+            self._open_list_url(self.list_url)
+        except AssertionError:
+            logger(f"{self.list_url} open more than {reOpen} time")
+            # TODO 这里需要一个保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
+            return "open_list_url_error"
+        
+        # 解析 html_list_match 源码, 遍历并判断项目列表的项目
+        self.tag_list = self.web_brows.get_bs_tag_list()
+        self._process_tag_list()  
+
+        if self.match_num:
+            logger.info("no match")
+        if self.State.state == "complete":
+            self._complete_state()
+            return "complete"
+        return "continue"
+
+    def _get_next_list_url(self):
         """ 获得下次打开的 url 保存在self.list_url
         """
         if not self.list_url:
@@ -256,23 +298,72 @@ class BidTask:
         else:
             self.list_url = self.web_brows.get_next_pages(self.list_url)
 
-    def restart(self):
-        """ 将json中 complete 添加到 queue中
+    def _open_list_url(self, url, reOpen=0):
+        """ 封装web_brows行为,打开浏览页面，获得裁剪后的页面源码
         """
-        logger.inf("BidTask.restart")
-        queue = deep_get(self.settings, "stateQueue")
-        complete = deep_get(self.settings, "stateComplete")
-        queue += complete
-        deep_set(self.settings, "stateQueue", queue)
-        logger.info(f"queue: {queue}")
-        self.init_state(self.settings)
+        logger.hr("BidTask._open_list_url", 3)
+        try:  # 在打开网页后立刻判断网页源码是否符合要求
+            self.web_brows.open(url=url)
+            self.web_brows.cut_html()
+        except Exception:
+            # TODO 识别出错的网页
+            logger.error(f"{traceback.format_exc()}")
+            self.web_brows.save_response(save_date=True, extra="list_Error")
+            logger.info(f"cut html error,open {self.list_url} again"
+                        f"\nreOpen: {reOpen}")
+            if reOpen < 3:
+                reOpen += 1
+                sleep(2)  # TODO 换定时器
+                self._open_list_url(url, reOpen)
+            assert reOpen < 3 , "a"
 
-    def have_next_state(self):
-        if not deep_get(self.settings, "stateQueue"):
-            return False
-        return True
+    def _process_tag_list(self):
+        """ 遍历处理 self.tag_list
+        若能遍历到结尾,保存 interruptUrl 和 interrupt
+        """
+        logger.hr("BidTask.process_tag_list", 3)
+        for idx, tag in enumerate(self.tag_list):
+            try:
+                self.bid.receive(*self.bid_tag.get(tag))
+                # logger.debug(str(self.bid.message))  # 打印每次获得的项目信息
+            except Exception:
+                logger.error(f"idx: {idx} tag error: {tag}, "
+                            f"rule: {self.bid_tag.get_now}\n"
+                            f"{traceback.format_exc()}")
+                self.bid_tag_error += 1
+                if self.bid_tag_error > 10:
+                    logger.error("too many bid.receive error")
+                    raise KeyboardInterrupt
+                continue
 
-    def complete_state(self):
+            if self.State.bid_is_end(self.bid):  # 判断是否符合结束条件
+                self.State.complete()  # set self.State.state = "complete"
+                break
+            if not self.State.newest:  # 只执行一次
+                self.State.save_newest_and_interrupt(self.bid)
+            if not self.State.start:
+                if not self.State.bid_is_start(self.bid):
+                    continue
+            self.State.set_interrupt(self.list_url, self.bid)
+            
+            self.list_file.write(f"{str(self.bid.message)}\n")
+            self._title_trie_search(self.bid)
+        logger.info(f"tag stop at {idx}")
+
+    def _title_trie_search(self, bid_prj: Bid):
+        """ 处理 bid对象
+
+        Args:
+            bid_prj (bid_web_brows.Bid): 保存 bid 信息的对象
+        """
+        result: list = title_trie.search_all(bid_prj.name)
+        if result:
+            logger.info(f"{result} {self.bid.message}")
+            result.append(bid_prj.message)
+            self.match_list_file.write(f"{str(result)}\n")
+            self.match_num += 1
+
+    def _complete_state(self):
         """ 将json中 queue 头元素出队,添加到complete中
         """
         queue = deep_get(self.settings, "stateQueue")
@@ -284,89 +375,6 @@ class BidTask:
                     f"complete: {complete}")
         if queue:
             self.state_idx = queue[0]
-
-    def get_url_list(self):
-        """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
-        """
-        logger.info("BidTask.get_url_list")
-        self._get_ist_url()
-        # 打开项目列表页面, 获得 self.web_brows.html_list_match
-        self.open_list_url(self.list_url)
-        # 解析 html_list_match 源码
-        self.tag_list = self.web_brows.get_bs_tag_list()
-        self.process_tag_list()
-        if self.State.state == "complete":
-            self.complete_state()
-            return "complete"
-        # need save json
-        return "continue"
-
-    def process_tag_list(self):
-        """ 遍历处理tag_list
-        若能遍历到结尾,保存 interruptUrl 和 interrupt
-        """
-        logger.hr("BidTask.process_tag_list", 3)
-        for idx, tag in enumerate(self.tag_list):
-            try:
-                self.bid.receive(*self.bid_tag.get(tag))
-                # logger.debug(str(self.bid.message))  # 打印每次获得的项目信息
-            except Exception:
-                logger.error(f"idx: {idx} tag error: {tag}\n"
-                             f"{traceback.format_exc()}")
-                continue
-
-            if self.State.bid_is_end(self.bid):
-                self.State.complete()  # set self.State.state = "complete"
-                break
-            if not self.State.newest:
-                # 只执行一次,设置state为interrupt, 保存第一个项目信息到 newest
-                self.State.save_newest_and_interrupt(self.bid)
-            if not self.State.start:
-                if not self.State.bid_is_start(self.bid):
-                    continue
-
-            self.State.set_interrupt(self.list_url, self.bid)
-            self.list_file.write(f"{str(self.bid.message)}\n")
-            self.title_trie_search(self.bid)
-        logger.info(f"tag stop at {idx}")
-
-    def title_trie_search(self, bid_prj: Bid):
-        """ 处理 bid对象
-
-        Args:
-            bid_prj (bid_web_brows.Bid): 保存 bid 信息的对象
-        """
-        result: list = title_trie.search_all(bid_prj.name)
-        if result:
-            logger.info(f"{result} {self.bid.message}")
-            result.append(bid_prj.message)
-            self.match_list_file.write(f"{str(result)}\n")
-
-    def open_list_url(self, url, reOpen=0):
-        """ 封装web_brows行为,打开浏览页面，获得裁剪后的页面源码
-        """
-        logger.hr("BidTask.open_list_url", 3)
-        try:  # 在打开网页后立刻判断网页源码是否符合要求
-            self.web_brows.open(url=url)
-            self.web_brows.cut_html()
-        except Exception:
-            # TODO 识别出错的网页,
-            logger.error(f"{traceback.format_exc()}")
-            self.web_brows.save_response(save_date=True, extra="list_Error")
-            logger.info(f"cut html error,open {self.list_url} again"
-                        f"\nreOpen: {reOpen}")
-            if reOpen < 3:
-                reOpen += 1
-                sleep(2)  # TODO 换定时器
-                self.open_list_url(url, reOpen)
-            else:
-                logger.error(f"{self.list_url} open more than {reOpen} time")
-                self.web_brows.save_response(save_date=True, extra="list_Error")
-                # TODO 这里需要一个保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
-
-    def close(self):
-        self.list_file.close()
-        self.match_list_file.close()
 
 
 def _date_is_end(date: str, end_date: str, date_len):
@@ -401,3 +409,18 @@ def _bid_to_dict(bid_prj=None):
         }
     else:
         return {key: "" for key in ("name", "date", "url")}
+
+
+if __name__ == "__main__":
+    json_file = "./bid_settings/bid_settings_t.json"
+    json_set = read_json(json_file)
+    bid_task_name = "zzlh"
+    bid_task_test = BidTask(json_set[bid_task_name])
+    
+    # test code
+    try:
+        bid_task_test.restart()
+    # use Ctrl + C exit
+    except KeyboardInterrupt:
+        pass
+    save_json(json_set, json_file)
