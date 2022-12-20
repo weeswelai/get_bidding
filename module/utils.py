@@ -3,10 +3,12 @@
 """
 
 import json
+from random import uniform
 import re
 import os
 import datetime as dt
 from json import loads, dumps
+from time import sleep
 from bs4 import Tag
 
 from module.bid_log import logger
@@ -215,6 +217,24 @@ def creat_folder(file):
 def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
     return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii ,
         sort_keys=sort_keys)
+
+
+def sleep_ramdom(time_range: tuple = (1.5, 3), message: str = None):
+    """ 在随机范围内sleep, 并带有提示, 默认为1.5秒到3秒内
+    """
+    if not message:
+        print(message)
+    sleep_time = uniform(*time_range)
+    logger.info(f"sleep {sleep_time}")
+    sleep_idx = int(sleep_time)
+    for idx in range(1, sleep_idx+1):
+        print(f"sleep {idx} now")
+        sleep(1)  # TODO 后期换成定时器
+    print(f"sleep {sleep_time} now")
+    sleep(sleep_time - sleep_idx)
+    print("sleep end")
+    
+
 
 if __name__ == "__main__":
     # 本模块测试
