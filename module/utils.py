@@ -74,10 +74,10 @@ def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
 def date_now_s(file_new=False) -> str:
     """ 返回当前日期
     Args:
-        file_new (bool): 为True时返回小数点精确到三位微秒
+        file_new (bool): 为True时将-变为_
     """
     if file_new:
-        return dt.datetime.now().strftime('_%Y_%m_%d-%H_%M_%S_%f')[:-3]
+        return dt.datetime.now().strftime('_%Y_%m_%d-%H_%M_%S')
     else:
         return dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -139,6 +139,20 @@ def save_file(file, data, mode="w"):
         f.write(data)
 
 
+__urlFind__ = {
+    "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ]
+}
+# ASCII 码转中文
+__urlRepacle__ = {
+    "jdcgw": {
+        "%25E7%2589%25A9%25E8%25B5%2584": "物资",
+        "%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587": "公开招标",
+        "%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587": "邀请招标",
+        "%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4": "竞争性谈判" 
+    }
+}
+
+
 def url_to_filename(url: str):
     """
     将url 转换为可创建的文件名,会删除 https http www , 将 / 替换为( , 将所有后缀替换为html
@@ -148,14 +162,15 @@ def url_to_filename(url: str):
         url (str): 转换后的网址,可作为文件名
     """
     # 将 / 替换成 空格 因为网址中不会有空格
+    if len(url) > 150:  # 部分网址有可能过长, windows文件名不能超过179个字符
+        pass
+        for key, value in __urlFind__.items():
+            if url[:value[0]] == value[1]:
+                url = url.replace(url[:value[0]], "")
+                for ascii, chn in __urlRepacle__[key].items():
+                    url = url.replace(ascii, chn)
     url = url[url.find(".") + 1:].replace("/", " ").replace("?","")
-    idx = url.rfind('.')  # 找到倒数第一个 . , 判断是否为html
-    html_find = url[idx + 1:].find("html")  # 查找 html 位置
-
-    if html_find < 0:  # 没有html
-        url = f"{url}.html"
-    elif html_find > 0:  # 另类的html后缀 , 如 jhtml
-        url = f"{url[:idx]}.html"
+    url = f"{url}.html"
     return url
 
 
