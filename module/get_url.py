@@ -119,6 +119,6 @@ class UrlOpen:
             return "file"
         except (FileNotFoundError, OSError):
             self.url_response = file
-            logger.info(f"read html from str: {file[:100]}...")
+            logger.info(f"read html from str: {file.strip()[:100]}...")
             return "html_read"
             

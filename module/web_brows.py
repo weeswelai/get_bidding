@@ -31,6 +31,7 @@ from module.utils import *
 
 # 仅对li_tag进行操作
 class BidTag:
+    message: list = None
     type_r: tuple 
     url_r: tuple 
     date_r: tuple 
@@ -66,13 +67,13 @@ class BidTag:
         """ return [name, date, url, b_type]
         """
         self.tag = bid_tag
-        message = []
-        message.append(self.parse_rule(bid_tag, *getattr(self, "name_r")))
-        message.append(self.parse_rule(bid_tag, *getattr(self, "date_r")))
-        message.append(self.parse_rule(bid_tag, *getattr(self, "url_r")))
-        message.append(self.parse_rule(bid_tag, *getattr(self, "type_r")))
+        self.message = []
+        self.message.append(self.parse_rule(bid_tag, *getattr(self, "name_r")))
+        self.message.append(self.parse_rule(bid_tag, *getattr(self, "date_r")))
+        self.message.append(self.parse_rule(bid_tag, *getattr(self, "url_r")))
+        self.message.append(self.parse_rule(bid_tag, *getattr(self, "type_r")))
         # for key in ("name_r", "date_r", "url_r", "type_r"):
-        return message
+        return self.message
 
     # TODO 写的太*了，记得重写
     def parse_rule(self, tag: Tag or dict, *args) -> Tag or None or str:
@@ -153,11 +154,12 @@ class Bid:
             rule = getattr(self, f"{key}_cut")
             setattr(self, key, self.re_get_str(args[idx], rule))
         self.get_bid_url(self.type, self.url)  # TODO 是否应该根据type进行选择?
+        self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
         self.message = [self.name, self.date, self.url, self.type]
 
     def re_get_str(self, obj: str, rule: re.Pattern = None, cut_rule=None):
         """
-        处理带时间的字符串时间
+        正则获取字符串
         Args:
             date_str (str): 要裁剪的时间变量, 通常为 "发布时间: 2022-11-11"
             date_cut_rule (str): 裁剪规则,仅在测试时使用
@@ -223,7 +225,7 @@ class WebBrows(UrlOpen):
             tag_rule = self.tag_rule
         if isinstance(page, str):
             self.html_list_match = page
-            logger.info(f"get tag list from \"{page[: 100]}\"")
+            logger.info(f"get tag list from \"{page.strip()[: 100]}\"")
         if json_read:
             self.bs = json.loads(self.html_list_match)
             return deep_get(self.bs, tag_rule)
