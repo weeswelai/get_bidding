@@ -26,22 +26,23 @@ class State:
     state = ""  # 默认为 ""
 
     def __init__(self, settings, state_idx="test") -> None:
-        self.state = settings["complete"]
         self.end_rule = settings["end_rule"]  # 翻页结束标志
         self.list_url = settings["url"]
         self.state_idx = state_idx
         self.settings = settings
-        self.init_end_rule()
+        self.init()
 
-    def init_end_rule(self):
+    def init(self):
         """ 判断 end_rule 是否合法
         """
         if not self.end_rule["date"]:
             self.end_rule["date"] = date_days(change_days=-6)
         if len(self.end_rule["date"]) <= 10:
             self.end_rule["date"] = self.end_rule["date"] + " 00:00:00"
-        logger.info(f"json: {self.state_idx}.complete = \"{self.state}\"\n"
-                    f"end_rule : {self.end_rule}")
+        
+        logger.info(f"json: {self.state_idx}.complete = "
+                    f"\"{deep_get(self.settings, 'complete')}"
+                    f"\"\nend_rule : {self.end_rule}")
 
     def bid_is_end(self, bid_prj: Bid):
         """ 判断当前项目是否符合结束条件
@@ -282,7 +283,7 @@ class BidTask:
         
         # 打开项目列表页面, 获得 self.web_brows.html_list_match
         try:
-            reOpen = self._open_list_url(self.list_url)
+            self._open_list_url(self.list_url)
         except AssertionError:
             logger.error(f"{traceback.format_exc()}")
             # TODO 这里需要一个保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目

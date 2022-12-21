@@ -1,5 +1,7 @@
 """
 用于测试网站的html使用什么样的形式解析
+TODO 若在 end_rule有值且 state.complete为 "complete"的情况下, 当打开网页超时或者cut_html出错的情况下的处理
+     因为此时若end_rule刚好在打不开的网址中则会有额外的花费(end_rule中的date只是保证不会死循环)
 """
 
 import json
@@ -29,7 +31,7 @@ bid_tag: 获得list中各个项目的信息的规则
     共有5个部分, [1]和[2]组成 tag 的获取方式,[3]和[4]组成 属性的检索方式
     [5] 为使用find_all时需要返回的tag的下标.
     参数说明:
-    [1]: 可选择: tagName_find_all, tagName_find, 为使用bs4的find_all方法
+    [1]: 可选择: tagName_all, tagName_find, 为使用bs4的find_all方法
         或find方法得到tag
     [2]: tag所处结构,使用时可输入 列表或字符串,若输入字符串则为:
          "a.p.em",列表为 ["a","p","em"],具体实现为使用bs4的find方法并递归获得tag,
@@ -38,7 +40,7 @@ bid_tag: 获得list中各个项目的信息的规则
          "_Text" 用于直接获得tag的标签内容
     [4]: tag中属性的值,与 [3]一起使用,一般用于 当[3]名称为 class 时,
          取得class=[4]的tag的标签内容
-    [5]: int类型,当[1] 为  tagName_find_all时返回的是搜索列表, 
+    [5]: int类型,当[1] 为  tagName_all时返回的是搜索列表, 
          [5]作用为按选[5]的值对应下标的tag
     注意事项:
     1. 使用时必须含有一个 | , 即使 | 的左右为空,如 "|href:" , 
@@ -46,9 +48,9 @@ bid_tag: 获得list中各个项目的信息的规则
         错误示例:  "|href"  ,该示例没有使用 : 隔开 [3]和[4] ,
                    程序无法判断 href是[3]还是[4] 
     3. 使用 ""或None 时会返回None
-    4. [5] 只有在 [1]为 tagName_find_all时使用,
+    4. [5] 只有在 [1]为 tagName_all时使用,
     5. [2]只有在[1]为 tagName_find时使用
-    6. 
+    6. tagName_all 与 [4]和[5]同时使用的情况下, 只会搜到一个值,此时 [5]为0
 bid: 正则解析得到的字符串
     date_cut: 正则表达式,对于 发布日期：2022-11-14 这样的字符串,
                 需要提取出其中的日期部分
@@ -58,27 +60,32 @@ bid: 正则解析得到的字符串
 rule= {
     "rule":{
         "cut": {
-            "re_rule": "(<ul id=\"list1\">).*?(</ul>)",
+            "re_rule": "(<ul class=\"categories li_square col-md-12 col-sm-12 col-xs-12 p0 list_new\">).*?(</ul>)",
             "rule_option": 16
         },
-        "next_pages": "(?<=pageNo\=)\d{1,3}",
-        "tag_list": "a",
+        "next_pages": "(?<=\\?page\\=)\\d{1,3}",
+        "tag_list": "li",
         "bid_tag": {
-            "name_r": "tagName_find:|title:",
-            "date_r": "tagName_find:em|_Text:",
-            "url_r": "tagName_find:|href:",
-            "type_r": ""
+            "name_r": "tagName_find:a|title:",
+            "date_r": "tagName_all:span|class:col-md-3 col-sm-3 col-xs-6 tc p0|0",
+            "url_r": "tagName_find:a|href:",
+            "type_r": "tagName_all:span|class:col-md-2 col-sm-3 col-xs-6|0"
         },
         "bid": {
-            "date_cut": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
+            "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
+        }
+    },
+    "url": {
+        "root":{
+            "default": "https://www.plap.cn"
         }
     }
 }
 
 
-web_page = "https://ebid.eavic.com/cms/channel/ywgg1/index.htm?pageNo=1"
-page_html_f = r"./html_save/eavic.com cms channel ywgg1 index.htmpageNo=1_2022_12_20-16_58_28_081.html"
-cut_html_f = r"./html_save/eavic.com cms channel ywgg1 index.htmpageNo=1_cut.html"
+web_page = r"https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate="
+page_html_f = r"./html_save/page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=物资&lastArticleTypeName=公开招标&publishStartDate=&publishEndDate=_2022_12_21-15_41_10.html"
+cut_html_f = r"./html_save/page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=物资&lastArticleTypeName=公开招标&publishStartDate=&publishEndDate=_cut.html"
 settings_json = "./bid_settings/bid_settings_t.json"
 settings = read_json(settings_json)
 
@@ -98,20 +105,24 @@ ruleTest = {
 }
 
 web_brows = WebBrows(rule)
-if page_html_f:
-    with open(page_html_f, "r", encoding="utf-8") as page_f:
-            url_page = page_f.read()
-
-if cut_html_f:
-    with open(cut_html_f, "r", encoding="utf-8") as page_f:
-        cut_page = page_f.read()
 
 try:
     if openAndSaveUrl:  # 打开网址 保存url的response
+        headers = {
+            "User-Agent": r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+        }
         # 打开网址
-        web_brows.open(url=web_page)
+        web_brows.open(url=web_page, headers=headers)
         # 保存decode后的源码
         web_brows.save_response(save_date=True)
+
+    if page_html_f:
+        with open(page_html_f, "r", encoding="utf-8") as page_f:
+                url_page = page_f.read()
+
+    if cut_html_f:
+        with open(cut_html_f, "r", encoding="utf-8") as page_f:
+            cut_page = page_f.read()
 
     # 正则表达式测试
     if not ruleTest["test"]:
@@ -138,15 +149,21 @@ try:
 
     if ruleTest["get_bs_tag_list"]["bid_tag"]:
         bid_tag = BidTag(rule)
-
+        bid = Bid(rule)
         for idx, tag in enumerate(tag_list):
             try:
-                logger.debug(str(bid_tag.get(tag)))
+                bid_tag.get(tag)
+                # logger.debug(str(bid_tag.message))
             except:
+                logger.debug(f"bid_tag: {bid_tag.message}")
                 logger.error(f"idx: {idx} tag error: {tag},\n"
                             f"bid_tag rule: {bid_tag.get_now}\n"
                             f"{traceback.format_exc()}")
             # f"bid rule : {self.bid.get_now}\n"
+            if ruleTest["get_bs_tag_list"]["bid"]:
+                bid.receive(*bid_tag.message)
+                logger.debug(bid.message)
+                
 
     if ruleTest["date"]:  # 日期字符串的正则测试
         date_test = "发布日期：2022-11-14"  # 测试文本
