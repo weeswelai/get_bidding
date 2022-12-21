@@ -12,7 +12,7 @@
     ],
     "run_time": "2022-12-21 17:33:34",
     "save_data": "./data/bid_list.txt",
-    "match_data": "./data/match_list.txt",
+    "match_data": "./data/match_list.txt"
   },
   "zzlh": {
     "nextRunTime": "",
