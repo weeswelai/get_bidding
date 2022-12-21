@@ -11,7 +11,7 @@ from json import loads, dumps
 from time import sleep
 from bs4 import Tag
 
-from module.log import logger
+
 
 
 def deep_set(d: dict, keys: list or str, value):
@@ -100,6 +100,7 @@ def read_json(file):
     Returns:
         dict : json.loads转换的dict
     """
+    from module.log import logger
     with open(file, "r", encoding="utf-8") as settings_json_r:
         f_read = settings_json_r.read()
         logger.info(f"read {file}")
@@ -116,6 +117,7 @@ def save_json(data, json_file, indent=2, creat_new=False):
     Returns:
         json_file (str): 保存的json文件路径
     """
+    from module.log import logger
     creat_folder(json_file)
 
     if creat_new:  # 是否创建新文件保存
@@ -146,7 +148,7 @@ def url_to_filename(url: str):
         url (str): 转换后的网址,可作为文件名
     """
     # 将 / 替换成 空格 因为网址中不会有空格
-    url = url[url.find(".") + 1:].replace("/", " ")
+    url = url[url.find(".") + 1:].replace("/", " ").replace("?","")
     idx = url.rfind('.')  # 找到倒数第一个 . , 判断是否为html
     html_find = url[idx + 1:].find("html")  # 查找 html 位置
 
@@ -190,6 +192,7 @@ def re_options_print(options):
     Args:
         options (re.options): S M
     """
+    from module.log import logger
     logger.info(int(eval(f"re.{options}")))
 
 
@@ -206,6 +209,8 @@ def init_re(re_rule, flag=16):
         if isinstance(re_rule["rule_option"], int):
             flag = re_rule["rule_option"]
         return re.compile(re_rule["re_rule"], flags=flag)
+    elif re_rule is None:
+        return None
 
 
 def creat_folder(file):
@@ -219,10 +224,11 @@ def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
         sort_keys=sort_keys)
 
 
-def sleep_ramdom(time_range: tuple = (1.5, 3), message: str = None):
+def sleep_ramdom(time_range: tuple = (1.7, 3), message: str = None):
     """ 在随机范围内sleep, 并带有提示, 默认为1.5秒到3秒内
     """
-    if not message:
+    from module.log import logger
+    if message:
         print(message)
     sleep_time = uniform(*time_range)
     logger.info(f"sleep {sleep_time}")
@@ -239,5 +245,5 @@ def sleep_ramdom(time_range: tuple = (1.5, 3), message: str = None):
 if __name__ == "__main__":
     # 本模块测试
     web_page = r"http://www.365trade.com.cn/zhwzb/390964.jhtml"
-    logger.info(url_to_filename(web_page))
+    print(url_to_filename(web_page))
     pass

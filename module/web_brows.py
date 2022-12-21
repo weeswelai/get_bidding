@@ -20,13 +20,10 @@
 """
 import json
 import re
-import traceback
-from sys import getsizeof
 
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
 
-from module.judge_content import title_trie
 from module.log import logger
 from module.get_url import UrlOpen
 from module.utils import *
@@ -51,6 +48,9 @@ class BidTag:
         """
         # 预处理分割rule
         find_all_idx = value_name = value = None
+        if rule is None or rule == "":
+            setattr(self, li_r, (None,))
+            return None
         if rule.count("|") == 2:  # 2个|认为有 find_all_idx, 用于find_all的索引
             tag_gets_r, value_gets_r, find_all_idx = rule.split("|")
         elif rule.count("|") == 1:  # 必须有1个 |
@@ -67,16 +67,26 @@ class BidTag:
         """
         self.tag = bid_tag
         message = []
-        for key in ("name_r", "date_r", "url_r", "type_r"):
-            self.get_now = key
-            message.append(self.parse_bs_rule(
-                bid_tag, *getattr(self, key)))
+        message.append(self.parse_rule(bid_tag, *getattr(self, "name_r")))
+        message.append(self.parse_rule(bid_tag, *getattr(self, "date_r")))
+        message.append(self.parse_rule(bid_tag, *getattr(self, "url_r")))
+        message.append(self.parse_rule(bid_tag, *getattr(self, "type_r")))
+        # for key in ("name_r", "date_r", "url_r", "type_r"):
         return message
 
     # TODO 写的太*了，记得重写
-    def parse_bs_rule(self, tag: Tag,
+    def parse_rule(self, tag: Tag or dict, *args) -> Tag or None or str:
+        self.get_now = args
+        if isinstance(tag, Tag):
+            return self._parse_bs_rule(tag, *args)
+        
+        elif isinstance(tag, dict):
+            return deep_get(tag, list(args))
+        return None
+    
+    def _parse_bs_rule(self, tag: Tag,
                       tag_find="", tag_name="", find_all_idx=None,
-                      value_name="", value="",) -> Tag or None or str:
+                      value_name="", value="") -> Tag or None or str:
         """
         解析规则,找到tag或tagList(bs4.element.ResultSet),或符合规则的属性值或tag中的文本
         Args:
@@ -101,7 +111,8 @@ class BidTag:
             if find_all_idx:  # 若有find_all 的索引要求,则返回该索引对应的tag
                 tag = tag[int(find_all_idx)]
         elif tag_find == "tagName_find":  # 使用tagName,find方式检索
-            tag = bs_deep_get(tag, tag_name)  # 调用额外函数返回Tag
+            if tag_name:
+                tag = bs_deep_get(tag, tag_name)  # 调用额外函数返回Tag
         # 检索属性值
         if value_name:  # value_name有值 则检索属性值
             if value_name == "class":
@@ -118,13 +129,17 @@ class BidTag:
 
 
 class Bid:
-    b_type: str
+    type: str
     url: str
     date: str
     name: str
-    date_cut: re.Pattern
+    name_cut: re.Pattern = None
+    date_cut: re.Pattern = None
+    type_cut: re.Pattern = None
+    url_cut: re.Pattern = None
     url_root: dict
     message: list = None
+    get_now: str
 
     def __init__(self, settings):
         rule = settings["rule"]["bid"]
@@ -132,14 +147,15 @@ class Bid:
             setattr(self, r, init_re(rule[r]))
         self.url_root = deep_get(settings, "url.root")
 
-    def receive(self, name, date, url, b_type):
-        self.name = name
-        self.date = self.re_get_date_str(date)
-        self.get_bid_url(b_type, url)
-        self.b_type = b_type
-        self.message = [self.name, self.date, self.url, self.b_type]
+    def receive(self, *args):
+        for idx, key in enumerate(("name", "date", "url",  "type")):
+            self.get_now = key
+            rule = getattr(self, f"{key}_cut")
+            setattr(self, key, self.re_get_str(args[idx], rule))
+        self.get_bid_url(self.type, self.url)  # TODO 是否应该根据type进行选择?
+        self.message = [self.name, self.date, self.url, self.type]
 
-    def re_get_date_str(self, date_str, date_cut_rule=None):
+    def re_get_str(self, obj: str, rule: re.Pattern = None, cut_rule=None):
         """
         处理带时间的字符串时间
         Args:
@@ -149,11 +165,11 @@ class Bid:
 
         """
         # 默认正则参数 (4)(数字)+(_,-,年)+(2)(数字)+(_,-,月)+(2)(数字)+(日),日可忽略
-        if isinstance(date_cut_rule, str):
-            return re.search(date_cut_rule, date_str).group()
-        if self.date_cut.pattern == "":
-            return date_str
-        return self.date_cut.search(date_str).group()
+        if isinstance(cut_rule, str):
+            return re.search(cut_rule, obj).group()
+        if rule is None or rule.pattern == "":
+            return obj
+        return rule.search(obj).group()
     
     def get_bid_url(self, bid_root, bid_tail):
         """ 用 前缀加上后缀得到网址
@@ -167,34 +183,32 @@ class Bid:
         else:
             self.url = f"{self.url_root['default']}{bid_tail}"
 
-    def return_bid(self):
-        return self.message
-
 
 class WebBrows(UrlOpen):
     cut_rule: re.Pattern = None  # init_re
     next_pages_rule: re.Pattern = None  # init_re
-    html_list_match = ""
+    html_list_match = ""  # cut_html 后保存
     bs: Tag or dict = None
     tag_rule: str
 
-    def __init__(self, settings):
+    def __init__(self, settings: dict = None):
         super().__init__()
         """ cookie, cut_rule, next_pages_rule 初始化
         """
         # 若有cookie 需求(使用第一个cookie)
-        cookie = deep_get(settings, "url.cookie")
-        user_agent = deep_get(settings, "url.User-Agent")
-        if cookie:
-            self.headers["cookie"] = cookie[0]
-        if user_agent:
-            self.headers["User-Agent"] = user_agent[0]
-        # init rule
-        self.cut_rule = init_re(deep_get(settings, "rule.cut"))
-        self.next_pages_rule = init_re(deep_get(settings, "rule.next_pages"))
-        self.tag_rule = deep_get(settings, "rule.tag_list")
+        if settings:
+            cookie = deep_get(settings, "url.cookie")
+            user_agent = deep_get(settings, "url.User-Agent")
+            if cookie:
+                self.headers["cookie"] = cookie[0]
+            if user_agent:
+                self.headers["User-Agent"] = user_agent[0]
+            # init rule
+            self.cut_rule = init_re(deep_get(settings, "rule.cut"))
+            self.next_pages_rule = init_re(deep_get(settings, "rule.next_pages"))
+            self.tag_rule = deep_get(settings, "rule.tag_list")
 
-    def get_bs_tag_list(self, page=None, parse="html.parser", json_read=False):
+    def get_bs_tag_list(self, page=None, tag_rule=None, parse="html.parser", json_read=False):
         """
         输入 str 调用 bs生成self.bs 从self.bs 里根据list_rule提取list
         Args:
@@ -205,31 +219,39 @@ class WebBrows(UrlOpen):
             bid_list (list): 提取到的list
         """
         logger.info("bid_web_brows.get_bs_tag_list")
-
+        if not tag_rule:  # 仅测试中使用
+            tag_rule = self.tag_rule
         if isinstance(page, str):
             self.html_list_match = page
-            logger.info(f"get tag list from {page[: 100]}")
+            logger.info(f"get tag list from \"{page[: 100]}\"")
         if json_read:
             self.bs = json.loads(self.html_list_match)
-            return deep_get(self.bs, self.tag_rule)
+            return deep_get(self.bs, tag_rule)
         else:
             self.bs = btfs(self.html_list_match, features=parse)  # bs解析结果
-            return self.bs.find_all(self.tag_rule)
+            return self.bs.find_all(tag_rule)
 
-    def cut_html(self, _cut_rule: dict = None):
+    def cut_html(self, cut_rule: dict = None):
         """
         某些html含过多无用信息，使用bs解析会变得非常慢，
         如zzlh的招标列表页面源码有一万多行的无用信息(目录页码)，
         需要删去部分无用信息
+        
+        Args
+            
         Returns:
             self.list_match (str): 匹配结果
         """
         logger.info("bid_web_brows.cut_html")
-        if isinstance(_cut_rule, dict):
-            self.html_list_match = re.search(
-                _cut_rule["re_rule"],
-                self.url_response,
-                _cut_rule["rule_option"]).group()
+        if isinstance(cut_rule, dict):
+            self.html_list_match = re.search(cut_rule["re_rule"],
+                                             self.url_response,
+                                             cut_rule["rule_option"]).group()
+        elif isinstance(cut_rule, str):
+            if cut_rule == "":
+                self.html_list_match = self.url_response
+            self.html_list_match = re.search(cut_rule, self.url_response, 
+                                             re.S).group()
         else:
             self.html_list_match = \
                 self.cut_rule.search(self.url_response).group()
@@ -242,6 +264,8 @@ class WebBrows(UrlOpen):
         """
         if not next_pages_rule:
             next_pages_rule = self.next_pages_rule
+        if isinstance(next_pages_rule, str):
+            next_pages_rule = re.compile(next_pages_rule)
         page_idx = int(next_pages_rule.search(page_url).group())
         next_pages_url = next_pages_rule.sub(str(page_idx + 1), page_url)
         logger.info(f"bid_web_brows.get_next_pages: {next_pages_url}")

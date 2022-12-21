@@ -102,13 +102,20 @@ class State:
                          "please check settings json file")
             exit()
 
-    def print_state(self):
+    def print_state_at_start(self):
+        """ 仅在init_state时调用
+        """
         logger.info(f"state = {self.state}, newest = {self.newest}, "
-                    f"start = {self.start}\n")
+                    f"start = {self.start}\n"
+                    f"json: newest = {self.settings['newest']}")
         if self.state == "interrupt":
             logger.info(f"interruptUrl = {self.settings['interruptUrl']}\n"
                         f"interrupt = {jsdump(self.settings['interrupt'])}")
 
+    def print_state(self):
+        if self.start:
+            logger.info(f"interrupt.name = {self.settings['interrupt']['name']}"
+                        f"{self.settings['interrupt']['date']}")
 
 class InterruptState(State):
     state = "interrupt"
@@ -233,9 +240,7 @@ class BidTask:
         setting = self.settings[state_idx]
         self.State = InterruptState(setting, state_idx) \
             if setting["complete"] == "interrupt" else State(setting, state_idx)
-        logger.info(f"json: {self.task_name}{self.state_idx}.state= "
-                    f"\"{setting['complete']}\"")
-        self.State.print_state()
+        self.State.print_state_at_start()
 
     def init_state(self):
         """ 用_get_state_idx 判断 task.stateQueue 中是否还有state
@@ -249,13 +254,17 @@ class BidTask:
         # 若queue中还有state
         if self._get_state_idx(deep_get(self.settings, "stateQueue")):
             self._init_State(self.state_idx)
+            self.list_file.write(f"{self.state_idx}\n")
+            self.match_list_file.write(f"{self.state_idx}\n")
+            self.list_url = ""
+            logger.hr(f"state start: {self.state_idx[-1]}", 3)
             return True
         return False
 
     def restart(self):
         """ 将json中 complete 添加到 queue中
         """
-        logger.info("BidTask.restart")
+        logger.hr("BidTask.restart", 3)
         queue = deep_get(self.settings, "stateQueue")
         complete = deep_get(self.settings, "stateComplete")
         queue += complete
@@ -273,9 +282,9 @@ class BidTask:
         
         # 打开项目列表页面, 获得 self.web_brows.html_list_match
         try:
-            self._open_list_url(self.list_url)
+            reOpen = self._open_list_url(self.list_url)
         except AssertionError:
-            logger(f"{self.list_url} open more than {reOpen} time")
+            logger.error(f"{traceback.format_exc()}")
             # TODO 这里需要一个保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
             return "open_list_url_error"
         
@@ -310,12 +319,12 @@ class BidTask:
             logger.error(f"{traceback.format_exc()}")
             self.web_brows.save_response(save_date=True, extra="list_Error")
             logger.info(f"cut html error,open {self.list_url} again"
-                        f"\nreOpen: {reOpen}")
+                        f"\nreOpen: {reOpen + 1}")
             if reOpen < 3:
                 reOpen += 1
                 sleep(2)  # TODO 换定时器
                 self._open_list_url(url, reOpen)
-            assert reOpen < 3 , "a"
+            assert reOpen < 3 , f"{self.list_url} open more than {reOpen} time"
 
     def _process_tag_list(self):
         """ 遍历处理 self.tag_list
@@ -323,32 +332,41 @@ class BidTask:
         """
         logger.hr("BidTask.process_tag_list", 3)
         for idx, tag in enumerate(self.tag_list):
-            try:
-                self.bid.receive(*self.bid_tag.get(tag))
-                # logger.debug(str(self.bid.message))  # 打印每次获得的项目信息
-            except Exception:
-                logger.error(f"idx: {idx} tag error: {tag}, "
-                            f"rule: {self.bid_tag.get_now}\n"
-                            f"{traceback.format_exc()}")
-                self.bid_tag_error += 1
-                if self.bid_tag_error > 10:
-                    logger.error("too many bid.receive error")
-                    raise KeyboardInterrupt
+            # bid对象接收bid_tag解析结果
+            if not self._bid_receive_bid_tag(tag, idx):
                 continue
 
             if self.State.bid_is_end(self.bid):  # 判断是否符合结束条件
                 self.State.complete()  # set self.State.state = "complete"
+                logger.info(f"bid end at {self.bid.message}")
                 break
             if not self.State.newest:  # 只执行一次
                 self.State.save_newest_and_interrupt(self.bid)
             if not self.State.start:
                 if not self.State.bid_is_start(self.bid):
                     continue
+
             self.State.set_interrupt(self.list_url, self.bid)
-            
             self.list_file.write(f"{str(self.bid.message)}\n")
             self._title_trie_search(self.bid)
         logger.info(f"tag stop at {idx}")
+        self.State.print_state()
+
+    def _bid_receive_bid_tag(self, tag: Tag, idx):
+        try:
+            self.bid.receive(*self.bid_tag.get(tag))
+            # logger.debug(str(self.bid.message))  # 打印每次获得的项目信息
+        except Exception:
+            logger.error(f"idx: {idx} tag error: {tag},\n"
+                        f"bid_tag rule: {self.bid_tag.get_now}\n"
+                        f"bid rule : {self.bid.get_now}\n"
+                        f"{traceback.format_exc()}")
+            self.bid_tag_error += 1
+            if self.bid_tag_error > 10:
+                logger.error("too many bid.receive error")
+                raise KeyboardInterrupt
+            return False
+        return True
 
     def _title_trie_search(self, bid_prj: Bid):
         """ 处理 bid对象
@@ -375,6 +393,13 @@ class BidTask:
                     f"complete: {complete}")
         if queue:
             self.state_idx = queue[0]
+
+
+# 网址接口直接返回json字符串的任务
+class BidTaskJs(BidTask):
+    def __init__(self, settings, task_name="test") -> None:
+        super().__init__(settings, task_name)
+
 
 
 def _date_is_end(date: str, end_date: str, date_len):
