@@ -7,7 +7,8 @@ import pickle
 import os
 
 from module.utils import *
-from module.bid_judge_content import title_trie
+from module.judge_content import title_trie
+from module.log import logger
 
 str_t = """['吉林大学原子层沉积系统采购项目招标公告', '2022-11-14', '/zhwzb/391052.jhtml', '货物']
 ['吉林大学高精度磁学测量系统采购项目招标公告', '2022-11-14', '/zhwzb/391051.jhtml', '货物']

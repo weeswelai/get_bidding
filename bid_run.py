@@ -11,8 +11,8 @@
 
 from time import sleep
 
-from module.bid_log import logger
-from module.bid_task import BidTask
+from module.log import logger
+from module.task import BidTask
 from module.utils import *
 
 # 读取配置json
@@ -25,6 +25,7 @@ class TaskManager:
     task_name: str = None
     match_list: list = None
     state: str = None
+    last_task_state = None
 
     def __init__(self, json_file, save=True, creat_new=False):
         """ 读取json_file; 设置 settings, json_file , queue
@@ -50,7 +51,7 @@ class TaskManager:
             new_name (str): 设置新开始的网站任务 必须在task.queue中
         """
         logger.hr("TaskManager.new_task", 3)
-        self._return_task_name(new_name)
+        self._set_task_name(new_name)
         deep_set(self.settings, "task.run_time", date_now_s())  # 写入运行时间
         self._build_task()
         save_json(self.settings, self.json_file)
@@ -61,33 +62,29 @@ class TaskManager:
             self.task_dict[self.task_name] = \
                 BidTask(self.settings[self.task_name], self.task_name)
 
-    def _return_task_name(self, new_name):
+    def _set_task_name(self, new_name):
         """ 若new_name有值且在queue中,将new_name排到最前面
         # TODO 创建新任务
         Args:
             new_name (str): 要排到最前面的队列
         """
-        if not new_name and new_name in self.queue:
+        if new_name and new_name in self.queue:
             idx = self.queue.index(new_name)
             for i in range(idx):
                 self.queue.append(self.queue.pop(0))
             logger.info(f"new task start at {new_name}")
-        else:
-            if self.task_name:
-                self.queue.append(self.queue.pop(0))
-                deep_set(self.settings, "task.queue", self.queue)
-            else:
-                self.task_name = self.queue[0]
+        self.task_name = self.queue[0]
 
     def task_run(self):
         """ 获得任务, 初始化 state
         """
-        logger.hr("TaskManager.task_run", 3)
+        logger.hr("TaskManager.task_run", 2)
         task: BidTask = self.task_dict[self.task_name]
-        if task.settings["stateQueue"] == []:
+        if not task.settings["stateQueue"]:
             task.restart()  # TODO
         while task.init_state():  # 若 queue中还有state
             state = ""
+            # task执行到所有state完成
             while state != "complete": 
                 state = task.process_next_list_web()  # 继续state任务
                 save_json(self.settings, self.json_file)
@@ -104,6 +101,7 @@ class TaskManager:
         self.queue.append(self.queue.pop(0))
         deep_set(self.settings, "task.queue", self.queue)
         save_json(self.settings, self.json_file)
+
         return self.queue[0]
 
     def exit(self):
@@ -132,9 +130,9 @@ if __name__ == "__main__":
         while task_continue < 1:
             state = ""
             # 判断状态是否开始新任务
-            if bidTaskManager.state in (None, "complete", ""):
-                # 构建新任务
-                bidTaskManager.new_task()
+            # if bidTaskManager.last_task_state in (None, "complete", ""):
+            # 构建新任务
+            bidTaskManager.new_task()
             # 任务执行
             try:
                 state = bidTaskManager.task_run()
@@ -150,3 +148,4 @@ if __name__ == "__main__":
             task_continue += 1
 
     # bidTaskManager.loop()
+    _ = input("enter any key to exit")

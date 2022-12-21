@@ -80,9 +80,6 @@ class UrlOpen:
     def save_response(self, rps="", url="", path="./html_save/",
                       save_date=False, extra=""):
         """保存response
-        目前需要适配的网址:
-        http://www.365trade.com.cn/zbgg/index_1.jhtml
-        >  365trade.com.cn、zbgg、index_1.jhtml
 
         Args:
             rps (str): response,为空时使用self.url_response
@@ -98,7 +95,7 @@ class UrlOpen:
         file_name = path + url_to_filename(url)
         if save_date:
             point_idx = file_name.rindex('.')
-            file_name = f"{file_name[: point_idx]}_{date_now_s(True)}" + \
+            file_name = f"{file_name[: point_idx]}{date_now_s(True)}" + \
                         f"{file_name[point_idx:]}"
         if extra:
             point_idx = file_name.rindex('.')
@@ -108,7 +105,7 @@ class UrlOpen:
         save_file(file_name, rps)
 
     def get_response_from_file(self, file):
-        """ 将文件读取的数据赋给self.url_response
+        """ 将文件读取的数据赋给self.url_response, 仅在测试中使用
         Args:
             file (str): file路径或html字符串
         Returns:
