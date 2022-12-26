@@ -11,8 +11,9 @@ import traceback
 from sys import getsizeof
 
 from module.log import logger
-from module.web_brows import WebBrows, BidTag, Bid
+from module.web_brows import ListWebBrows, BidTag, Bid
 from module.utils import *
+from module.judge_content import title_trie
 # sys.stderr = logger.handlers[1].stream
 
 # 正则测试网址: https://regex101.com/
@@ -54,139 +55,156 @@ bid_tag: 获得list中各个项目的信息的规则
 bid: 正则解析得到的字符串
     date_cut: 正则表达式,对于 发布日期：2022-11-14 这样的字符串,
                 需要提取出其中的日期部分
-
-
 """
-rule= {
-    "rule":{
-        "cut": {
-            "re_rule": "(<ul class=\"categories li_square col-md-12 col-sm-12 col-xs-12 p0 list_new\">).*?(</ul>)",
-            "rule_option": 16
-        },
-        "next_pages": "(?<=\\?page\\=)\\d{1,3}",
-        "tag_list": "li",
-        "bid_tag": {
-            "name_r": "tagName_find:a|title:",
-            "date_r": "tagName_all:span|class:col-md-3 col-sm-3 col-xs-6 tc p0|0",
-            "url_r": "tagName_find:a|href:",
-            "type_r": "tagName_all:span|class:col-md-2 col-sm-3 col-xs-6|0"
-        },
-        "bid": {
-            "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
-        }
+
+test_settings = {
+"headers": {
+      "User-Agent": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+      ],
+      "Cookie": []
     },
-    "url": {
-        "root":{
-            "default": "https://www.plap.cn"
-        }
+    "urlConfig": {
+      "root": {
+        "default": "http://bid.aited.cn"
+      },
+      "method": "POST"
+    },
+    "rule": {
+      "cut": {
+        "re_rule": "<li>.*?(?=,)",
+        "rule_option": 16
+      },
+      "next_pages": "",
+      "tag_list": "li",
+      "bid_tag": {
+        "name_r": "tagName_find:a|title:",
+        "date_r": "tagName_find:div.span|_Text:",
+        "url_r": "tagName_find:a|href:",
+        "type_r": ""
+      },
+      "bid": {
+        "name_cut": "(?<=\").*?(?=\\\)",
+        "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)",
+        "url_cut": "(?<=\.\.).*?(?=\\\)"
+      }
     }
 }
 
-
-web_page = r"https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate="
-page_html_f = r"./html_save/page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=物资&lastArticleTypeName=公开招标&publishStartDate=&publishEndDate=_2022_12_21-15_41_10.html"
-cut_html_f = r"./html_save/page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=物资&lastArticleTypeName=公开招标&publishStartDate=&publishEndDate=_cut.html"
-settings_json = "./bid_settings/bid_settings_t.json"
-settings = read_json(settings_json)
-
-
-openAndSaveUrl = 0
-ruleTest = {
-    "test": 1,
-    "test_new_rule": 0,
-    "get_bs_tag_list": {
-        "cut_html": 0,
-        "li_tag": 0,
-        "bid_tag": 0,
-        "bid": 0
-    },
-    "date": 0,
-    "next_pages": 1
+# json: [task_name].[state].url, url有两种形式, GET 为 str, POST为 dict, 其中须包含form信息
+url = {
+        "url": "http://bid.aited.cn/front/ajax_getBidList.do",
+        "form": {
+          "classId": 151,
+          "key": -1,
+          "page": 1
+        }
 }
+# url = ""
 
-web_brows = WebBrows(rule)
+page_html_f = r"./html_test/aited.cn front ajax_getBidList.do_classId=151&key=-1&page=1_2022_12_26-15_56_56_test.html"
+cut_html_f = r"./html_test/aited.cn front ajax_getBidList.do_classId=151&key=-1&page=1_cut.html"
+settings_file = "./bid_settings/bid_settings.json"
+json_settings = read_json(settings_file)
+
+# 测试开关
+test = 1  # 测试总开关
+openAndSaveUrl = 0  # 打开网址并保存response
+rule_test = 1  # 规则测试总开关
+_cut_html = 0  # 裁剪html源码并保存
+_li_tag = 1    # 从源码中获得项目列表, 这里使用的是 cut_html_f
+_bid_tag = 1   # 测试项目列表中项目基本信息提取
+_bid = 1      # 测试项目信息获取
+_title_trie = 0  # 前缀树搜索测试
+
+_next_pages = 1  # 测试获得下一页网址,需要 全局 url变量
+
+test_json = 1  # 0: 使用本文件中test_settings, 1: 使用json file的setting,需要指定任务名
+
+task_name = "zhzb"
+settings = json_settings[task_name] if test_json else test_settings
+
+
+web_brows: ListWebBrows.Html = ListWebBrows.init(settings, task_name)
+
 
 try:
-    if openAndSaveUrl:  # 打开网址 保存url的response
-        headers = {
-            "User-Agent": r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
-        }
-        # 打开网址
-        web_brows.open(url=web_page, headers=headers)
-        # 保存decode后的源码
-        web_brows.save_response(save_date=True)
 
-    if page_html_f:
+    # 规则测试总开关
+    if not test:
+        print("test is False, exit")
+        sys.exit()
+
+    # 打开网址并保存response
+    if openAndSaveUrl:  # 打开网址 保存url的response
+        # 打开网址
+        web_brows.open(url)
+        # 保存decode后的源码
+        res_file = web_brows.save_response(save_date=True,path="./html_test/")
+
+    # 使用本地文件
+    # 使用原始html源码
+    if page_html_f and page_html_f[-1] != "/":
         with open(page_html_f, "r", encoding="utf-8") as page_f:
                 url_page = page_f.read()
-
-    if cut_html_f:
+    # 使用裁剪后的html源码
+    if cut_html_f and cut_html_f[-1] != "/":
         with open(cut_html_f, "r", encoding="utf-8") as page_f:
             cut_page = page_f.read()
 
-    # 正则表达式测试
-    if not ruleTest["test"]:
-        print("ruleTest.test = 0, exit")
-        sys.exit()
+    if rule_test:
 
-    if ruleTest["get_bs_tag_list"]["cut_html"]:
-        # getsizeof page 最好不要小于51, ""的内存占用为51
-        logger.info(f"test: page memory size: {getsizeof(url_page)}")
-        
-        web_brows.get_response_from_file(file=url_page)  # 将源码str输入web_brows对象
-        if ruleTest["test_new_rule"]:  # 使用本文件中的测试rule
-            web_brows.cut_html(rule["rule"]["cut"])  # 裁剪源码
-        else:
+        # 测试裁剪源码
+        if _cut_html:
+            # getsizeof page 最好不要小于51, ""的内存占用为51
+            logger.info(f"test: page memory size: {getsizeof(url_page)}")
+            
+            web_brows.get_response_from_file(file=url_page)  # 将源码str输入web_brows对象
             web_brows.cut_html()
-        web_brows.save_response(url=web_page, 
-                                rps=web_brows.html_list_match, extra="cut")
-        logger.info(f"test: page memory size: {getsizeof(web_brows.html_list_match)}")
+            if isinstance(url, dict):
+                web_brows.init_req(url)
+                url = url["url"]
+            logger.info(f"test: page memory size: {getsizeof(web_brows.html_cut)}")
+            web_brows.save_response(rps=web_brows.html_cut, url=url,
+                                    path="./html_test/", extra="cut")
 
-    if ruleTest["get_bs_tag_list"]["li_tag"]:
-        # web_brows.get_response_from_file(file=url_page)
-        # web_brows.cut_html(rule["cut"])
-        tag_list = web_brows.get_bs_tag_list(page=cut_page, tag_rule=rule["rule"]["tag_list"])
+        # 测试获得项目列表
+        if _li_tag:
+            # web_brows.get_response_from_file(file=url_page, save="html_cut")
+            # web_brows.cut_html(test_settings["rule"]["cut"])
 
-    if ruleTest["get_bs_tag_list"]["bid_tag"]:
-        bid_tag = BidTag(rule)
-        bid = Bid(rule)
-        for idx, tag in enumerate(tag_list):
-            try:
-                bid_tag.get(tag)
-                # logger.debug(str(bid_tag.message))
-            except:
-                logger.debug(f"bid_tag: {bid_tag.message}")
-                logger.error(f"idx: {idx} tag error: {tag},\n"
-                            f"bid_tag rule: {bid_tag.get_now}\n"
-                            f"{traceback.format_exc()}")
-            # f"bid rule : {self.bid.get_now}\n"
-            if ruleTest["get_bs_tag_list"]["bid"]:
-                bid.receive(*bid_tag.message)
-                logger.debug(bid.message)
-                
+            file_read = cut_page  # 或 file_read = url_page
+            tag_list = web_brows.get_tag_list(
+                page=cut_page, tag_rule=test_settings["rule"]["tag_list"])
+            logger.info(f"tag_list len: {len(tag_list)}")
 
-    if ruleTest["date"]:  # 日期字符串的正则测试
-        date_test = "发布日期：2022-11-14"  # 测试文本
-        date_cut_rule = rule["rule"]["date_cut_rule"]  # 测试的正则表达式
-        default = True  # 是否使用默认正则
-        date_output = web_brows.re_get_time_str(  # 调用方法
-            date_str=date_test,
-            time_cut_rule=date_cut_rule,
-            default=default )
+        # 测试项目列表中项目基本信息提取
+        if _bid_tag:
+            bid_tag = BidTag(test_settings)
+            bid = Bid(test_settings)
+            for idx, tag in enumerate(tag_list):
+                try:
+                    bid_tag.get(tag)
+                    # logger.debug(str(bid_tag.message))
+                except:
+                    logger.debug(f"bid_tag: {bid_tag.message}")
+                    logger.error(f"idx: {idx} tag error: {tag},\n"
+                                f"bid_tag rule: {bid_tag.get_now}\n"
+                                f"{traceback.format_exc()}")
 
-        if default:
-            date_cut_rule = r"\d{4}([_\-年])\d{2}([_\-月])\d{2}(|日)"
-        logger.info(  # 打印结果
-            f"ruleTest time: \"{date_test}\" becomes \"{date_output}\" " +
-            f"through re: \"{date_cut_rule}\"")
+                # 测试项目信息获取
+                if _bid:
+                    bid.receive(*bid_tag.message)
+                    logger.debug(bid.message)
 
+                # 前缀树搜索
+                if _title_trie:
+                    logger.info("title_trie.search_all:\n"
+                                f"{title_trie.search_all(bid.message[0])}")
 
-    if ruleTest["next_pages"]:  # 下一页测试
-        if rule["rule"]["next_pages"]:
-            web_brows.get_next_pages(web_page, rule["rule"]["next_pages"])
-        else:
-            web_brows.get_next_pages(web_page)
-
+    # 下一页测试
+    if _next_pages:
+        web_brows.get_next_pages(url, test_settings["rule"]["next_pages"])
 
 except Exception:
     logger.error(f"test: {traceback.format_exc()}")
