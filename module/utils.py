@@ -3,15 +3,33 @@
 """
 
 import json
-from random import uniform
-import re
 import os
-import datetime as dt
-from json import loads, dumps
+import re
+from datetime import datetime as dt
+from datetime import timedelta
+from json import dumps, loads
+from random import uniform
 from time import sleep
+
 from bs4 import Tag
 
-
+_DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+__URL_FIND__ = {
+    "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ],
+    "qjc": [24, "http://www.weain.mil.cn/"]
+}
+# ASCII 码转中文
+__URL_REPLACE__ = {
+    "jdcgw": {
+        "%25E7%2589%25A9%25E8%25B5%2584": "物资",
+        "%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587": "公开招标",
+        "%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587": "邀请招标",
+        "%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4": "竞争性谈判"
+    },
+    "qjc": {
+        "%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87": "公开招标"
+    }
+}
 
 
 def deep_set(d: dict, keys: list or str, value):
@@ -77,9 +95,9 @@ def date_now_s(file_new=False) -> str:
         file_new (bool): 为True时将-变为_
     """
     if file_new:
-        return dt.datetime.now().strftime('_%Y_%m_%d-%H_%M_%S')
+        return dt.now().strftime('_%Y_%m_%d-%H_%M_%S')
     else:
-        return dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        return dt.now().strftime(_DATE_TIME_FORMAT)
 
 
 def date_days(change_days=0):
@@ -89,8 +107,29 @@ def date_days(change_days=0):
     Retruns:
         str : 返回计算后日期的字符串
     """
-    return (dt.datetime.now() + dt.timedelta(days=change_days)).strftime(
-        '%Y-%m-%d %H:%M:%S')
+    return (dt.now() + timedelta(days=change_days)).strftime(_DATE_TIME_FORMAT)
+
+
+def get_time_add(time_base=None, min=30):
+    """
+    Args:
+        min:
+        time_base:
+    Returns:
+        time_base + time_add
+    """
+    time_base = dt.strptime(time_base) if time_base else dt.now()
+    time_add = timedelta(minutes=min)
+    return (time_base + time_add).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def t1_slow_than_t2(time1, time2) -> bool:
+    """ 若time1 慢于 time2(time1在time2后) 返回True, 否则返回 False
+    """
+    if dt.strptime(time1, _DATE_TIME_FORMAT) > \
+            dt.strptime(time2, _DATE_TIME_FORMAT):
+        return True
+    return False
 
 
 def read_json(file):
@@ -131,26 +170,16 @@ def save_json(data, json_file, indent=2, creat_new=False):
     return json_file
 
 
-def save_file(file, data, mode="w"):
+def save_file(file, data, mode="w", bytes=False):
     """ 保存文件
     """
     creat_folder(file)
-    with open(file, mode, encoding="utf-8") as f:
-        f.write(data)
-
-
-__urlFind__ = {
-    "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ]
-}
-# ASCII 码转中文
-__urlRepacle__ = {
-    "jdcgw": {
-        "%25E7%2589%25A9%25E8%25B5%2584": "物资",
-        "%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587": "公开招标",
-        "%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587": "邀请招标",
-        "%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4": "竞争性谈判" 
-    }
-}
+    if bytes:
+        with open(file, "wb") as f:
+            f.write(data)
+    else:
+        with open(file, mode, encoding="utf-8") as f:
+            f.write(str(data))
 
 
 def url_to_filename(url: str):
@@ -162,14 +191,14 @@ def url_to_filename(url: str):
         url (str): 转换后的网址,可作为文件名
     """
     # 将 / 替换成 空格 因为网址中不会有空格
-    if len(url) > 150:  # 部分网址有可能过长, windows文件名不能超过179个字符
-        pass
-        for key, value in __urlFind__.items():
+    if len(url) > 100:  # 部分网址有可能过长, windows文件名不能超过179个字符
+        for key, value in __URL_FIND__.items():
             if url[:value[0]] == value[1]:
                 url = url.replace(url[:value[0]], "")
-                for ascii, chn in __urlRepacle__[key].items():
+                for ascii, chn in __URL_REPLACE__[key].items():
                     url = url.replace(ascii, chn)
-    url = url[url.find(".") + 1:].replace("/", " ").replace("?","")
+    url = url[url.find(".") + 1:].replace("/", " ").replace("?", " ").replace(
+        ":", " ")
     url = f"{url}.html"
     return url
 
@@ -201,6 +230,11 @@ def str_list(output_list, level=1, add_idx=False):
     return output, len(output)
 
 
+def str_dict(output_dict: dict):
+    data = "  "
+    for key, value in output_dict.items():
+        data = f"{data}{key}: {value}\n  "
+    return data.rstrip()
 def re_options_print(options):
     """
     打印 re.S re.M 的值
@@ -235,30 +269,28 @@ def creat_folder(file):
 
 
 def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
-    return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii ,
-        sort_keys=sort_keys)
+    return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii,
+                      sort_keys=sort_keys)
 
 
 def sleep_ramdom(time_range: tuple = (1.7, 3), message: str = None):
     """ 在随机范围内sleep, 并带有提示, 默认为1.5秒到3秒内
     """
     from module.log import logger
-    if message:
-        print(message)
     sleep_time = uniform(*time_range)
+    if message:
+        print(f"wait {sleep_time} s,{message}")
     logger.info(f"sleep {sleep_time}")
     sleep_idx = int(sleep_time)
-    for idx in range(1, sleep_idx+1):
+    for idx in range(1, sleep_idx + 1):
         print(f"sleep {idx} now")
         sleep(1)  # TODO 后期换成定时器
     print(f"sleep {sleep_time} now")
     sleep(sleep_time - sleep_idx)
     print("sleep end")
-    
 
 
 if __name__ == "__main__":
     # 本模块测试
-    web_page = r"http://www.365trade.com.cn/zhwzb/390964.jhtml"
-    print(url_to_filename(web_page))
+    # test code
     pass
