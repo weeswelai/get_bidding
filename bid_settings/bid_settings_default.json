@@ -1,6 +1,6 @@
 {
   "task": {
-    "queue": [
+    "list": [
       "zzlh",
       "hkgy",
       "jdcg"
@@ -8,27 +8,30 @@
     "test": [
       "zzlh",
       "hkgy",
-      "jdcg"
+      "jdcg",
+      "zhzb"
     ],
-    "run_time": "2022-12-21 17:33:34",
+    "run_time": "",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt"
   },
   "zzlh": {
     "nextRunTime": "",
-    "stateQueue": [],
-    "stateComplete": [
+    "stateQueue": [
       "state1",
       "state2"
     ],
-    "url": {
-      "root": {
-        "default": "http://www.365trade.com.cn"
-      },
+    "stateComplete": [],
+    "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       ],
-      "cookie": []
+      "Cookie": []
+    },
+    "urlConfig": {
+      "root": {
+        "default": "http://www.365trade.com.cn"
+      }
     },
     "rule": {
       "cut": {
@@ -54,7 +57,7 @@
         "date": "",
         "url": ""
       },
-      "interruptUrl": "",
+      "interruptUrl": "http://www.365trade.com.cn/zbgg/index_8.jhtml?typeId=102",
       "interrupt": {
         "name": "",
         "date": "",
@@ -85,7 +88,7 @@
         "date": "",
         "url": ""
       },
-      "complete": "complete"
+      "complete": ""
     }
   },
   "hkgy": {
@@ -94,14 +97,16 @@
     "stateComplete": [
       "state1"
     ],
-    "url": {
-      "root": {
-        "default": "https://ebid.eavic.com"
-      },
+    "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       ],
-      "cookie": []
+      "Cookie": []
+    },
+    "urlConfig": {
+      "root": {
+        "default": "https://ebid.eavic.com"
+      }
     },
     "rule": {
       "cut": {
@@ -149,14 +154,16 @@
       "state2",
       "state3"
     ],
-    "url": {
-      "root": {
-        "default": "https://www.plap.cn"
-      },
+    "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       ],
-      "cookie": []
+      "Cookie": []
+    },
+    "urlConfig": {
+      "root": {
+        "default": "https://www.plap.cn"
+      }
     },
     "rule": {
       "cut": {
@@ -213,10 +220,130 @@
         "date": "",
         "url": ""
       },
-      "complete": "complete"
+      "complete": ""
     },
     "state3": {
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate=",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": ""
+    }
+  },
+  "qjc": {
+    "nextRunTime": "",
+    "stateQueue": [
+      "state1"
+    ],
+    "stateComplete": [],
+    "headers": {
+      "User-Agent": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+      ],
+      "Cookie": []
+    },
+    "urlConfig": {
+      "root": {
+        "default": "http://www.weain.mil.cn"
+      }
+    },
+    "rule": {
+      "cut": {
+        "re_rule": ".*",
+        "rule_option": 16
+      },
+      "next_pages": "(?<=pageNo\\=)\\d{1,3}",
+      "tag_list": "list.contentList",
+      "bid_tag": {
+        "name_r": ":nonSecretTitle|",
+        "date_r": ":publishTime|",
+        "url_r": ":pcUrl|",
+        "type_r": ":purchaseType|"
+      },
+      "bid": {
+        "date_cut": null
+      }
+    },
+    "state1": {
+      "url": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231276155707394&pageNo=1&purchaseType=%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": ""
+    }
+  },
+  "zhzb": {
+    "nextRunTime": "",
+    "stateQueue": [
+      "state1"
+    ],
+    "stateComplete": [],
+    "headers": {
+      "User-Agent": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+      ],
+      "Cookie": []
+    },
+    "urlConfig": {
+      "root": {
+        "default": "http://bid.aited.cn"
+      },
+      "method": "POST"
+    },
+    "rule": {
+      "cut": {
+        "re_rule": "<li>.*?(?=,)",
+        "rule_option": 16
+      },
+      "next_pages": "",
+      "tag_list": "li",
+      "bid_tag": {
+        "name_r": "tagName_find:a|title:",
+        "date_r": "tagName_find:div.span|_Text:",
+        "url_r": "tagName_find:a|href:",
+        "type_r": ""
+      },
+      "bid": {
+        "name_cut": "(?<=\").*?(?=\\\\)",
+        "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)",
+        "url_cut": "(?<=\\.\\.).*?(?=\\\\)"
+      }
+    },
+    "state1": {
+      "url": {
+        "url": "http://bid.aited.cn/front/ajax_getBidList.do",
+        "form": {
+          "classId": 151,
+          "key": -1,
+          "page": 2
+        }
+      },
       "newest": {
         "name": "",
         "date": "",
@@ -242,14 +369,17 @@
       "state1"
     ],
     "stateComplete": [],
-    "url": {
-      "root": {
-        "default": ""
-      },
+    "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       ],
-      "cookie": []
+      "Cookie": []
+    },
+    "urlConfig": {
+      "root": {
+        "default": ""
+      },
+      "method": "GET 或 POST, 若为GET可不写method"
     },
     "rule": {
       "cut": {
