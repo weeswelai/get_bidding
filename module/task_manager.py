@@ -6,13 +6,6 @@ RUN_TIME_START = "2022-01-01 00:00:00"
 
 
 class TaskQueue(list):
-
-    def __next__(self):
-        if self:
-            return self[0]
-        else:
-            raise StopIteration
-
     def pop_q(self) -> BidTask:
         if self:
             return self.pop(0)
