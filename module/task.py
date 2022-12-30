@@ -17,7 +17,8 @@ from module.web_brows import *
 from module.utils import *
 
 data_path = r"./data"
-
+RE_OPEN_MAX = 6
+SAVE_ERROR_MAX = 2
 
 class BidState:
     class Complete:
@@ -38,7 +39,7 @@ class BidState:
                 self.end_rule["date"] = date_days(change_days=-6)
             if len(self.end_rule["date"]) <= 10:
                 self.end_rule["date"] = self.end_rule["date"] + " 00:00:00"
-
+            # TODO end_rule 不能超过6天
             logger.info(f"json: {self.state_idx}.complete = "
                         f"\"{deep_get(self.settings, 'complete')}"
                         f"\"\nend_rule : {self.end_rule}")
@@ -84,6 +85,9 @@ class BidState:
             deep_set(self.settings, "complete", "interrupt")  # 启动后状态设为interrupt
             self.newest = True
 
+        def set_interrupt_url(self, list_url):
+            deep_set(self.settings, "interruptUrl", list_url)
+
         def set_interrupt(self, list_url, bid):
             """ 在BidTask._process_tag_list中调用,若开始标志(self.start==True)
             则保存list_url 到 self.settings["interruptUrl"]
@@ -99,7 +103,7 @@ class BidState:
                 bid (web_brows.Bid): 当前Bid对象
             """
             if self.start:
-                deep_set(self.settings, "interruptUrl", list_url)
+                self.set_interrupt_url(list_url)
                 deep_set(self.settings, "interrupt", _bid_to_dict(bid))
 
         def return_start_url(self) -> str or dict:
@@ -191,10 +195,7 @@ class BidState:
         else:
             return cls.Complete(settings, state_idx)
 
-
-# TODO 初始化和 State 初始化, 以及 state重新初始化
-class BidTask:
-    settings: dict  # 初始化新的State时用到
+class BidTaskInit:
     state_idx: str  # init at _get_state  "state1" or "state2"
     State: BidState.Complete or BidState.InterruptState
     bid: Bid
@@ -206,6 +207,7 @@ class BidTask:
     match_list_file = None
     list_url: str = None
     bid_tag_error = 0
+    error_open = True
 
     def __init__(self, settings, task_name="test") -> None:
         self.settings = settings  # zzlh:{}
@@ -241,6 +243,9 @@ class BidTask:
         self.list_file.write(f"start at {date_now_s()}\n")
         self.match_list_file.write(f"start at {date_now_s()}\n")
 
+
+# TODO 初始化和 State 初始化, 以及 state重新初始化
+class BidTask(BidTaskInit):
     def close(self):
         self.list_file.close()
         self.match_list_file.close()
@@ -251,7 +256,7 @@ class BidTask:
         """
         if queue:
             self.state_idx = queue[0]
-            logger.info(f"BidTask._get_state_idx = {self.state_idx}")
+            logger.info(f"{self.task_name}._get_state_idx = {self.state_idx}")
             return True
         else:
             logger.info(f"{self.task_name}.queue is []")
@@ -265,10 +270,10 @@ class BidTask:
         Returns:
             (bool): 初始化完成返回 True ,失败返回 False 
         """
-        logger.info("BidTask.init_state")
+        logger.hr(f"{self.task_name}.init_state", 3)
         # 若queue中还有state
         if self._get_state_idx(deep_get(self.settings, "stateQueue")):
-            self.State: BidState.Complete = BidState.init(
+            self.State = BidState.init(
                 self.settings[self.state_idx], self.state_idx)
             self.State.print_state_at_start()
 
@@ -286,10 +291,13 @@ class BidTask:
         """
         logger.hr("BidTask.restart", 3)
         queue = deep_get(self.settings, "stateQueue")
-        complete = deep_get(self.settings, "stateComplete")
+        complete = deep_get(self.settings, "stateWait")
         queue += complete
-        deep_set(self.settings, "stateComplete", [])
+        deep_set(self.settings, "stateWait", [])
+        for state in queue:
+            deep_set(self.settings, f"{state}.error", False)
         logger.info(f"queue: {queue}")
+        
 
     def process_next_list_web(self):
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
@@ -301,12 +309,7 @@ class BidTask:
         self._get_next_list_url()
 
         # 打开项目列表页面, 获得 self.web_brows.html_list_match
-        try:
-            self._open_list_url(self.list_url)
-        except AssertionError:
-            logger.error(f"{traceback.format_exc()}")
-            # TODO 这里需要一个保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
-            return "open_list_url_error"
+        self._open_list_url(self.list_url)
 
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
         self.tag_list = self.web_brows.get_tag_list()
@@ -316,8 +319,8 @@ class BidTask:
             logger.info("no match")
         if self.State.state == "complete":
             self._complete_state()
-            return "complete"
-        return "continue"
+            return False  # state结束
+        return True  # state继续
 
     def _get_next_list_url(self):
         """ 获得下次打开的 url 保存在self.list_url
@@ -332,24 +335,37 @@ class BidTask:
             self.list_url = self.web_brows.get_next_pages(self.list_url)
 
     # TODO 写的很*,记得重写, 且需要改成重试次数过多(6次以上)后将任务延迟
-    def _open_list_url(self, url, reOpen=0):
+    def _open_list_url(self, url, reOpen=0, save_error=0):
         """ 封装web_brows行为,打开浏览页面，获得裁剪后的页面源码
         """
+        from bid_run import bidTaskManager
+        bidTaskManager.web_break()
         logger.hr("BidTask._open_list_url", 3)
+        self.error_open = False
         try:  # 在打开网页后立刻判断网页源码是否符合要求
             self.web_brows.open(url=url)
-            self.web_brows.cut_html()
-        except Exception:
+        except AssertionError:
             # TODO 识别出错的网页
             logger.error(f"{traceback.format_exc()}")
-            self.web_brows.save_response(save_date=True, extra="list_Error")
-            logger.info(f"cut html error, open {self.list_url} again"
-                        f"\nreOpen: {reOpen + 1}")
-            if reOpen < 3:
+            self.error_open = True
+        else:
+            try:
+                self.web_brows.cut_html()
+            except Exception:
+                self.error_open = True
+                if save_error < SAVE_ERROR_MAX:
+                    self.web_brows.save_response(
+                        save_date=True, extra="cut_Error")
+                    logger.info(f"cut html error, open {self.list_url} again"
+                            f"\nreOpen: {reOpen + 1}")
+        if self.error_open:
+            if reOpen < RE_OPEN_MAX:
                 reOpen += 1
                 sleep(2)  # TODO 换定时器
-                self._open_list_url(url, reOpen)
-            assert reOpen < 3, f"{self.list_url} open more than {reOpen} time"
+                self._open_list_url(url, reOpen, save_error)
+
+            assert reOpen < RE_OPEN_MAX, \
+                f"{self.list_url} open more than {RE_OPEN_MAX} time"
 
     def _process_tag_list(self):
         """ 遍历处理 self.tag_list
@@ -369,6 +385,7 @@ class BidTask:
                 self.State.save_newest_and_interrupt(self.bid)
             if not self.State.start:
                 if not self.State.bid_is_start(self.bid):
+                    self.State.set_interrupt_url(self.list_url)
                     continue
 
             self.State.set_interrupt(self.list_url, self.bid)
@@ -418,19 +435,27 @@ class BidTask:
             self.match_list_file.write(f"{str(result)}\n")
             self.match_num += 1
 
+    def _state_queue_move(self):
+        queue = deep_get(self.settings, "stateQueue")
+        complete = deep_get(self.settings, "stateWait")
+        complete.append(queue.pop(0))
+        deep_set(self.settings, "stateQueue", queue)
+        deep_set(self.settings, "stateWait", complete)
+        return queue, complete
+
     def _complete_state(self):
         """ 将json中 queue 头元素出队,添加到complete中
         """
-        queue = deep_get(self.settings, "stateQueue")
-        complete = deep_get(self.settings, "stateComplete")
-        complete.append(queue.pop(0))
-        deep_set(self.settings, "stateQueue", queue)
-        deep_set(self.settings, "stateComplete", complete)
+        queue, complete = self._state_queue_move()
         logger.info(f"{self.state_idx} complete, queue: {queue}\n"
                     f"complete: {complete}")
         if queue:
             self.state_idx = queue[0]
 
+    def set_error_state(self):
+        deep_set(self.settings, 
+                    f"{self.state_idx}.error", f"{self.State.state}Error")
+        self._state_queue_move()
 
 def _date_is_end(date: str, end_date: str, date_len):
     """ 

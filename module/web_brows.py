@@ -42,6 +42,7 @@ class BidTag:
 
     def __init__(self, settings=None):
         # settings: 整个task 的settings
+        logger.hr("BidTag.__init__", 3)
         if settings:
             rule: dict = settings["rule"]["bid_tag"]
             for li_r, value in rule.items():
@@ -183,12 +184,12 @@ class Bid:
         Args:
             settings:
         """
+        logger.hr("Bid.__init__", 3)
         if settings:
             rule = settings["rule"]["bid"]
             for r in rule:
-                logger.debug(f"rule: {r}")
                 setattr(self, r, init_re(rule[r]))
-                logger.debug(getattr(self, r))
+                logger.debug(f"rule init {r}: {getattr(self, r)}")
             self.url_root = deep_get(settings, "urlConfig.root")
 
     def receive(self, *args):
@@ -269,6 +270,7 @@ class ListWebBrows:
             Args:
                 settings (dict): 需要整个task的settings
             """
+            logger.hr(f"{type(self)} __init__", 3)
             if settings:
                 method = settings["urlConfig"]["method"] \
                     if "method" in settings["urlConfig"] else "GET"

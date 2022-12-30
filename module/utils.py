@@ -273,7 +273,7 @@ def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
                       sort_keys=sort_keys)
 
 
-def sleep_ramdom(time_range: tuple = (1.7, 3), message: str = None):
+def sleep_random(time_range: tuple = (1.7, 3), message: str = None):
     """ 在随机范围内sleep, 并带有提示, 默认为1.5秒到3秒内
     """
     from module.log import logger
@@ -289,6 +289,9 @@ def sleep_ramdom(time_range: tuple = (1.7, 3), message: str = None):
     sleep(sleep_time - sleep_idx)
     print("sleep end")
 
+def time_difference_second(time1, time2):
+    return (dt.strptime(time1, "%Y-%m-%d %H:%M:%S") - 
+            dt.strptime(time2, "%Y-%m-%d %H:%M:%S")).seconds
 
 if __name__ == "__main__":
     # 本模块测试
