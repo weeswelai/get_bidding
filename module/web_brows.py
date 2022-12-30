@@ -159,7 +159,7 @@ def _parse_json_rule(tag: list or dict,
         str or None
     """
     if isinstance(tag, dict):
-        return deep_get(tag, key_find)
+        return deep_get(tag, list_idx)
     elif isinstance(tag, list):
         return tag[list_idx]
 
@@ -270,7 +270,7 @@ class ListWebBrows:
             Args:
                 settings (dict): 需要整个task的settings
             """
-            logger.hr(f"{type(self)} __init__", 3)
+            logger.hr(f"{type(self).__name__}.__init__", 3)
             if settings:
                 method = settings["urlConfig"]["method"] \
                     if "method" in settings["urlConfig"] else "GET"
