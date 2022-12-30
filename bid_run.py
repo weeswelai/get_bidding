@@ -25,8 +25,6 @@ newFlag = False
 bidTaskManager = TaskManager(settings_json,
                              creat_new=(True if newFlag else False))
 
-# TODO
-# 写一个死循环,任务调度器不断读取任务队列，进行翻页，读取网页内容
 if __name__ == "__main__":
     if runFlag:
         try:

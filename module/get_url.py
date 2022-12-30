@@ -80,7 +80,6 @@ class UrlOpen:
         open_error = None
         try:
             self.url_response = urlreq.urlopen(req, timeout=timeout).read()
-        # TODO 超时的异常捕获
         except (urlerr.HTTPError, urlerr.URLError) as url_error:
             logger.error(
                 f"open {req.full_url} Failed HTTPError: {url_error}\n"
@@ -88,7 +87,7 @@ class UrlOpen:
                 f"req: url: {req.full_url}\nheaders: {jsdump(req.headers)}\n"
                 f"method: {req.method}, data:{req.data}")         
             open_error = url_error
-            # exit(1)  # 未来可能不终止
+            # exit(1)
         assert open_error is None, open_error  # raise 给上级抛出异常
         return self.url_response
 

@@ -39,7 +39,7 @@ class BidState:
                 self.end_rule["date"] = date_days(change_days=-6)
             if len(self.end_rule["date"]) <= 10:
                 self.end_rule["date"] = self.end_rule["date"] + " 00:00:00"
-            # TODO end_rule 不能超过6天
+            # TODO end_rule 和现在的日期不能超过6天,若超过,则修改为与现在日期差6天的值
             logger.info(f"json: {self.state_idx}.complete = "
                         f"\"{deep_get(self.settings, 'complete')}"
                         f"\"\nend_rule : {self.end_rule}")
@@ -244,7 +244,6 @@ class BidTaskInit:
         self.match_list_file.write(f"start at {date_now_s()}\n")
 
 
-# TODO 初始化和 State 初始化, 以及 state重新初始化
 class BidTask(BidTaskInit):
     task_end = False  # 由 pywebio设置
 
@@ -361,7 +360,7 @@ class BidTask(BidTaskInit):
         if self.error_open:
             if reOpen < RE_OPEN_MAX:
                 reOpen += 1
-                sleep(2)  # TODO 换定时器
+                sleep_random((1.4, 2))
                 self._open_list_url(url, reOpen, save_error)
 
             assert reOpen < RE_OPEN_MAX, \

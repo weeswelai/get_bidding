@@ -1,22 +1,11 @@
 """
  本模块的功能为
  对于一个招标网站的 招标项目列表 的 页面 有如下操作
- 1. 解析当前页面，记录第一个招标项目的 标题、日期，交给任务调度做判断
-    1.1 若第一个项目为新发布的项目，继续，若不为新项目，则回到任务调度进行下一任务
-    1.2 这里需要记录一些关于第一个招标项目的信息，储存在json中
- 2. 遍历列表中的标题，对于标题，招标类型符合条件的(调用判断模块)
-    2.1 交给任务调度模块判断是否已经获取过，若已获取过则停止并返回任务调度进行下一任务
-    若没获取过则继续
-    在 bid_web_brows 里调用bid_task 
-    或 在 bid_task 里得到bid_web_brows 的返回值
-    或 在 bid_task 里使用全局变量(全局对象)
-    同时 对符合条件的
-    (这里不确定是先交给任务调度判断是否已获取过还是先判断是否符合条件)
-    2.2 记录符合条件的项目 的 url 、 标题 、 时间 储存到文件中(可能会用到数据库)
-    2.3 打开符合条件的项目的页面 、 调用页面模块对项目页面进行读取，由于涉及到访问频率，
-        此处可能要返回给任务调度，由任务调度来打开项目页
- 3. 返回任务调度，任务调度执行翻到下一页(涉及访问频率)
- 4. 由任务调度来循环 1~3
+ 1. 解析页面, 裁剪页面
+ 2. 用bs4解析html源码
+ 3. 解析招标项目所在的tag
+ 4. 获得招标信息
+
 """
 import json
 import re
@@ -48,6 +37,7 @@ class BidTag:
             for li_r, value in rule.items():
                 self._init_list_rule(li_r, value)
 
+    # TODO 解析规则这部分有点*,记得重写一下
     def _init_list_rule(self, li_r, rule: str):
         """ 将rule以 | 和 : 分隔, 最终得到一个元组,详细说明参考web_brows_test.py
             解析rule, 设置属性值
@@ -182,7 +172,7 @@ class Bid:
         """ 定义项目对象,
 
         Args:
-            settings:
+            settings (dict): 需要一整个task的设置
         """
         logger.hr("Bid.__init__", 3)
         if settings:
@@ -360,10 +350,13 @@ class ListWebBrows:
 
         def url_time(self):
             """ 只在以complete状态开始的任务获取开始网址时调用一次
+                在qjc的网址后面
             """
             return f"&_t={str(time()).replace('.', '')[:13]}"
 
         def cut_html(self, *args):
+            """ 用json.loads将字符串转换为dict
+            """
             logger.info("web_brows.Qjc.cut_html")
             self.html_cut = json.loads(self.response)
 
