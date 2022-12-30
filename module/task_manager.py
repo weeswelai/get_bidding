@@ -31,7 +31,7 @@ class TaskQueue(list):
             return None
 
     def insert_task(self, task: BidTask):
-        """ 选择插入位置
+        """ 任务插入队列中,按nexRunTime排序
         """
         if not self:
             self.append(task)
@@ -207,7 +207,7 @@ class TaskManager:
             # 任务执行
             self.web_break()
             self.task_run()
-            self.run_queue.insert_task()
+            self.run_queue.insert_task(self.task)
 
     def sleep(self, nex_run_tieme: int):
         time_sleep = time_difference_second(nex_run_tieme, date_now_s())
