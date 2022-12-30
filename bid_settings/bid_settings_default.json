@@ -1,9 +1,7 @@
 {
   "task": {
     "list": [
-      "zzlh",
-      "hkgy",
-      "jdcg"
+      "zzlh"
     ],
     "test": [
       "zzlh",
@@ -11,17 +9,17 @@
       "jdcg",
       "zhzb"
     ],
-    "run_time": "",
+    "run_time": "2022-12-30 11:05:38",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt"
   },
   "zzlh": {
-    "nextRunTime": "",
+    "nextRunTime": "2022-12-22 12:06:16",
     "stateQueue": [
       "state1",
       "state2"
     ],
-    "stateComplete": [],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -57,7 +55,7 @@
         "date": "",
         "url": ""
       },
-      "interruptUrl": "http://www.365trade.com.cn/zbgg/index_8.jhtml?typeId=102",
+      "interruptUrl": "",
       "interrupt": {
         "name": "",
         "date": "",
@@ -68,7 +66,8 @@
         "date": "",
         "url": ""
       },
-      "complete": ""
+      "complete": "",
+      "error": false
     },
     "state2": {
       "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=103",
@@ -88,13 +87,14 @@
         "date": "",
         "url": ""
       },
-      "complete": ""
+      "complete": "complete",
+      "error": false
     }
   },
   "hkgy": {
-    "nextRunTime": "",
+    "nextRunTime": "2022-12-22 12:06:54",
     "stateQueue": [],
-    "stateComplete": [
+    "stateWait": [
       "state1"
     ],
     "headers": {
@@ -143,13 +143,14 @@
         "date": "",
         "url": ""
       },
-      "complete": "complete"
+      "complete": "",
+      "error": false
     }
   },
   "jdcg": {
     "nextRunTime": "",
     "stateQueue": [],
-    "stateComplete": [
+    "stateWait": [
       "state1",
       "state2",
       "state3"
@@ -200,7 +201,8 @@
         "date": "",
         "url": ""
       },
-      "complete": ""
+      "complete": "",
+      "error": false
     },
     "state2": {
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
@@ -220,7 +222,8 @@
         "date": "",
         "url": ""
       },
-      "complete": ""
+      "complete": "",
+      "error": false
     },
     "state3": {
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate=",
@@ -240,7 +243,8 @@
         "date": "",
         "url": ""
       },
-      "complete": ""
+      "complete": "",
+      "error": false
     }
   },
   "qjc": {
@@ -248,7 +252,7 @@
     "stateQueue": [
       "state1"
     ],
-    "stateComplete": [],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -295,15 +299,16 @@
         "date": "",
         "url": ""
       },
-      "complete": ""
+      "complete": "",
+      "error": false
     }
   },
   "zhzb": {
-    "nextRunTime": "",
+    "nextRunTime": "2022-01-01 00:00:00",
     "stateQueue": [
       "state1"
     ],
-    "stateComplete": [],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -357,10 +362,11 @@
       },
       "end_rule": {
         "name": "",
-        "date": "",
+        "date": "2022-12-21 00:46:04",
         "url": ""
       },
-      "complete": ""
+      "complete": "",
+      "error": false
     }
   },
   "default": {
@@ -368,7 +374,7 @@
     "stateQueue": [
       "state1"
     ],
-    "stateComplete": [],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -416,7 +422,8 @@
         "date": "",
         "url": ""
       },
-      "complete": ""
+      "complete": "",
+      "error": false
     }
   }
 }

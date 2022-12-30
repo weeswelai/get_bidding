@@ -27,7 +27,5 @@ if __name__ == "__main__":
     if runFlag:
         try:
             bidTaskManager.loop()
-            pass
         except KeyboardInterrupt:
             bidTaskManager.exit()
-    # _ = input("enter any key to exit")
