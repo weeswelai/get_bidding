@@ -13,8 +13,8 @@ from bs4 import Tag
 
 from module.judge_content import title_trie
 from module.log import logger
-from module.web_brows import *
 from module.utils import *
+from module.web_brows import *
 
 data_path = r"./data"
 RE_OPEN_MAX = 6
@@ -246,6 +246,8 @@ class BidTaskInit:
 
 # TODO 初始化和 State 初始化, 以及 state重新初始化
 class BidTask(BidTaskInit):
+    task_end = False  # 由 pywebio设置
+
     def close(self):
         self.list_file.close()
         self.match_list_file.close()
@@ -279,10 +281,8 @@ class BidTask(BidTaskInit):
 
             self.list_file.write(f"{self.state_idx}\n")
             self.match_list_file.write(f"{self.state_idx}\n")
-
             self.list_url = None
-
-            logger.hr(f"state start: {self.state_idx[-1]}", 3)
+            
             return True
         return False
 
@@ -297,7 +297,6 @@ class BidTask(BidTaskInit):
         for state in queue:
             deep_set(self.settings, f"{state}.error", False)
         logger.info(f"queue: {queue}")
-        
 
     def process_next_list_web(self):
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
@@ -338,8 +337,9 @@ class BidTask(BidTaskInit):
     def _open_list_url(self, url, reOpen=0, save_error=0):
         """ 封装web_brows行为,打开浏览页面，获得裁剪后的页面源码
         """
-        from bid_run import bidTaskManager
-        bidTaskManager.web_break()
+        if self.task_end:  # webio将task_end置为True后中断
+            from bid_run import bidTaskManager
+            bidTaskManager.web_break()
         logger.hr("BidTask._open_list_url", 3)
         self.error_open = False
         try:  # 在打开网页后立刻判断网页源码是否符合要求
@@ -418,6 +418,8 @@ class BidTask(BidTaskInit):
             self.bid_tag_error += 1
             if self.bid_tag_error > 5:
                 logger.error("too many bid.receive error")
+                self.web_brows.save_response(rps=self.web_brows.bs, 
+                    save_date=True, extra="receiveError")
                 raise KeyboardInterrupt
             return False
         return True
@@ -492,12 +494,14 @@ def _bid_to_dict(bid_prj=None):
 if __name__ == "__main__":
     json_file = "./bid_settings/bid_settings.json"
     json_set = read_json(json_file)
-    bid_task_name = "zzlh"
-    bid_task_test = BidTask(json_set[bid_task_name])
+    bid_task_name = "qjc"
+    bid_task_test = BidTask(json_set[bid_task_name], bid_task_name)
 
     # test code
     try:
         bid_task_test.restart()
+        bid_task_test.init_state()
+        bid_task_test.process_next_list_web()
     # use Ctrl + C exit
     except KeyboardInterrupt:
         pass

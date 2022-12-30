@@ -36,12 +36,14 @@ class TaskQueue(list):
         if not self:
             self.append(task)
             return None
+        end = False
         for idx, t in enumerate(self):
             if t1_slow_than_t2(t.nextRunTime, task.nextRunTime):
                 break
             else:
+                end = True
                 continue
-        if self.__len__() == 1:
+        if self.__len__() == 1 and end:
             idx = 1
         self.insert(idx, task)
         return idx
@@ -70,6 +72,8 @@ class RunQueue(TaskQueue):
             self.set_next_run_time(task)
             self.insert_task(task)
         self.print_all_next_time()
+        self.print_queue()
+        pass
 
     def set_next_run_time(self, task: BidTask):
         # 判断 "nextRunTime", 若没有值则写入默认起始时间
@@ -86,7 +90,12 @@ class RunQueue(TaskQueue):
             return True
         else:
             return False
-
+    
+    def print_queue(self):
+        task_queue = []
+        for task in self:
+            task_queue.append(task.task_name)
+        logger.info(f"queue: {task_queue}")
 
 class TaskManager:
     task_name: str = None
@@ -95,6 +104,7 @@ class TaskManager:
     last_task_state = None
     restart: bool = False
     break_ = False
+    task: BidTask
 
     def __init__(self, json_file, save=True, creat_new=False):
         """ 读取json_file; 设置 settings, json_file , queue
@@ -114,33 +124,34 @@ class TaskManager:
         
 
     # TODO 写得很*, 重写
-    def task_run(self, task: BidTask):
+    def task_run(self):
         """ 完成一个任务
         """
-        logger.hr(f"{task.task_name}.task_run", 1)
-        # logger.info(f"run {task.task_name}")
-        if not task.settings["stateQueue"]:
-            task.restart()
+        logger.hr(f"{self.task.task_name}.task_run", 1)
         
-        while task.init_state():  # task 按stateQueue顺序完成state
+        if not self.task.settings["stateQueue"]:
+            self.task.restart()
+        self.task.task_end = False
+        
+        while self.task.init_state():  # task 按stateQueue顺序完成state
             self.web_break()
-            state_result = self.state_run(task)
+            state_result = self.state_run()
         min_delay = MIN_DELAY if state_result else ERROR_DELAY
         nextRunTime = get_time_add(min=min_delay)
-        deep_set(task.settings, "nextRunTime", nextRunTime)
-        task.nextRunTime = nextRunTime
+        deep_set(self.task.settings, "nextRunTime", nextRunTime)
+        self.task.nextRunTime = nextRunTime
         logger.info(f"task {self.task_name}" f"next run time: {nextRunTime}")
 
-    def state_run(self, task: BidTask):
+    def state_run(self):
         """完成一个state"""
-        logger.hr(f"{task.task_name}.task_run", 2)
+        logger.hr(f"{self.task.state_idx}.state_run", 2)
         while 1:
             self.web_break()
             try:
-                state_result = task.process_next_list_web()
+                state_result = self.task.process_next_list_web()
                 self.web_break()
             except AssertionError:  # from task.BidTask._open_list_url
-                task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
+                self.task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
                 # TODO 一个网址错误次数过多后,将整个任务延迟, 继续下一个state
@@ -152,7 +163,7 @@ class TaskManager:
                 sleep_random(message="you can use 'Ctrl  C' stop now")
                 # yield True
             else:
-                logger.info(f"{task.task_name} {task.state_idx} is complete")
+                logger.info(f"{self.task.task_name} {self.task.state_idx} is complete")
                 return True
 
     def task_complete(self):
@@ -169,40 +180,42 @@ class TaskManager:
     def exit(self):
         logger.hr("TaskManager.exit")
         save_json(self.settings, self.json_file)
-        for task in self.run_queue:
-            task: BidTask
-            task.close()
+        if hasattr(self, "run_queue"):
+            for task in self.run_queue:
+                task: BidTask
+                task.close()
 
     def loop(self):
         """ 死循环, 等待、完成 task.list内的任务
         """
-        self.run_queue = RunQueue(self.settings)
-        logger.info(f"task.list: {self.settings['task']['list']}")
         if self.restart:
                 self.break_ = self.restart = False
                 self.settings = read_json(self.json_file)
-                
+        logger.info(f"task.list: {self.settings['task']['list']}")
+        self.run_queue = RunQueue(self.settings)
+        self.run_queue.print_queue()
         if not self.run_queue:
             logger.info(f"json: task.list is {self.run_queue}")
             raise WebBreak
         while 1:
             # 判断 TimerQueue第一个任务是否可执行
             if self.run_queue.next_task_ready():
-                task = self.run_queue.pop_q()
+                self.task = self.run_queue.pop_q()
             else:
                 # 阻塞sleep定时
                 self.sleep(self.run_queue[0].nextRunTime)
                 continue
             # 任务执行
             self.web_break()
-            self.task_run(task)
-            self.run_queue.insert_task(task)
+            self.task_run()
+            self.run_queue.insert_task()
 
     def sleep(self, nex_run_tieme: int):
         time_sleep = time_difference_second(nex_run_tieme, date_now_s())
         interval = 5
         self.sleep_now = True
         while 1:
+            self.web_break()
             if time_sleep:
                 sleep(interval)
                 time_sleep -= interval
