@@ -9,11 +9,12 @@ from module.log import logger
 from module.task import BidTask
 from module.utils import *
 
-RUN_TIME_START = "2022-01-01 00:00:00"
-MIN_DELAY = 30
-ERROR_DELAY = 5
+RUN_TIME_START = "2022-01-01 00:00:00"  # 默认下次运行时间
+MIN_DELAY = 30  # 默认延迟时间 30分钟
+ERROR_DELAY = 5  # 网页打开次数过多时延迟时间
 
 
+# webio点击stop按钮时引发的异常
 class WebBreak(Exception):
     pass
 
@@ -25,6 +26,7 @@ class TaskQueue(list):
     print_all_next_time : 
     """
     def pop_q(self) -> BidTask:
+        """出队第一个元素"""
         if self:
             return self.pop(0)
         else:
@@ -49,6 +51,7 @@ class TaskQueue(list):
         return idx
 
     def print_all_next_time(self):
+        """依次输出队列下次运行时间"""
         log = ""
         if self:
             for t in self:
@@ -81,8 +84,8 @@ class RunQueue(TaskQueue):
             deep_set(task.settings, "nextRunTime", RUN_TIME_START)
             task.nextRunTime = RUN_TIME_START
 
-    def next_task_ready(self):
-        """ 若第一个任务时间到了执行时间,出队该任务
+    def next_task_ready(self) -> bool:
+        """ 若第一个任务时间到了执行时间则返回True
         """
         task: BidTask = self[0]
         logger.info(f"first task {task.task_name} nextRunTime: {task.nextRunTime}")
@@ -92,19 +95,22 @@ class RunQueue(TaskQueue):
             return False
     
     def print_queue(self):
+        """输出当前list里所有任务名"""
         task_queue = []
         for task in self:
             task_queue.append(task.task_name)
         logger.info(f"queue: {task_queue}")
 
+
 class TaskManager:
-    task_name: str = None
-    match_list: list = None
+    task_name: str = None   # 任务名
+    match_list: list = None  
     state: str = None
     last_task_state = None
     restart: bool = False
     break_ = False
     task: BidTask
+    run_queue: RunQueue
 
     def __init__(self, json_file, save=True, creat_new=False):
         """ 读取json_file; 设置 settings, json_file , queue
@@ -121,7 +127,6 @@ class TaskManager:
         if save:  # 当前文件，可选是否保存新副本
             self.json_file = save_json(self.settings, json_file,
                                        creat_new=creat_new)
-        
 
     # TODO 写得很*, 重写
     def task_run(self):
@@ -129,7 +134,7 @@ class TaskManager:
         """
         logger.hr(f"{self.task.task_name}.task_run", 1)
         
-        if not self.task.settings["stateQueue"]:
+        if not self.task.settings["stateQueue"]:  # 若为空,重新写入stateQueue
             self.task.restart()
         self.task.task_end = False
         
@@ -138,6 +143,7 @@ class TaskManager:
             state_result = self.state_run()
         min_delay = MIN_DELAY if state_result else ERROR_DELAY
         nextRunTime = get_time_add(min=min_delay)
+        # 设置下次运行时间
         deep_set(self.task.settings, "nextRunTime", nextRunTime)
         self.task.nextRunTime = nextRunTime
         logger.info(f"task {self.task_name}" f"next run time: {nextRunTime}")
@@ -165,18 +171,14 @@ class TaskManager:
                 logger.info(f"{self.task.task_name} {self.task.state_idx} is complete")
                 return True
 
-    def task_complete(self):
-        logger.hr("TaskManager.task_complete", 3)
-        deep_set(self.settings, "task.queue", self.run_queue)
-        save_json(self.settings, self.json_file)
-        return self.run_queue[0]
-
     def web_break(self):
+        """判断 break_属性,若为True,抛出WebBreak异常"""
         if self.break_:
             logger.info("web break")
             raise WebBreak
 
     def exit(self):
+        """关闭任务中占用的文件,保存settings"""
         logger.hr("TaskManager.exit")
         save_json(self.settings, self.json_file)
         if hasattr(self, "run_queue"):
@@ -188,8 +190,8 @@ class TaskManager:
         """ 死循环, 等待、完成 task.list内的任务
         """
         if self.restart:
-                self.break_ = self.restart = False
-                self.settings = read_json(self.json_file)
+            self.break_ = self.restart = False
+            self.settings = read_json(self.json_file)
         logger.info(f"task.list: {self.settings['task']['list']}")
         self.run_queue = RunQueue(self.settings)
         self.run_queue.print_queue()
@@ -210,9 +212,9 @@ class TaskManager:
             self.run_queue.insert_task(self.task)
 
     def sleep(self, nex_run_tieme: int):
+        """阻塞的定时器,阻塞间隔为5秒"""
         time_sleep = time_difference_second(nex_run_tieme, date_now_s())
         interval = 5
-        self.sleep_now = True
         while 1:
             self.web_break()
             if time_sleep:
@@ -234,34 +236,34 @@ class TaskManager:
     #         return_when=asyncio.FIRST_COMPLETED
     #     )
 
-async def wait_break(self, second=1):
-    while 1:
-        await asyncio.sleep(second)
+
+# async def wait_break(self, second=1):
+#     while 1:
+#         await asyncio.sleep(second)
 
 
-def sig_exit(*args):
-    loop = asyncio.get_running_loop()
-    print("ctrl on signal")
-    for task in asyncio.all_tasks():
-        task.cancel()
-        if task.cancelled:
-            print("task is cancelled")
-    
-
-async def random_timer(time_range: tuple = (3, 3), message: str = None):
-    sleep_time = uniform(*time_range)
-    if message:
-        print(f"wait {sleep_time} s,{message}")
-    logger.info(f"sleep {sleep_time}")
-    sleep_idx = int(sleep_time)
-    for idx in range(1, sleep_idx + 1):
-        print(f"sleep {idx} now")
-        await asyncio.sleep(1)  # TODO 后期换成定时器
-    if sleep_time - sleep_idx:
-        print(f"sleep {sleep_time} now")
-        await asyncio.sleep(sleep_time - sleep_idx)
-    print("sleep end")
-
+# def sig_exit(*args):
+#     loop = asyncio.get_running_loop()
+#     print("ctrl on signal")
+#     for task in asyncio.all_tasks():
+#         task.cancel()
+#         if task.cancelled:
+#             print("task is cancelled")
+#
+#
+# async def random_timer(time_range: tuple = (3, 3), message: str = None):
+#     sleep_time = uniform(*time_range)
+#     if message:
+#         print(f"wait {sleep_time} s,{message}")
+#     logger.info(f"sleep {sleep_time}")
+#     sleep_idx = int(sleep_time)
+#     for idx in range(1, sleep_idx + 1):
+#         print(f"sleep {idx} now")
+#         await asyncio.sleep(1)  # TODO 后期换成定时器
+#     if sleep_time - sleep_idx:
+#         print(f"sleep {sleep_time} now")
+#         await asyncio.sleep(sleep_time - sleep_idx)
+#     print("sleep end")
 
 
 if __name__ == "__main__":

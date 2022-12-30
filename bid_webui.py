@@ -1,3 +1,7 @@
+"""
+瞎写的,暂时不用考虑优化代码
+"""
+
 from logging import LogRecord
 from os import _exit
 from time import sleep
@@ -32,10 +36,11 @@ class BidWeb:
         except WebBreak:
             save_json(bidTaskManager.settings, bidTaskManager.json_file)
         
-    def exit_button(self, btn_val):
+    def stop_button(self, btn_val):
         from bid_run import bidTaskManager
         bidTaskManager.break_ = True
         bidTaskManager.task.task_end = True
+        self.stroll = False
 
     def exit(self, _):
         # save json

@@ -489,13 +489,12 @@
       "next_pages": "",
       "tag_list": "li",
       "bid_tag": {
-        "name_r": "tagName_find:a|title:",
+        "name_r": "tagName_find:a|_Text:",
         "date_r": "tagName_find:div.span|_Text:",
         "url_r": "tagName_find:a|href:",
         "type_r": ""
       },
       "bid": {
-        "name_cut": "(?<=\").*?(?=\\\\)",
         "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)",
         "url_cut": "(?<=\\.\\.).*?(?=\\\\)"
       }
@@ -506,7 +505,7 @@
         "form": {
           "classId": 151,
           "key": -1,
-          "page": 7
+          "page": 1
         }
       },
       "newest": {

@@ -77,7 +77,7 @@ class BidTag:
         # for key in ("name_r", "date_r", "url_r", "type_r"):
         return self.message
 
-    # TODO 写的太*了，记得重写
+    # TODO 写的太*了，记得重写,包括下面的_parse_bs_rule
     def parse_rule(self, tag: Tag or dict, *args) -> Tag or None or str:
         """ 判断tag类型, 接收规则并解析
         
@@ -141,10 +141,6 @@ def _parse_json_rule(tag: list or dict,
 
     Args:
         tag (dict or list):
-        key_find (str):
-        list_idx (int):
-        *kwargs:
-
     Returns:
         str or None
     """
@@ -214,11 +210,11 @@ def _re_get_str(obj: str, rule: re.Pattern = None, cut_rule=None):
     """ 正则获取字符串
 
     Args:
-        cut_rule:
-        rule:
-        obj:
+        obj: 被匹配的字符
+        rule: 编译好的正则
+        cut_rule: 正则表达式, 仅在测试中使用
     Returns:
-
+        (str): 返回re.search搜索结果
     """
     # 默认正则参数 (4)(数字)+(_,-,年)+(2)(数字)+(_,-,月)+(2)(数字)+(日),日可忽略
     if isinstance(cut_rule, str):
@@ -375,7 +371,7 @@ class ListWebBrows:
 
     class Zhzb(Html):
         def get_next_pages(self, list_url: dict, next_rule=None, *args):
-            """ 针对post方式发送表单的下一页获取函数
+            """ 针对post方式发送表单的下一页获取
             """
             pages = list_url["form"]["page"]
             if isinstance(pages, int):
