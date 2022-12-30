@@ -20,6 +20,7 @@ data_path = r"./data"
 RE_OPEN_MAX = 6
 SAVE_ERROR_MAX = 2
 
+
 class BidState:
     class Complete:
         newest = False
@@ -44,6 +45,18 @@ class BidState:
                         f"\"{deep_get(self.settings, 'complete')}"
                         f"\"\nend_rule : {self.end_rule}")
 
+        def _date_is_end(self, date: str, date_len):
+            """ 判断传入的date是否符合 end_date要求
+            """
+            if date_len > 10:
+                date_format = "%Y-%m-%d %H:%M:%S"
+                end_date = self.end_rule["date"]
+            elif date_len <= 10:
+                date_format = "%Y-%m-%d"
+                end_date = self.end_rule["date"][:10]
+            return datetime.strptime(date, date_format) < \
+                   datetime.strptime(end_date, date_format)
+
         def bid_is_end(self, bid_prj: Bid):
             """ 判断当前项目是否符合结束条件
             Args:
@@ -53,8 +66,7 @@ class BidState:
                     and bid_prj.url == self.end_rule["url"]:
                 return True
             if self.end_rule["date"]:
-                if _date_is_end(bid_prj.date, self.end_rule["date"],
-                                len(bid_prj.date)):
+                if self._date_is_end(bid_prj.date, len(bid_prj.date)):
                     return True
             return False
 
@@ -86,8 +98,12 @@ class BidState:
             self.newest = True
 
         def set_interrupt_url(self, list_url):
-            deep_set(self.settings, "interruptUrl", list_url)
-
+            """设置interruptUrl"""
+            if isinstance(list_url, dict) or isinstance(list_url, list):
+                deep_set(self.settings, "interruptUrl", list_url.copy())
+            else:
+                deep_set(self.settings, "interruptUrl", list_url)
+        
         def set_interrupt(self, list_url, bid):
             """ 在BidTask._process_tag_list中调用,若开始标志(self.start==True)
             则保存list_url 到 self.settings["interruptUrl"]
@@ -128,10 +144,11 @@ class BidState:
                 logger.info(f"interruptUrl = {self.settings['interruptUrl']}\n"
                             f"interrupt = {jsdump(self.settings['interrupt'])}")
 
-        def print_state(self):
+        def print_interrupt(self):
+            """打印interrupt信息,仅在self.start==True状态下打印"""
             if self.start:
                 logger.info(
-                    f"interrupt.name = {self.settings['interrupt']['name']}"
+                    f"interrupt.name = {self.settings['interrupt']['name']}, "
                     f"{self.settings['interrupt']['date']}")
 
     class InterruptState(Complete):
@@ -190,10 +207,12 @@ class BidState:
 
     @classmethod
     def init(cls, settings, state_idx) -> Complete or InterruptState:
+        """根据传入settings返回对应的class"""
         if settings["complete"] == "interrupt":
             return cls.InterruptState(settings, state_idx)
         else:
             return cls.Complete(settings, state_idx)
+
 
 class BidTaskInit:
     state_idx: str  # init at _get_state  "state1" or "state2"
@@ -248,6 +267,7 @@ class BidTask(BidTaskInit):
     task_end = False  # 由 pywebio设置
 
     def close(self):
+        """关闭已打开的文件,一般在程序结束时使用"""
         self.list_file.close()
         self.match_list_file.close()
 
@@ -281,7 +301,7 @@ class BidTask(BidTaskInit):
             self.list_file.write(f"{self.state_idx}\n")
             self.match_list_file.write(f"{self.state_idx}\n")
             self.list_url = None
-            
+
             return True
         return False
 
@@ -326,7 +346,7 @@ class BidTask(BidTaskInit):
         if not self.list_url:
             self.list_url = self.State.return_start_url()
 
-            if self.task_name.title()  == "Qjc":  # 这段不知道塞哪里好   
+            if self.task_name.title() == "Qjc":  # 这段不知道塞哪里好
                 self.web_brows: ListWebBrows.Qjc
                 self.list_url += self.web_brows.url_time()  # ListWebBrows.Qjc.url_time
         else:
@@ -341,14 +361,14 @@ class BidTask(BidTaskInit):
             bidTaskManager.web_break()
         logger.hr("BidTask._open_list_url", 3)
         self.error_open = False
-        try:  # 在打开网页后立刻判断网页源码是否符合要求
+        try:
             self.web_brows.open(url=url)
         except AssertionError:
             # TODO 识别出错的网页
             logger.error(f"{traceback.format_exc()}")
             self.error_open = True
         else:
-            try:
+            try:  # 在打开网页后判断网页源码是否符合要求
                 self.web_brows.cut_html()
             except Exception:
                 self.error_open = True
@@ -356,7 +376,7 @@ class BidTask(BidTaskInit):
                     self.web_brows.save_response(
                         save_date=True, extra="cut_Error")
                     logger.info(f"cut html error, open {self.list_url} again"
-                            f"\nreOpen: {reOpen + 1}")
+                                f"\nreOpen: {reOpen + 1}")
         if self.error_open:
             if reOpen < RE_OPEN_MAX:
                 reOpen += 1
@@ -391,7 +411,7 @@ class BidTask(BidTaskInit):
             self.list_file.write(f"{str(self.bid.message)}\n")
             self._title_trie_search(self.bid)
         logger.info(f"tag stop at {idx + 1}")
-        self.State.print_state()
+        self.State.print_interrupt()
 
     def _bid_receive_bid_tag(self, tag: Tag or dict, idx):
         """ 由BidTag.get 读取一个项目项目节点, Bid 接收并对信息进行处理
@@ -399,25 +419,27 @@ class BidTask(BidTaskInit):
         err_flag = False
         try:
             message = self.bid_tag.get(tag)
-            # logger.debug(str(message))  # 打印每次获得的项目信息
+            logger.debug(str(message))  # 打印每次获得的项目信息
         except Exception:
             err_flag = True
-            logger.error(f"tag get error: {tag},\n"
+            logger.error(f"tag get error: {tag},\nidx: {idx}"
                          f"bid_tag rule: {self.bid_tag.rule_now}\n"
                          f"{traceback.format_exc()}")
         if not err_flag:
             try:
                 self.bid.receive(*message)
+                logger.debug(self.bid.message)
             except Exception:
                 err_flag = True
-                logger.error(f"bid receive failed, rule : {self.bid.rule_now}"
+                logger.error(f"bid receive failed, idx: {idx}, rule: {self.bid.rule_now}"
                              f"{traceback.format_exc()}")
         if err_flag:
             logger.error(f"error idx: {idx}")
             self.bid_tag_error += 1
             if self.bid_tag_error > 5:
                 logger.error("too many bid.receive error")
-                self.web_brows.save_response(rps=self.web_brows.bs, 
+                self.web_brows.save_response(
+                    rps=self.web_brows.bs,
                     save_date=True, extra="receiveError")
                 raise KeyboardInterrupt
             return False
@@ -437,6 +459,7 @@ class BidTask(BidTaskInit):
             self.match_num += 1
 
     def _state_queue_move(self):
+        """将stateQueue第一个移到stateWait"""
         queue = deep_get(self.settings, "stateQueue")
         complete = deep_get(self.settings, "stateWait")
         complete.append(queue.pop(0))
@@ -454,21 +477,10 @@ class BidTask(BidTaskInit):
             self.state_idx = queue[0]
 
     def set_error_state(self):
-        deep_set(self.settings, 
-                    f"{self.state_idx}.error", f"{self.State.state}Error")
+        """当网页打开次数过多时设置错误标志,并将当前state移到stateWait"""
+        deep_set(self.settings,
+                 f"{self.state_idx}.error", f"{self.State.state}Error")
         self._state_queue_move()
-
-def _date_is_end(date: str, end_date: str, date_len):
-    """ 
-    """
-    if date_len > 10:
-        date_format = "%Y-%m-%d %H:%M:%S"
-
-    elif date_len <= 10:
-        date_format = "%Y-%m-%d"
-        end_date = end_date[:10]
-    return datetime.strptime(date, date_format) < \
-           datetime.strptime(end_date, date_format)
 
 
 def _bid_to_dict(bid_prj=None):
