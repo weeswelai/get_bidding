@@ -74,10 +74,10 @@ class UrlOpen:
         """
         if not req:
             req = self.req
-        logger.info(f"open {req.full_url},\n"
+        logger.info(f"open {req.full_url}\n"
                     f"method:{req.method}, data:{req.data}")
         self.url_response = None
-        open_error = False
+        open_error = None
         try:
             self.url_response = urlreq.urlopen(req, timeout=timeout).read()
         # TODO 超时的异常捕获
@@ -86,11 +86,10 @@ class UrlOpen:
                 f"open {req.full_url} Failed HTTPError: {url_error}\n"
                 f"HTTP Status Code: {url_error.code}\n"
                 f"req: url: {req.full_url}\nheaders: {jsdump(req.headers)}\n"
-                f"method: {req.method}, data:{req.data}")           
-            open_error = True
+                f"method: {req.method}, data:{req.data}")         
+            open_error = url_error
             # exit(1)  # 未来可能不终止
-        if open_error:
-            pass  # raise 给上级抛出异常
+        assert open_error is None, open_error  # raise 给上级抛出异常
         return self.url_response
 
     def decode_response(self):
@@ -107,9 +106,9 @@ class UrlOpen:
             self.response = self.url_response.decode(decoding)
         except AttributeError:
             if self.url_response is None:
-                pass  # 当网站无返回时
+                logger.error("url_response is None")  # 当网站无返回时
             else:
-                self.response = self.url_response
+                self.response = self.url_response  # 仅用于读取文件给url_response
         return self.response
 
     def save_response(self, rps="", url="", path="./html_save/",

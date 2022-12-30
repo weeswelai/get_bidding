@@ -8,6 +8,10 @@ import logging
 import os
 import sys
 
+from queue import Queue
+from logging import addLevelName
+from logging.handlers import QueueHandler
+
 # 定义输出格式
 file_formatter = logging.Formatter(
     fmt='%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s',
@@ -15,7 +19,7 @@ file_formatter = logging.Formatter(
 console_formatter = logging.Formatter(
     fmt='%(asctime)s.%(msecs)03d │ %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 web_formatter = logging.Formatter(
-    fmt='%(asctime)s.%(msecs)03d │ %(message)s', datefmt='%H:%M:%S')
+    fmt='%(levelname)s | %(asctime)s.%(msecs)03d │ %(message)s', datefmt='%H:%M:%S')
 
 # logger初始化
 logger = logging.getLogger("bid_log")
@@ -23,9 +27,9 @@ logger.setLevel(level=logging.DEBUG)
 
 # Ensure running in Alas root folder
 os.chdir(os.path.join(os.path.dirname(__file__), '../'))
-
+_srcfile = os.path.normcase(addLevelName.__code__.co_filename)
 # Add file logger
-pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所在的文件,去掉.py和文件夹前缀
 
 # 设置 控制台handler
 console_hdlr = logging.StreamHandler()
@@ -61,6 +65,8 @@ def rule(title="", characters="─"):
         if isinstance(hdlr, logging.FileHandler) or \
                 isinstance(hdlr, logging.StreamHandler):
             print(title, file=hdlr.stream)  # 使用print 直接输出到file流
+        elif isinstance(hdlr, QueueHandler):
+            hdlr.enqueue(title)
 
 
 def hr(title, level=3):
@@ -106,6 +112,10 @@ def set_file_logger(name=pyw_name):
     logger.addHandler(hdlr)
     logger.log_file = log_file
 
+queue_handler = QueueHandler(Queue())
+queue_handler.setFormatter(web_formatter)
+if pyw_name in ("log", "bid_webui"):   
+    logger.addHandler(queue_handler)
 
 def show():
     # logger输出示例,仅在 __name__ == "__main__" 时调用
@@ -134,10 +144,10 @@ logger.hr = hr
 logger.hr('start', level=0)
 
 if __name__ == "__main__":
-    # show() # 输出示例
-    import sys
-    __stderr = sys.stderr
-    sys.stderr = logger.handlers[1].stream
+    show() # 输出示例
+    # import sys
+    # __stderr = sys.stderr
+    # sys.stderr = logger.handlers[1].stream
 
     logger.info("a")
     pass
