@@ -1,7 +1,5 @@
 """
 用于测试网站的html使用什么样的形式解析
-TODO 若在 end_rule有值且 state.complete为 "complete"的情况下, 当打开网页超时或者cut_html出错的情况下的处理
-     因为此时若end_rule刚好在打不开的网址中则会有额外的花费(end_rule中的date只是保证不会死循环)
 """
 
 import json
@@ -91,7 +89,7 @@ test_settings = {
     }
 }
 
-# json: [task_name].[state].url, url有两种形式, GET 为 str, POST为 dict, 其中须包含form信息
+# json: [task_name].[state].url, url有两种形式, GET 为 str, POST为 dict, 若为POST则必须包含form信息
 url = {
         "url": "http://bid.aited.cn/front/ajax_getBidList.do",
         "form": {
@@ -111,11 +109,11 @@ json_settings = read_json(settings_file)
 test = 1  # 测试总开关
 openAndSaveUrl = 0  # 打开网址并保存response
 rule_test = 1  # 规则测试总开关
-_cut_html = 0  # 裁剪html源码并保存
+_cut_html = 1  # 裁剪html源码并保存
 _li_tag = 1    # 从源码中获得项目列表, 这里使用的是 cut_html_f
 _bid_tag = 1   # 测试项目列表中项目基本信息提取
 _bid = 1      # 测试项目信息获取
-_title_trie = 0  # 前缀树搜索测试
+_title_trie = 1  # 前缀树搜索测试
 
 _next_pages = 1  # 测试获得下一页网址,需要 全局 url变量
 
@@ -160,12 +158,15 @@ try:
             logger.info(f"test: page memory size: {getsizeof(url_page)}")
             
             web_brows.get_response_from_file(file=url_page)  # 将源码str输入web_brows对象
+            web_brows.decode_response()
             web_brows.cut_html()
             if isinstance(url, dict):
                 web_brows.init_req(url)
-                url = url["url"]
+                list_url = url["url"]
+            else:
+                list_url = url
             logger.info(f"test: page memory size: {getsizeof(web_brows.html_cut)}")
-            web_brows.save_response(rps=web_brows.html_cut, url=url,
+            web_brows.save_response(rps=web_brows.html_cut, url=list_url,
                                     path="./html_test/", extra="cut")
 
         # 测试获得项目列表
@@ -199,7 +200,7 @@ try:
 
                 # 前缀树搜索
                 if _title_trie:
-                    logger.info("title_trie.search_all:\n"
+                    logger.info("title_trie.search_all: "
                                 f"{title_trie.search_all(bid.message[0])}")
 
     # 下一页测试

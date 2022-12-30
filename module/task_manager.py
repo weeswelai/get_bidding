@@ -154,7 +154,6 @@ class TaskManager:
                 self.task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
-                # TODO 一个网址错误次数过多后,将整个任务延迟, 继续下一个state
                 logger.warning("open_list_url_error, delay ERROR_DELAY min")
                 save_json(self.settings, self.json_file)
                 return False
