@@ -8,13 +8,17 @@
  判断时间，判断访问频率是否合适
  调度网页的打开、项目列表页面的翻页
 """
-
+import os
+import shutil
 from time import sleep
 
 from module.task_manager import TaskManager
 
 # 读取配置json
+settings_default = "./bid_settings/bid_settings_default.json"
 settings_json = "./bid_settings/bid_settings.json"
+if not os.path.exists(settings_json):
+    shutil.copyfile(settings_default, settings_json)
 runFlag = True
 newFlag = False
 # 初始化任务
