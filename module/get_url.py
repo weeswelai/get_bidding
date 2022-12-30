@@ -111,14 +111,14 @@ class UrlOpen:
                 self.response = self.url_response  # 仅用于读取文件给url_response
         return self.response
 
-    def save_response(self, rps="", url="", path="./html_save/",
+    def save_response(self, rps="", url="", path="./html_error/",
                       save_date=False, extra=""):
         """保存response
 
         Args:
             rps (str): response,为空时使用self.url_response
             url (str): 网页url,为空时使用self.req.full_url
-            path (str): html文件相对路径,默认为 ./html_save
+            path (str): html文件相对路径,默认为 ./html_error
             save_date (bool): 是带有保存带时间的新文件
             仅在浏览列表页面出错时或测试时保存使用
         """
