@@ -51,7 +51,7 @@ class BidWeb:
         put_row([
             put_scope(name="button"),
             put_buttons(["start"], onclick=self.start_button, scope="button"),
-            put_buttons(["end"], onclick=self.exit_button, scope="button"),
+            put_buttons(["stop"], onclick=self.exit_button, scope="button"),
             put_buttons(["exit"], onclick=self.exit, scope="button"),
             put_buttons(["滚动日志"], onclick=self.stroll_switch, scope="button")]
             )
@@ -70,7 +70,7 @@ class BidWeb:
         try:
             while 1:
                 next(log_put)
-                sleep(1)
+                sleep(0.5)
                 if self.stroll:
                     height = eval_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scrollHeight')
                     run_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scroll(0,height)', height=height)
