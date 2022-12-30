@@ -286,7 +286,7 @@ def sleep_random(time_range: tuple = (1.7, 3), message: str = None):
     sleep_idx = int(sleep_time)
     for idx in range(1, sleep_idx + 1):
         print(f"sleep {idx} now")
-        sleep(1)  # TODO 后期换成定时器
+        sleep(1)  
     print(f"sleep {sleep_time} now")
     sleep(sleep_time - sleep_idx)
     print("sleep end")
