@@ -325,7 +325,7 @@ def reset_task(settings: dict, task_name: dict, json_file=""):
         settings = read_json(settings)
     stateQueue = settings[task_name]["stateQueue"]
     stateWait = settings[task_name]["stateWait"]
-    for _ in stateWait:
+    for _ in range(len(stateWait)):
         stateQueue.append(stateWait.pop(0))
 
     settings[task_name]["nextRunTime"] = ""
@@ -346,5 +346,5 @@ def reset_json_file(json_file):
 if __name__ == "__main__":
     # 本模块测试
     # test code
-    reset_json_file("./bid_settings/bid_settings copy.json")
+    reset_json_file("./bid_settings/bid_settings_test.json")
     pass
