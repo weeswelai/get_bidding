@@ -148,7 +148,7 @@ class BidState:
             """打印interrupt信息,仅在self.start==True状态下打印"""
             if self.start:
                 logger.info(
-                    f"interrupt.name = {self.settings['interrupt']['name']}, "
+                    f"interrupt.name = '{self.settings['interrupt']['name']}', "
                     f"{self.settings['interrupt']['date']}")
 
     class InterruptState(Complete):
@@ -318,7 +318,7 @@ class BidTask(BidTaskInit):
         deep_set(self.settings, "stateWait", [])
         for state in queue:
             deep_set(self.settings, f"{state}.error", False)
-        logger.info(f"queue: {queue}")
+        logger.info(f"stateQueue: {queue}")
 
     def process_next_list_web(self):
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
@@ -334,6 +334,10 @@ class BidTask(BidTaskInit):
 
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
         self.tag_list = self.web_brows.get_tag_list()
+        if not self.tag_list:
+            self._complete_state()
+            logger.warning("tag list is []")
+            return False
         self._process_tag_list()
 
         if not self.match_num:
@@ -398,7 +402,10 @@ class BidTask(BidTaskInit):
             # bid对象接收bid_tag解析结果
             if not self._bid_receive_bid_tag(tag, idx):
                 continue
-
+            if not idx and self.web_brows.compare_last_first(self.bid.message):
+                self.State.complete()
+                logger.info(f"open out of pages, pages now is {self.list_url}")
+                break
             if self.State.bid_is_end(self.bid):  # 判断是否符合结束条件
                 self.State.complete()  # set self.State.state = "complete"
                 logger.info(f"bid end at {self.bid.message}")
@@ -474,11 +481,11 @@ class BidTask(BidTaskInit):
     def _complete_state(self):
         """ 将json中 queue 头元素出队,添加到complete中
         """
-        queue, complete = self._state_queue_move()
-        logger.info(f"{self.state_idx} complete, queue: {queue}\n"
-                    f"complete: {complete}")
-        if queue:
-            self.state_idx = queue[0]
+        stateQueue, stateWait = self._state_queue_move()
+        logger.info(f"{self.state_idx} complete, stateQueue: {stateQueue}\n"
+                    f"stateWait: {stateWait}")
+        if stateQueue:
+            self.state_idx = stateQueue[0]
 
     def set_error_state(self):
         """当网页打开次数过多时设置错误标志,并将当前state移到stateWait"""

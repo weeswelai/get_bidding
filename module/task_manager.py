@@ -10,7 +10,7 @@ from module.task import BidTask
 from module.utils import *
 
 RUN_TIME_START = "2022-01-01 00:00:00"  # 默认下次运行时间
-MIN_DELAY = 30  # 默认延迟时间 30分钟
+MIN_DELAY = 60  # 默认延迟时间 60分钟
 ERROR_DELAY = 5  # 网页打开次数过多时延迟时间
 
 
