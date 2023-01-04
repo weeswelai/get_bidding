@@ -248,6 +248,7 @@ class ListWebBrows:
         html_cut = ""  # cut_html 后保存
         bs: Tag or dict = None
         tag_rule: str
+        first_bid: list = None
 
         def __init__(self, settings: dict = None):
             """ 
@@ -324,7 +325,7 @@ class ListWebBrows:
 
         def get_tag_list(self, page=None, tag_rule=None, parse="html.parser"):
             """
-            输入 str 调用 bs生成self.bs 从self.bs 里根据list_rule提取list
+            输入 str 调用 bs生成self.bs 从self.bs 里根据tag_list提取list
             Args:
                 tag_rule:
                 page:(str) html源码,解析获得self.bs,或从 self.url_response 或
@@ -341,6 +342,14 @@ class ListWebBrows:
 
             self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
             return self.bs.find_all(tag_rule)
+
+        def compare_last_first(self, message):
+            """ 比较每页第一个项目信息是否与上一页第一个完全相等, 若相等返回True
+            """
+            if message == self.first_bid:
+                return True
+            self.first_bid = message
+            return False
 
     class Qjc(Html):
         def __init__(self, settings: dict = None):
