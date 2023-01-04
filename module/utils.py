@@ -306,7 +306,41 @@ def time_difference_second(time1, time2):
             dt.strptime(time2, "%Y-%m-%d %H:%M:%S")).seconds
 
 
+def reset_state(settings, key, json_file=""):
+    if isinstance(settings, str) and not json_file:
+        json_file = settings
+        settings = read_json(settings)
+    url = deep_get(settings, f"{key}.url")
+    deep_set(settings, key, settings["default"]["state1"].copy())
+    deep_set(settings, f"{key}.url", url)
+    if json_file:
+        save_json(settings, json_file)
+
+def reset_task(settings: dict, task_name: dict, json_file=""):
+    if isinstance(settings, str) and not json_file:
+        json_file = settings
+        settings = read_json(settings)
+    stateQueue = settings[task_name]["stateQueue"]
+    stateWait = settings[task_name]["stateWait"]
+    for _ in stateWait:
+        stateQueue.append(stateWait.pop(0))
+
+    settings[task_name]["nextRunTime"] = ""
+    for state in settings[task_name]["stateQueue"]:
+        reset_state(settings, f"{task_name}.{state}")
+    if json_file:
+        save_json(json_file)
+
+
+def reset_json_file(json_file):
+    settings = read_json(json_file)
+    for task_name in settings["task"]["test"]:
+        reset_task(settings, task_name)
+    save_json(settings, json_file)
+
+
 if __name__ == "__main__":
     # 本模块测试
     # test code
+    reset_json_file("./bid_settings/bid_settings copy.json")
     pass
