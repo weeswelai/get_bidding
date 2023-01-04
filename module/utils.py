@@ -199,9 +199,14 @@ def url_to_filename(url: str):
                 url = url.replace(url[:value[0]], "")
                 for ascii, chn in __URL_REPLACE__[key].items():
                     url = url.replace(ascii, chn)
-    url = url[url.find(".") + 1:].replace("/", " ").replace("?", " ").replace(
-        ":", " ")
-    url = f"{url}.html"
+    if url.find("//www") > 0:
+        url = url[url.find(".") + 1:]
+    else:
+        url = url[url.find("//") + 2:]
+    url = url.replace("/", " ")\
+        .replace("?", " ").replace(":", " ")
+    if url[-5:] != ".html":
+        url = f"{url}.html"
     return url
 
 
@@ -237,6 +242,8 @@ def str_dict(output_dict: dict):
     for key, value in output_dict.items():
         data = f"{data}{key}: {value}\n  "
     return data.rstrip()
+
+
 def re_options_print(options):
     """
     打印 re.S re.M 的值
@@ -271,17 +278,18 @@ def creat_folder(file):
 
 
 def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
+    """简化版json.dumps, 自带默认参数"""
     return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii,
                       sort_keys=sort_keys)
 
 
 def sleep_random(time_range: tuple = (1.7, 3), message: str = None):
-    """ 在随机范围内sleep, 并带有提示, 默认为1.5秒到3秒内
+    """ 在随机范围内sleep, 并带有提示, 默认为1.7秒到3秒内
     """
     from module.log import logger
     sleep_time = uniform(*time_range)
     if message:
-        print(f"wait {sleep_time} s,{message}")
+        print(f" wait {sleep_time} s,{message}")
     logger.info(f"sleep {sleep_time}")
     sleep_idx = int(sleep_time)
     for idx in range(1, sleep_idx + 1):
@@ -291,9 +299,12 @@ def sleep_random(time_range: tuple = (1.7, 3), message: str = None):
     sleep(sleep_time - sleep_idx)
     print("sleep end")
 
+
 def time_difference_second(time1, time2):
-    return (dt.strptime(time1, "%Y-%m-%d %H:%M:%S") - 
+    """获得时间差,单位为秒,返回 time1 - time2"""
+    return (dt.strptime(time1, "%Y-%m-%d %H:%M:%S") -
             dt.strptime(time2, "%Y-%m-%d %H:%M:%S")).seconds
+
 
 if __name__ == "__main__":
     # 本模块测试

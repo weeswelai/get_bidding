@@ -16,7 +16,7 @@ from module.log import logger
 from module.utils import *
 from module.web_brows import *
 
-data_path = r"./data"
+DATA_PATH = r"./data"
 RE_OPEN_MAX = 6
 SAVE_ERROR_MAX = 2
 
@@ -228,13 +228,13 @@ class BidTaskInit:
     bid_tag_error = 0
     error_open = True
 
-    def __init__(self, settings, task_name="test") -> None:
+    def __init__(self, settings, task_name="test", test=False) -> None:
         self.settings = settings  # zzlh:{}
         self.task_name = task_name  # 当前任务名
         self.match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
         self.nextRunTime = settings["nextRunTime"]
         self._init_brows(settings)
-        self._creat_data_file()
+        self._creat_data_file(test)
         logger.info(f"init task {self.task_name}, list brows:\n"
                     f"url settings:\n{str_dict(settings['urlConfig'])}\n"
                     f"rule:\n{str_dict(settings['rule'])}")
@@ -250,26 +250,20 @@ class BidTaskInit:
         self.web_brows = ListWebBrows.init(settings, self.task_name)
         self.bid_web = BidHtml(settings)
 
-    def _creat_data_file(self):
+    def _creat_data_file(self, test=False):
         """ 创建数据保存文件, add 方式
+        Args:
+            test (bool): 测试开关,仅在测试中使用
         """
-        list_save = f"{data_path}/bid_list_{self.task_name}.txt"
-        match_list_save = f"{data_path}/bid_match_list_{self.task_name}.txt"
+        file = "test" if test else self.task_name
+        list_save = f"{DATA_PATH}/bid_list_{file}.txt"
+        match_list_save = f"{DATA_PATH}/bid_match_list_{file}.txt"
         creat_folder(list_save)
         self.list_file = open(list_save, "a", encoding="utf-8")
         self.match_list_file = open(match_list_save, "a", encoding="utf-8")
         # 写入一行运行时间
         self.list_file.write(f"start at {date_now_s()}\n")
         self.match_list_file.write(f"start at {date_now_s()}\n")
-
-
-class BidTask(BidTaskInit):
-    task_end = False  # 由 pywebio设置
-
-    def close(self):
-        """关闭已打开的文件,一般在程序结束时使用"""
-        self.list_file.close()
-        self.match_list_file.close()
 
     def _get_state_idx(self, queue: list):
         """ 从stateQueue中取第一个state 赋给 self.state_idx(str)
@@ -285,7 +279,7 @@ class BidTask(BidTaskInit):
 
     def init_state(self):
         """ 用_get_state_idx 判断 task.stateQueue 中是否还有state
-        有则用 _init_state 初始化State 并返回 True,
+        有则用 BidState.init() 初始化State, 如果State已初始化将会被新的覆盖
         无则返回 False
         
         Returns:
@@ -304,6 +298,15 @@ class BidTask(BidTaskInit):
 
             return True
         return False
+
+
+class BidTask(BidTaskInit):
+    task_end = False  # 由 pywebio设置
+
+    def close(self):
+        """关闭已打开的文件,一般在程序结束时使用"""
+        self.list_file.close()
+        self.match_list_file.close()
 
     def restart(self):
         """ 将json中 complete 添加到 queue中
@@ -399,17 +402,18 @@ class BidTask(BidTaskInit):
             if self.State.bid_is_end(self.bid):  # 判断是否符合结束条件
                 self.State.complete()  # set self.State.state = "complete"
                 logger.info(f"bid end at {self.bid.message}")
+                logger.info(f"end_rule: {self.State.end_rule}")
                 break
-            if not self.State.newest:  # 只执行一次
+            if not self.State.newest:  # 非interrupt 状态只执行一次,interrupt状态该语句结果为False
                 self.State.save_newest_and_interrupt(self.bid)
-            if not self.State.start:
+            if not self.State.start:  # interrupt状态时判断项目是否开始记录
                 if not self.State.bid_is_start(self.bid):
                     self.State.set_interrupt_url(self.list_url)
                     continue
 
-            self.State.set_interrupt(self.list_url, self.bid)
-            self.list_file.write(f"{str(self.bid.message)}\n")
-            self._title_trie_search(self.bid)
+            self.State.set_interrupt(self.list_url, self.bid)  # 设置每次最后一个为interrupt
+            self.list_file.write(f"{str(self.bid.message)}\n")  # 写入文件
+            self._title_trie_search(self.bid)  # 使用title trie 查找关键词
         logger.info(f"tag stop at {idx + 1}")
         self.State.print_interrupt()
 
@@ -419,7 +423,7 @@ class BidTask(BidTaskInit):
         err_flag = False
         try:
             message = self.bid_tag.get(tag)
-            logger.debug(str(message))  # 打印每次获得的项目信息
+            # logger.debug(str(message))  # 打印每次获得的项目信息
         except Exception:
             err_flag = True
             logger.error(f"tag get error: {tag},\nidx: {idx}"
@@ -428,7 +432,7 @@ class BidTask(BidTaskInit):
         if not err_flag:
             try:
                 self.bid.receive(*message)
-                logger.debug(self.bid.message)
+                # logger.debug(self.bid.message)
             except Exception:
                 err_flag = True
                 logger.error(f"bid receive failed, idx: {idx}, rule: {self.bid.rule_now}"

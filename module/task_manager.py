@@ -2,7 +2,7 @@
 
 """
 
-import asyncio
+# import asyncio
 import traceback
 
 from module.log import logger
@@ -35,18 +35,18 @@ class TaskQueue(list):
     def insert_task(self, task: BidTask):
         """ 任务插入队列中,按nexRunTime排序
         """
-        if not self:
-            self.append(task)
-            return None
-        end = False
-        for idx, t in enumerate(self):
-            if t1_slow_than_t2(t.nextRunTime, task.nextRunTime):
-                break
-            else:
-                end = True
-                continue
-        if self.__len__() == 1 and end:
-            idx = 1
+        queue_iter = iter(self)
+        try:
+            idx = 0
+            while 1:
+                t: BidTask = next(queue_iter)
+                if t1_slow_than_t2(t.nextRunTime, task.nextRunTime):
+                    break
+                else:
+                    idx += 1
+        # 到底了
+        except StopIteration:
+            idx = self.__len__()
         self.insert(idx, task)
         return idx
 
@@ -76,7 +76,6 @@ class RunQueue(TaskQueue):
             self.insert_task(task)
         self.print_all_next_time()
         self.print_queue()
-        pass
 
     def set_next_run_time(self, task: BidTask):
         # 判断 "nextRunTime", 若没有值则写入默认起始时间
@@ -89,6 +88,7 @@ class RunQueue(TaskQueue):
         """
         task: BidTask = self[0]
         logger.info(f"first task {task.task_name} nextRunTime: {task.nextRunTime}")
+        sleep(1.1)  # 防止两个时间秒数相等
         if t1_slow_than_t2(date_now_s(), task.nextRunTime):
             return True
         else:
@@ -111,6 +111,7 @@ class TaskManager:
     break_ = False
     task: BidTask
     run_queue: RunQueue
+    sleep_now = False
 
     def __init__(self, json_file, save=True, creat_new=False):
         """ 读取json_file; 设置 settings, json_file , queue
@@ -137,6 +138,7 @@ class TaskManager:
         if not self.task.settings["stateQueue"]:  # 若为空,重新写入stateQueue
             self.task.restart()
         self.task.task_end = False
+        logger.info(f"task stateQueue: {self.task.settings['stateQueue']}")
         
         while self.task.init_state():  # task 按stateQueue顺序完成state
             self.web_break()
@@ -146,7 +148,8 @@ class TaskManager:
         # 设置下次运行时间
         deep_set(self.task.settings, "nextRunTime", nextRunTime)
         self.task.nextRunTime = nextRunTime
-        logger.info(f"task {self.task_name}" f"next run time: {nextRunTime}")
+        save_json(self.settings, self.json_file)
+        logger.info(f"task {self.task.task_name}" f"next run time: {nextRunTime}")
 
     def state_run(self):
         """完成一个state"""
@@ -160,8 +163,7 @@ class TaskManager:
                 self.task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
-                logger.warning("open_list_url_error, delay ERROR_DELAY min")
-                save_json(self.settings, self.json_file)
+                logger.warning(f"open_list_url_error, delay {ERROR_DELAY} min")
                 return False
             save_json(self.settings, self.json_file)  # 处理完一页后save
             if state_result:
@@ -194,7 +196,7 @@ class TaskManager:
             self.settings = read_json(self.json_file)
         logger.info(f"task.list: {self.settings['task']['list']}")
         self.run_queue = RunQueue(self.settings)
-        self.run_queue.print_queue()
+
         if not self.run_queue:
             logger.info(f"json: task.list is {self.run_queue}")
             raise WebBreak
@@ -204,66 +206,30 @@ class TaskManager:
                 self.task = self.run_queue.pop_q()
             else:
                 # 阻塞sleep定时
+                self.sleep_now = True
                 self.sleep(self.run_queue[0].nextRunTime)
                 continue
             # 任务执行
             self.web_break()
+            self.sleep_now = False
             self.task_run()
             self.run_queue.insert_task(self.task)
+            self.run_queue.print_all_next_time()
 
     def sleep(self, nex_run_tieme: int):
         """阻塞的定时器,阻塞间隔为5秒"""
+        if t1_slow_than_t2(date_now_s(), nex_run_tieme):
+            return None
         time_sleep = time_difference_second(nex_run_tieme, date_now_s())
+        logger.debug(f"time sleep {time_sleep}")
         interval = 5
         while 1:
             self.web_break()
-            if time_sleep:
+            if time_sleep > 0:
                 sleep(interval)
                 time_sleep -= interval
             else:
-                break
-
-    # async def wait_main(self, wait_time):
-    #     time_sleep = time_difference_second(wait_time, date_now_s())
-    #     return asyncio.wait([], return_when=asyncio.FIRST_COMPLETED)
-
-    # async def run_main(self, task):
-    #     """ coroutine function main
-    #     """
-    #     return asyncio.wait(
-    #         [self.task_run(task),
-    #         wait_break()],
-    #         return_when=asyncio.FIRST_COMPLETED
-    #     )
-
-
-# async def wait_break(self, second=1):
-#     while 1:
-#         await asyncio.sleep(second)
-
-
-# def sig_exit(*args):
-#     loop = asyncio.get_running_loop()
-#     print("ctrl on signal")
-#     for task in asyncio.all_tasks():
-#         task.cancel()
-#         if task.cancelled:
-#             print("task is cancelled")
-#
-#
-# async def random_timer(time_range: tuple = (3, 3), message: str = None):
-#     sleep_time = uniform(*time_range)
-#     if message:
-#         print(f"wait {sleep_time} s,{message}")
-#     logger.info(f"sleep {sleep_time}")
-#     sleep_idx = int(sleep_time)
-#     for idx in range(1, sleep_idx + 1):
-#         print(f"sleep {idx} now")
-#         await asyncio.sleep(1)  # TODO 后期换成定时器
-#     if sleep_time - sleep_idx:
-#         print(f"sleep {sleep_time} now")
-#         await asyncio.sleep(sleep_time - sleep_idx)
-#     print("sleep end")
+                return None
 
 
 if __name__ == "__main__":
@@ -271,5 +237,6 @@ if __name__ == "__main__":
     task_manager = TaskManager(settings_json, save=True)
     try:
         task_manager.loop()
-    except KeyboardInterrupt:
+    except Exception:
         task_manager.exit()
+        save_json(settings_json, task_manager.settings)

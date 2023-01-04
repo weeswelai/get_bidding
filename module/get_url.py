@@ -3,7 +3,6 @@ url打开模块
 打开网页, 保存html源码
 """
 
-from ntpath import join
 import urllib.error as urlerr
 import urllib.request as urlreq
 from urllib.parse import urlencode
@@ -41,7 +40,7 @@ class UrlOpen:
         else:
             self.init_req(url, headers=headers, method=method)
         self.open_url()
-        self.decode_response()
+        return self.decode_response()
 
     def init_req(self, url="http://127.0.0.1", 
                  headers=None, method=None, form=None):
@@ -68,7 +67,7 @@ class UrlOpen:
             for head, value in headers.items():
                 self.req.add_header(head, value)
 
-    def open_url(self, req=None, timeout=10):
+    def open_url(self, req=None, timeout=6):
         """ 打开self.REQ的网页,保存源码(bytes)
         
         """
@@ -79,7 +78,7 @@ class UrlOpen:
         self.url_response = None
         open_error = None
         try:
-            self.url_response = urlreq.urlopen(req, timeout=timeout).read()
+            self.url_response = urlreq.urlopen(req, timeout=timeout)
         except (urlerr.HTTPError, urlerr.URLError) as url_error:
             logger.error(
                 f"open {req.full_url} Failed HTTPError: {url_error}\n"
@@ -88,7 +87,10 @@ class UrlOpen:
                 f"method: {req.method}, data:{req.data}")         
             open_error = url_error
             # exit(1)
-        assert open_error is None, open_error  # raise 给上级抛出异常
+        else:
+            self.url_response = self.url_response.read()
+
+        assert open_error is None, open_error
         return self.url_response
 
     def decode_response(self):
@@ -167,22 +169,34 @@ class UrlOpen:
 
 
 if __name__ == "__main__":
-    url_open = {
-        "url":"http://bid.aited.cn/front/ajax_getBidList.do",
-        "form": {
-            "classId": "151",
-            "key": "-1",
-            "page": "1"
-        }
-    }
-    test_headers = {
-        "User-Agent": "233",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-    }
-    test_method = "get"
-    url_obj = UrlOpen(method="POST")
-    url_obj.init_req(url_open, headers=test_headers)
-    url_obj.open_url()
-    print(url_obj.decode_response())
-    url_obj.save_response(save_date=True, path="./html_test/", extra="test")
+    pass
+    # #  POST
+    # url_open = {
+    #     "url":"https://httpbin.org/post",
+    #     "form": {
+    #         "classId": "151",
+    #         "key": "-1",
+    #         "page": "1"
+    #     }
+    # }
+    # test_headers = {
+    #     "User-Agent": "233",
+    #     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+    # }
+    # url_obj = UrlOpen(method="POST")
+    # url_obj.init_req(url_open, headers=test_headers)
+    # url_obj.open_url()
+    # print(url_obj.decode_response())
+    # url_obj.save_response(save_date=True, path="./html_test/", extra="test")
     
+    # # GET
+    # url_open = "https://httpbin.org/get"
+    # test_headers = {
+    #     "User-Agent": "233",
+    #     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+    # }
+    # url_obj = UrlOpen(method="GET")
+    # url_obj.init_req(url_open, headers=test_headers)
+    # url_obj.open_url()
+    # print(url_obj.decode_response())
+    # url_obj.save_response(save_date=True, path="./html_test/", extra="test")

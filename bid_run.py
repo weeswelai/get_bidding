@@ -11,23 +11,26 @@
 import os
 import shutil
 from time import sleep
+import traceback
 
+from module.log import logger
 from module.task_manager import TaskManager
 
 # 读取配置json
-settings_default = "./bid_settings/bid_settings_default.json"
-settings_json = "./bid_settings/bid_settings.json"
-if not os.path.exists(settings_json):
-    shutil.copyfile(settings_default, settings_json)
+SETTINGS_DEFAULT = "./bid_settings/bid_settings_default.json"
+SETTINGS_JSON = "./bid_settings/bid_settings.json"
+if not os.path.exists(SETTINGS_JSON):
+    shutil.copyfile(SETTINGS_DEFAULT, SETTINGS_JSON)
 runFlag = True
 newFlag = False
 # 初始化任务
-bidTaskManager = TaskManager(settings_json,
+bidTaskManager = TaskManager(SETTINGS_JSON,
                              creat_new=(True if newFlag else False))
 
 if __name__ == "__main__":
     if runFlag:
         try:
             bidTaskManager.loop()
-        except KeyboardInterrupt:
+        except Exception:
             bidTaskManager.exit()
+            logger.error(traceback.format_exc())

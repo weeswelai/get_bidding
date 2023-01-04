@@ -47,7 +47,8 @@ res_file = None
 
 try:
     # 打开网址并保存response
-    if openUrlAndSaveHtml:  # 打开网址 保存url的response
+
+    if openUrlAndSaveHtml and __name__ == "__main__":  # 打开网址 保存url的response
         from module.get_url import UrlOpen
         
         # 可在 UrlOpen中选择headers: url_open = UrlOpen(headers=test_headers, method=method)
@@ -206,105 +207,107 @@ test_settings = {
     }
 }
 
-rule_test = 0  # 规则测试总开关
-get_html_from_open_url = 0  # 衔接测试1打开网址和测试2网页解析
 
-settings_from_json = 0  # 0: 使用本文件中test_settings, 1: 使用json file的setting,需要指定任务名
-_cut_html = 0  # 裁剪html源码并保存
-_li_tag = 0    # 从源码中获得项目列表, 这里使用的是 cut_html_f
-_bid_tag = 0   # 测试项目列表中项目基本信息提取
-_bid = 0      # 测试项目信息获取
-_title_trie = 0  # 前缀树搜索测试
-_next_pages = 0  # 测试获得下一页网址,需要 全局 url变量
+if __name__ == "__main__":
+    rule_test = 0  # 规则测试总开关
+    get_html_from_open_url = 0  # 衔接测试1打开网址和测试2网页解析
 
-html_file = r""
-JSON_FILE = "./bid_settings/bid_settings.json"
-json_settings = read_json(JSON_FILE)  # 读取json文件为dict对象
+    settings_from_json = 0  # 0: 使用本文件中test_settings, 1: 使用json file的setting,需要指定任务名
+    _cut_html = 0  # 裁剪html源码并保存
+    _li_tag = 0    # 从源码中获得项目列表, 这里使用的是 cut_html_f
+    _bid_tag = 0   # 测试项目列表中项目基本信息提取
+    _bid = 0      # 测试项目信息获取
+    _title_trie = 0  # 前缀树搜索测试
+    _next_pages = 0  # 测试获得下一页网址,需要 全局 url变量
 
-task_name = "test"
-if get_html_from_open_url:
-    if isinstance(url, dict):
-        task_name = "zhzb"
-    else:
-        for u, name in _URL_TASK_NAME.items():
-            if u in url:
-                task_name = name
-                break
+    html_file = r""
+    JSON_FILE = "./bid_settings/bid_settings.json"
+    json_settings = read_json(JSON_FILE)  # 读取json文件为dict对象
 
-settings = json_settings[task_name] if settings_from_json else test_settings
-web_brows: ListWebBrows.Html = ListWebBrows.init(settings, task_name)
-
-try:
-    # 使用本地文件或使用测试1得到的html源码
+    task_name = "test"
     if get_html_from_open_url:
-        url_page = response
-    elif html_file and html_file[-1] != "/":
-        with open(html_file, "r", encoding="utf-8") as page_f:
-            url_page = page_f.read()
-    else:
-        print("no url response read")
-        exit(1)
-
-    if rule_test:
-        # 测试裁剪源码, 得到 html_cut 变量
-        if _cut_html:
-            # getsizeof page 最好不要小于51, ""的内存占用为51
-            logger.info(f"test: page memory size: {getsizeof(url_page)}")
-            
-            web_brows.get_response_from_file(file=url_page)  # 将源码str输入web_brows对象
-            web_brows.decode_response()
-            try:
-                html_cut = web_brows.cut_html()
-            except AttributeError as error:
-                logger.error(f"{error}\n{traceback.format_exc()}")
-                exit(1)
-            logger.info(f"test: page memory size: {getsizeof(web_brows.html_cut)}")
-
-            # 保存裁剪后的html源码, 若不想保存请将下面语句注释掉
-            # web_brows.save_response(rps=web_brows.html_cut, url="cut_test_html",
-            #                         path="./html_test/", extra="cut")
+        if isinstance(url, dict):
+            task_name = "zhzb"
         else:
-            html_cut = url_page
+            for u, name in _URL_TASK_NAME.items():
+                if u in url:
+                    task_name = name
+                    break
 
-        # 测试获得项目列表
-        if _li_tag:
-            # web_brows.get_response_from_file(file=url_page, save="html_cut")
-            # web_brows.cut_html(settings["rule"]["cut"])
+    settings = json_settings[task_name] if settings_from_json else test_settings
+    web_brows: ListWebBrows.Html = ListWebBrows.init(settings, task_name)
 
-            tag_list = web_brows.get_tag_list(
-                page=html_cut, tag_rule=settings["rule"]["tag_list"])
-            logger.info(f"tag_list len: {len(tag_list)}")
+    try:
+        # 使用本地文件或使用测试1得到的html源码
+        if get_html_from_open_url:
+            url_page = response
+        elif html_file and html_file[-1] != "/":
+            with open(html_file, "r", encoding="utf-8") as page_f:
+                url_page = page_f.read()
+        else:
+            print("no url response read")
+            exit(1)
 
-        # 测试项目列表中项目基本信息提取
-        if _bid_tag:
-            bid_tag = BidTag(settings)
-            bid = Bid(settings)
-            for idx, tag in enumerate(tag_list):
+        if rule_test:
+            # 测试裁剪源码, 得到 html_cut 变量
+            if _cut_html:
+                # getsizeof page 最好不要小于51, ""的内存占用为51
+                logger.info(f"test: page memory size: {getsizeof(url_page)}")
+                
+                web_brows.get_response_from_file(file=url_page)  # 将源码str输入web_brows对象
+                web_brows.decode_response()
                 try:
-                    bid_tag.get(tag)
-                    # logger.debug(str(bid_tag.message))
-                except:
-                    logger.debug(f"bid_tag: {bid_tag.message}")
-                    logger.error(f"idx: {idx} tag error: {tag},\n"
-                                f"bid_tag rule: {bid_tag.get_now}\n"
-                                f"{traceback.format_exc()}")
+                    html_cut = web_brows.cut_html()
+                except AttributeError as error:
+                    logger.error(f"{error}\n{traceback.format_exc()}")
+                    exit(1)
+                logger.info(f"test: page memory size: {getsizeof(web_brows.html_cut)}")
 
-                # 测试项目信息获取
-                if _bid:
-                    bid.receive(*bid_tag.message)
-                    logger.debug(bid.message)
+                # 保存裁剪后的html源码, 若不想保存请将下面语句注释掉
+                # web_brows.save_response(rps=web_brows.html_cut, url="cut_test_html",
+                #                         path="./html_test/", extra="cut")
+            else:
+                html_cut = url_page
 
-                # 前缀树搜索
-                if _title_trie:
-                    logger.info("title_trie.search_all: "
-                                f"{title_trie.search_all(bid.message[0])}")
+            # 测试获得项目列表
+            if _li_tag:
+                # web_brows.get_response_from_file(file=url_page, save="html_cut")
+                # web_brows.cut_html(settings["rule"]["cut"])
 
-    # 下一页测试
-    if _next_pages:
-        web_brows.get_next_pages(url, settings["rule"]["next_pages"])
+                tag_list = web_brows.get_tag_list(
+                    page=html_cut, tag_rule=settings["rule"]["tag_list"])
+                logger.info(f"tag_list len: {len(tag_list)}")
 
-except Exception:
-    logger.error(f"test: {traceback.format_exc()}")
+            # 测试项目列表中项目基本信息提取
+            if _bid_tag:
+                bid_tag = BidTag(settings)
+                bid = Bid(settings)
+                for idx, tag in enumerate(tag_list):
+                    try:
+                        bid_tag.get(tag)
+                        # logger.debug(str(bid_tag.message))
+                    except:
+                        logger.debug(f"bid_tag: {bid_tag.message}")
+                        logger.error(f"idx: {idx} tag error: {tag},\n"
+                                    f"bid_tag rule: {bid_tag.get_now}\n"
+                                    f"{traceback.format_exc()}")
+
+                    # 测试项目信息获取
+                    if _bid:
+                        bid.receive(*bid_tag.message)
+                        logger.debug(bid.message)
+
+                    # 前缀树搜索
+                    if _title_trie:
+                        logger.info("title_trie.search_all: "
+                                    f"{title_trie.search_all(bid.message[0])}")
+
+        # 下一页测试
+        if _next_pages:
+            web_brows.get_next_pages(url, settings["rule"]["next_pages"])
+
+    except Exception:
+        logger.error(f"test: {traceback.format_exc()}")
 
 
 
