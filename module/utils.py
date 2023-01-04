@@ -307,6 +307,7 @@ def time_difference_second(time1, time2):
 
 
 def reset_state(settings, key, json_file=""):
+    """ 重置一个 state  如 zzlh的'货物'"""
     if isinstance(settings, str) and not json_file:
         json_file = settings
         settings = read_json(settings)
@@ -316,7 +317,9 @@ def reset_state(settings, key, json_file=""):
     if json_file:
         save_json(settings, json_file)
 
+
 def reset_task(settings: dict, task_name: dict, json_file=""):
+    """ 重置一个任务的nextRunTime, newest interrupt end_rule"""
     if isinstance(settings, str) and not json_file:
         json_file = settings
         settings = read_json(settings)
@@ -333,6 +336,7 @@ def reset_task(settings: dict, task_name: dict, json_file=""):
 
 
 def reset_json_file(json_file):
+    """ 重置一个json文件task.list里所有任务"""
     settings = read_json(json_file)
     for task_name in settings["task"]["test"]:
         reset_task(settings, task_name)
