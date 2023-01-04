@@ -47,6 +47,7 @@ res_file = None
 
 try:
     # 打开网址并保存response
+
     if openUrlAndSaveHtml and __name__ == "__main__":  # 打开网址 保存url的response
         from module.get_url import UrlOpen
         
@@ -205,6 +206,7 @@ test_settings = {
       }
     }
 }
+
 
 if __name__ == "__main__":
     rule_test = 0  # 规则测试总开关
