@@ -130,7 +130,7 @@ def _parse_bs_rule(tag: Tag,
         elif value_name == "_Text":  # 没有属性只有text的标签
             return tag.text.strip()  # tag内容文本
         else:
-            return tag.get(value_name)  # tag属性值
+            return tag.get(value_name).strip()  # tag属性值
     else:  # 若不检索属性值则直接返回tag
         return tag
 
@@ -238,7 +238,7 @@ class ListWebBrows:
         Returns:
             ListWebBrows.Html or ListWebBrows.Qjc
         """
-        if class_name in ("zzlh", "hkgy", "jdcg"):
+        if class_name in ("zzlh", "hkgy", "jdcg", "test", ""):
             return getattr(cls, "Html")(settings)
         return getattr(cls, class_name.title())(settings)
 
@@ -284,9 +284,10 @@ class ListWebBrows:
             if isinstance(next_rule, str):
                 next_rule = re.compile(next_rule)
 
-            pages = int(next_rule.search(list_url).group())
-            next_pages_url = next_rule.sub(str(pages + 1), list_url)
-            logger.info(f"web_brows.Html.get_next_pages: {next_pages_url}")
+            pages = str(int(next_rule.search(list_url).group()) + 1)
+            next_pages_url = next_rule.sub(pages, list_url)
+            logger.info(f"web_brows.Html.get_next_pages: {next_pages_url}\n"
+                        f"pages: {pages}")
             return next_pages_url
 
         def cut_html(self, cut_rule: dict = None):
@@ -319,6 +320,7 @@ class ListWebBrows:
                     self.html_cut = self.response
                 self.html_cut = re.search(
                     cut_rule, self.response, re.S).group()
+            return self.html_cut
 
         def get_tag_list(self, page=None, tag_rule=None, parse="html.parser"):
             """
