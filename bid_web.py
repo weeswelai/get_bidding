@@ -169,6 +169,8 @@ def print_log_queue():
             text = next(log_print)
             put_text(text, scope="log")
     except StopIteration:
+        height = eval_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scrollHeight')
+        run_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scroll(0,height)', height=height)
         return None
 
 if __name__ == "__main__":
