@@ -112,7 +112,7 @@ def date_days(change_days=0):
     return (dt.now() + timedelta(days=change_days)).strftime(_DATE_TIME_FORMAT)
 
 
-def get_time_add(time_base=None, min=30):
+def get_time_add(time_base=None, delay="1h"):
     """
     Args:
         min:
@@ -121,7 +121,16 @@ def get_time_add(time_base=None, min=30):
         time_base + time_add
     """
     time_base = dt.strptime(time_base) if time_base else dt.now()
-    time_add = timedelta(minutes=min)
+    if isinstance(delay, int):
+        time_add = timedelta(minutes=delay)
+    if isinstance(delay, str):
+        time_ , unit = int(delay[:-1]), delay[-1]
+        if unit == "h":
+            time_add = timedelta(hours=time_)
+        elif unit == "d":
+            time_add = timedelta(days=time_)
+        elif unit == "m":
+            time_add = timedelta(minutes=time_)
     return (time_base + time_add).strftime('%Y-%m-%d %H:%M:%S')
 
 
