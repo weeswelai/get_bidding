@@ -10,8 +10,8 @@ from module.task import BidTask
 from module.utils import *
 
 RUN_TIME_START = "2022-01-01 00:00:00"  # 默认下次运行时间
-MIN_DELAY = 60  # 默认延迟时间 60分钟
-ERROR_DELAY = 5  # 网页打开次数过多时延迟时间
+COMPLETE_DELAY = 60  # 默认延迟时间 60分钟
+ERROR_DELAY = 10  # 网页打开次数过多时延迟时间
 
 
 # webio点击stop按钮时引发的异常
@@ -143,8 +143,14 @@ class TaskManager:
         while self.task.init_state():  # task 按stateQueue顺序完成state
             self.web_break()
             state_result = self.state_run()
-        min_delay = MIN_DELAY if state_result else ERROR_DELAY
-        nextRunTime = get_time_add(min=min_delay)
+
+        # 判断结果 计算下次运行时间, 返回 True 则 延迟60分钟, 错误则延迟10分钟或json设置里的时间        
+        if state_result:
+            delay = COMPLETE_DELAY
+        else:
+            delay = self.task.error_delay if self.task.error_delay \
+                else ERROR_DELAY
+        nextRunTime = get_time_add(delay=delay)
         # 设置下次运行时间
         deep_set(self.task.settings, "nextRunTime", nextRunTime)
         self.task.nextRunTime = nextRunTime
@@ -163,6 +169,7 @@ class TaskManager:
                 self.task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
+                
                 logger.warning(f"open_list_url_error, delay {ERROR_DELAY} min")
                 return False
             save_json(self.settings, self.json_file)  # 处理完一页后save

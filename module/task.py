@@ -228,11 +228,13 @@ class BidTaskInit:
     bid_tag_error = 0
     error_open = True
 
+
     def __init__(self, settings, task_name="test", test=False) -> None:
         self.settings = settings  # zzlh:{}
         self.task_name = task_name  # 当前任务名
         self.match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
         self.nextRunTime = settings["nextRunTime"]
+        self.error_delay = deep_get(self.settings, "urlConfig.errorDelay")
         self._init_brows(settings)
         self._creat_data_file(test)
         logger.info(f"init task {self.task_name}, list brows:\n"
