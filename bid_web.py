@@ -14,6 +14,7 @@ from pywebio.session import eval_js, run_js
 from module.log import logger, queue_handler
 from module.task_manager import WebBreak
 from module.utils import save_json
+from bid_run import bidTaskManager
 
 # BUTTON_TEST_SIZE = "40% 100px 60%"
 LOG_TEST_SZIE = "70% 0px 70%"
@@ -79,7 +80,7 @@ class BidWeb:
         self.stroll = False if self.stroll else True
 
     def start_button(self, btn_val):
-        from bid_run import bidTaskManager
+        # from bid_run import bidTaskManager
         try:
             logger.hr("START", 0)
             bidTaskManager.restart = True
@@ -91,14 +92,14 @@ class BidWeb:
             save_json(bidTaskManager.settings, bidTaskManager.json_file)
         
     def stop_button(self, btn_val):
-        from bid_run import bidTaskManager
+        # from bid_run import bidTaskManager
         bidTaskManager.break_ = True
         bidTaskManager.task.task_end = True
         self.stroll = False
 
     def exit(self, _):
         # save json
-        from bid_run import bidTaskManager
+        # from bid_run import bidTaskManager
         bidTaskManager.exit()
         toast("结束程序")  # 弹窗
         _exit(0)  # 结束进程
@@ -136,7 +137,7 @@ class BidWeb:
                     run_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scroll(0,height)', height=height)
 
         except KeyboardInterrupt:
-            from bid_run import bidTaskManager
+            # from bid_run import bidTaskManager
             bidTaskManager.exit()
             _exit(0)
 
@@ -157,7 +158,7 @@ class BidWeb:
         try:
             start_server(self.main, port=40961, debug=False)
         except KeyboardInterrupt:
-            from bid_run import bidTaskManager
+            
             bidTaskManager.exit()
             _exit(0)
 
