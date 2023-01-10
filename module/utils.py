@@ -16,7 +16,8 @@ from bs4 import Tag
 _DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 __URL_FIND__ = {
     "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ],
-    "qjc": [24, "http://www.weain.mil.cn/"]
+    "qjc": [24, "http://www.weain.mil.cn/"],
+    "zgzf": [25, "http://search.ccgp.gov.cn"]
 }
 # ASCII 码转中文
 __URL_REPLACE__ = {
@@ -30,6 +31,16 @@ __URL_REPLACE__ = {
         "%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87": "公开招标",
         "%E9%82%80%E8%AF%B7%E6%8B%9B%E6%A0%87": "邀请招标",
         "%E7%AB%9E%E4%BA%89%E6%80%A7%E8%B0%88%E5%88%A4": "竞争性谈判"
+    },
+    "zgzf":{
+        "&dbselect=bidx": "",
+        "&bidSort=0": "",
+        "&displayZone=": "",
+        "&zoneId=": "",
+        "&pppStatus=0": "",
+        "&agentName=": "",
+        "&buyerName=": "",
+        "&projectId=": ""
     }
 }
 
@@ -102,14 +113,16 @@ def date_now_s(file_new=False) -> str:
         return dt.now().strftime(_DATE_TIME_FORMAT)
 
 
-def date_days(change_days=0):
+def date_days(change_days=0, format=None):
     """ 返回当前日期,仅到日
     Args:
         change_days (int): 增加或减少的天数
     Retruns:
         str : 返回计算后日期的字符串
     """
-    return (dt.now() + timedelta(days=change_days)).strftime(_DATE_TIME_FORMAT)
+    if not format:
+        format = _DATE_TIME_FORMAT
+    return (dt.now() + timedelta(days=change_days)).strftime(format)
 
 
 def get_time_add(time_base=None, delay="1h"):
@@ -205,15 +218,14 @@ def url_to_filename(url: str):
     if len(url) > 100:  # 部分网址有可能过长, windows文件名不能超过179个字符
         for key, value in __URL_FIND__.items():
             if url[:value[0]] == value[1]:
-                url = url.replace(url[:value[0]], "")
+                # url = url.replace(url[:value[0]], "")
                 for ascii, chn in __URL_REPLACE__[key].items():
                     url = url.replace(ascii, chn)
     if url.find("//www") > 0:
         url = url[url.find(".") + 1:]
-    else:
+    elif url.find("//") > 0:
         url = url[url.find("//") + 2:]
-    url = url.replace("/", " ")\
-        .replace("?", " ").replace(":", " ")
+    url = url.replace("/", " ").replace("?", " ").replace(":", " ")
     if url[-5:] != ".html":
         url = f"{url}.html"
     return url
@@ -292,7 +304,7 @@ def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
                       sort_keys=sort_keys)
 
 
-def sleep_random(time_range: tuple = (1.7, 3), message: str = None):
+def sleep_random(time_range: tuple = (2, 3), message: str = None):
     """ 在随机范围内sleep, 并带有提示, 默认为1.7秒到3秒内
     """
     from module.log import logger
