@@ -1,0 +1,11 @@
+
+
+class WebTooManyVisits(Exception):
+    pass
+
+
+
+
+
+
+
