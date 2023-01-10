@@ -114,7 +114,7 @@ def set_file_logger(name=pyw_name):
 
 queue_handler = QueueHandler(Queue())
 queue_handler.setFormatter(web_formatter)
-if pyw_name in ("log", "bid_webui"):   
+if pyw_name in ("log", "bid_web"):   
     logger.addHandler(queue_handler)
 
 def show():
