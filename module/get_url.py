@@ -5,6 +5,7 @@ url打开模块
 
 import urllib.error as urlerr
 import urllib.request as urlreq
+import gzip
 from urllib.parse import urlencode
 from sys import exit
 
@@ -21,8 +22,9 @@ class UrlOpen:
     html_cut: str = None
     response: str = None  # read后的数据再decode, 默认为 utf-8解析
     req: urlreq.Request = None
+    url: str or dict = None
 
-    def __init__(self, headers=None, method="GET"):
+    def __init__(self, headers=None, method=None):
         self.headers = _HEADERS if headers in (None, {}, "") else headers
         self.method = "GET" if method in (None, "") else method.upper()
         self.init_req()
@@ -43,7 +45,7 @@ class UrlOpen:
         return self.decode_response()
 
     def init_req(self, url="http://127.0.0.1", 
-                 headers=None, method=None, form=None):
+                 headers: dict = None, method=None, form=None):
         """封装请求头,默认模式为GET
         Args:
             url (str,dict): 请求网址
@@ -58,39 +60,37 @@ class UrlOpen:
         if not method:
             method = self.method
         method = method.upper()
+        self.url = url
         if isinstance(url, dict):
             form = url["form"]
             url = url["url"]
         data = bytes(urlencode(form), encoding="utf-8") if form else None
-        self.req = urlreq.Request(url=url, method=method, data=data)
-        if headers:
-            for head, value in headers.items():
-                self.req.add_header(head, value)
+        self.req = urlreq.Request(url=url, method=method, data=data, headers=headers)
+        # if headers:
+        #     for head, value in headers.items():
+        #         self.req.add_header(head, value)
 
-    def open_url(self, req=None, timeout=6):
+    def open_url(self, timeout=6):
         """ 打开self.REQ的网页,保存源码(bytes)
         
         """
-        if not req:
-            req = self.req
-        logger.info(f"open {req.full_url}\n"
-                    f"method:{req.method}, data:{req.data}")
+        logger.info(f"open {self.req.full_url}\n"
+                    f"method:{self.req.method}, data:{self.req.data}")
         self.url_response = None
-        open_error = None
         try:
-            self.url_response = urlreq.urlopen(req, timeout=timeout)
+            self.url_response_open = urlreq.urlopen(self.req, timeout=timeout)
         except (urlerr.HTTPError, urlerr.URLError) as url_error:
             logger.error(
-                f"open {req.full_url} Failed HTTPError: {url_error}\n"
+                f"open {self.req.full_url} Failed HTTPError: {url_error}\n"
                 f"HTTP Status Code: {url_error.code}\n"
-                f"req: url: {req.full_url}\nheaders: {jsdump(req.headers)}\n"
-                f"method: {req.method}, data:{req.data}")         
-            open_error = url_error
+                f"req: url: {self.req.full_url}\nheaders: {jsdump(self.req.headers)}\n"
+                f"method: {self.req.method}, data:{self.req.data}")         
+            assert False, "open url error"
             # exit(1)
-        else:
-            self.url_response = self.url_response.read()
 
-        assert open_error is None, open_error
+        self.url_response = self.url_response_open.read()
+        # self.url_response.info().get("Content-Encoding")
+
         return self.url_response
 
     def decode_response(self):
@@ -104,7 +104,12 @@ class UrlOpen:
             self.response = self.url_response.decode(decoding)
         except UnicodeDecodeError:
             decoding = "gbk"
-            self.response = self.url_response.decode(decoding)
+            try:
+                self.response = self.url_response.decode(decoding)
+            # 尝试用gzip解压缩
+            except UnicodeDecodeError:
+                self.url_response = gzip.decompress(self.url_response)
+                self.decode_response()
         except AttributeError:
             if self.url_response is None:
                 logger.error("url_response is None")  # 当网站无返回时
@@ -123,19 +128,22 @@ class UrlOpen:
             save_date (bool): 是带有保存带时间的新文件
             仅在浏览列表页面出错时或测试时保存使用
         """
-        if not url:
-            url = self.req.full_url
-        if not rps:
-            rps = self.response
-        if path[-1] != "/":
-            path = f"{path}/"
-        file_name = path + url_to_filename(url)
+        url = self.url if not url else url
+        if isinstance(url, dict):
+            data = url["form"] if "from" in url else self.req.data
+            full_url = url["url"]
+        else:
+            full_url = url
+        rps = self.response if not rps else rps
+        path = f"{path}/" if path[-1] != "/" else path
+            
+        file_name = path + url_to_filename(full_url)
         name_list = file_name.split(".")
         # 添加额外名称
-        if self.method == "POST" and self.req.data:
-            name_list[-2] = f"{name_list[-2]}_{self.req.data.decode('utf-8')}"
-        elif self.method == "POST" and self.req.data is None:
-            name_list[-2] = f"{name_list[-2]}_from={self.req.data}"
+        if isinstance(url, dict) and data:
+            name_list[-2] = f"{name_list[-2]}_{urlencode(data)}"
+        elif isinstance(url, dict) and data is None:
+            name_list[-2] = f"{name_list[-2]}_from={data}"
         if save_date:
             name_list[-2] = f"{name_list[-2]}{date_now_s(True)}"
         if extra:
