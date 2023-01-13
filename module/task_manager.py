@@ -11,7 +11,7 @@ from module.utils import *
 from module.web_exception import WebTooManyVisits
 
 RUN_TIME_START = "2022-01-01 00:00:00"  # 默认下次运行时间
-COMPLETE_DELAY = 60  # 默认延迟时间 60分钟
+COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
 ERROR_DELAY = 10  # 网页打开次数过多时延迟时间
 NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
 
@@ -176,7 +176,7 @@ class TaskManager:
                 return False
             save_json(self.settings, self.json_file)  # 处理完一页后save
             if state_result:
-                sleep_random(delay_range, message="you can use 'Ctrl  C' stop now")
+                sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
                 # yield True
             else:
                 logger.info(f"{self.task.task_name} {self.task.state_idx} is complete")
