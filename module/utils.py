@@ -310,7 +310,7 @@ def sleep_random(time_range: tuple = (2, 3), message: str = None):
     from module.log import logger
     sleep_time = uniform(*time_range)
     if message:
-        print(f" wait {sleep_time} s,{message}")
+        print(f"wait {sleep_time} s, {message}")
     logger.info(f"sleep {sleep_time}")
     sleep_idx = int(sleep_time)
     for idx in range(1, sleep_idx + 1):
@@ -364,8 +364,21 @@ def reset_json_file(json_file):
     save_json(settings, json_file)
 
 
+def cookie_str_to_dict(cookie: str):
+    cookie_dict = {}
+    for c in cookie.split(";"):
+        key, value = c.strip().split("=")
+        cookie_dict[key] = value
+    return cookie_dict
+
+def cookie_dict_to_str(set_cookie: dict):
+    cookie = ()
+    for key, value in set_cookie.items():
+        cookie += (f"{key}={value}",)
+    return "; ".join(cookie).strip()
+
 if __name__ == "__main__":
     # 本模块测试
     # test code
-    reset_json_file("./bid_settings/bid_settings_test.json")
+    reset_json_file("./bid_settings/bid_settings.json")
     pass
