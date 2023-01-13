@@ -2,12 +2,12 @@
 url打开模块
 打开网页, 保存html源码
 """
-
+import gzip
+import socket
 import urllib.error as urlerr
 import urllib.request as urlreq
-import gzip
+from http.client import HTTPResponse
 from urllib.parse import urlencode
-from sys import exit
 
 from module.log import logger
 from module.utils import *
@@ -18,11 +18,13 @@ _HEADERS = {
 
 
 class UrlOpen:
-    url_response: bytes = None  # 原始bytes数据 read后
+    url_response_open: HTTPResponse = None
+    url_response_byte: bytes = None  # 原始bytes数据 read后
     html_cut: str = None
     response: str = None  # read后的数据再decode, 默认为 utf-8解析
     req: urlreq.Request = None
     url: str or dict = None
+    cookie = {}
 
     def __init__(self, headers=None, method=None):
         self.headers = _HEADERS if headers in (None, {}, "") else headers
@@ -76,7 +78,7 @@ class UrlOpen:
         """
         logger.info(f"open {self.req.full_url}\n"
                     f"method:{self.req.method}, data:{self.req.data}")
-        self.url_response = None
+        self.url_response_byte = None
         try:
             self.url_response_open = urlreq.urlopen(self.req, timeout=timeout)
         except (urlerr.HTTPError, urlerr.URLError) as url_error:
@@ -86,35 +88,38 @@ class UrlOpen:
                 f"req: url: {self.req.full_url}\nheaders: {jsdump(self.req.headers)}\n"
                 f"method: {self.req.method}, data:{self.req.data}")         
             assert False, "open url error"
+        except socket.timeout:
+            assert False, "socket.timeout: time out"
             # exit(1)
 
-        self.url_response = self.url_response_open.read()
-        # self.url_response.info().get("Content-Encoding")
+        self.url_response_byte = self.url_response_open.read()
+        # self.url_response_byte.info().get("Content-Encoding")
 
-        return self.url_response
+        return self.url_response_byte
 
     def decode_response(self):
         """
         AttributeError: 'HTTPResponse' object has no attribute 'decode'
         可能会有AttributeError: 'NoneType' object has no attribute 'decode'
         """
-        # self.url_response (str): 经过urlopen返回的response.read().decode()后的源码
+        # self.url_response_byte (str): 经过urlopen返回的response.read().decode()后的源码
         decoding = "utf-8"
+        self.response = None
         try:
-            self.response = self.url_response.decode(decoding)
+            self.response = self.url_response_byte.decode(decoding)
         except UnicodeDecodeError:
             decoding = "gbk"
             try:
-                self.response = self.url_response.decode(decoding)
+                self.response = self.url_response_byte.decode(decoding)
             # 尝试用gzip解压缩
             except UnicodeDecodeError:
-                self.url_response = gzip.decompress(self.url_response)
+                self.url_response_byte = gzip.decompress(self.url_response_byte)
                 self.decode_response()
         except AttributeError:
-            if self.url_response is None:
-                logger.error("url_response is None")  # 当网站无返回时
+            if self.url_response_byte is None:
+                logger.error("url_response_byte is None")  # 当网站无返回时
             else:
-                self.response = self.url_response  # 仅用于读取文件给url_response
+                self.response = self.url_response_byte  # 仅用于读取文件给url_response
         return self.response
 
     def save_response(self, rps="", url="", path="./html_error/",
@@ -122,7 +127,7 @@ class UrlOpen:
         """保存response
 
         Args:
-            rps (str): response,为空时使用self.url_response
+            rps (str): response,为空时使用self.url_response_byte
             url (str): 网页url,为空时使用self.req.full_url
             path (str): html文件相对路径,默认为 ./html_error
             save_date (bool): 是带有保存带时间的新文件
@@ -153,11 +158,11 @@ class UrlOpen:
         save_file(file_name, rps)
         return file_name
 
-    def get_response_from_file(self, file, save="url_response"):
-        """ 将文件读取的数据赋给self.url_response, 仅在测试中使用
+    def get_response_from_file(self, file, save="response"):
+        """ 将文件读取的数据赋给self.url_response_byte, 仅在测试中使用
         Args:
             file (str): file路径或html字符串
-            save (str): url_response: 保存在 self.url_response中
+            save (str): url_response_byte: 保存在 self.url_response中
                         html_cut: 保存在 self.html_cut中
         Returns:
             (str):  file 是文件还是 字符串
@@ -170,10 +175,7 @@ class UrlOpen:
         except (FileNotFoundError, OSError):
             response = file
             logger.info(f"read html from str: {file.strip()[:100]}...")
-        if save == "url_response":
-            self.url_response = response
-        elif save == "html_cut":
-            self.html_cut = response
+        setattr(self, save, response)
 
 
 if __name__ == "__main__":
