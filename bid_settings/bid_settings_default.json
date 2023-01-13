@@ -5,26 +5,28 @@
       "zzlh",
       "hkgy",
       "jdcg",
-      "zhzb"
+      "zhzb",
+      "zgzf"
     ],
     "test": [
       "qjc",
       "zzlh",
       "hkgy",
       "jdcg",
-      "zhzb"
+      "zhzb",
+      "zgzf"
     ],
-    "run_time": "2022-12-30 14:33:34",
+    "run_time": "2023-01-13 10:34:01",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt"
   },
   "zzlh": {
     "nextRunTime": "",
-    "stateQueue": [],
-    "stateWait": [
+    "stateQueue": [
       "货物",
       "服务"
     ],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -154,12 +156,12 @@
   },
   "jdcg": {
     "nextRunTime": "",
-    "stateQueue": [],
-    "stateWait": [
+    "stateQueue": [
       "公开招标",
       "邀请招标",
       "竞争性谈判"
     ],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -264,8 +266,7 @@
       "需求1",
       "需求2"
     ],
-    "stateWait": [
-    ],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -465,10 +466,10 @@
   },
   "zhzb": {
     "nextRunTime": "",
-    "stateQueue": [],
-    "stateWait": [
+    "stateQueue": [
       "招标公告"
     ],
+    "stateWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -479,7 +480,8 @@
       "root": {
         "default": "http://bid.aited.cn"
       },
-      "method": "POST"
+      "method": "POST",
+      "errorDelay": "1d"
     },
     "rule": {
       "cut": {
@@ -505,9 +507,86 @@
         "form": {
           "classId": 151,
           "key": -1,
-          "page": 1
+          "page": 3
         }
       },
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "",
+      "error": false
+    }
+  },
+  "zgzf": {
+    "nextRunTime": "",
+    "stateQueue": [
+      "公开招标"
+    ],
+    "stateWait": [],
+    "test": [
+      "竞争性谈判",
+      "邀请公告",
+      "竞争性磋商"
+    ],
+    "headers": {
+      "User-Agent": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+      ],
+      "Cookie": "",
+      "Referer": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&start_time=&end_time=&timeType=2&searchparam=&searchchannel=0&dbselect=bidx&kw=&bidSort=0&pinMu=0&bidType=0&buyerName=&projectId=&displayZone=&zoneId=&agentName=",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+      "Accept-Language": "zh-CN,zh;q=0.9",
+      "Connection": "keep-alive"
+    },
+    "urlConfig": {
+      "root": {
+        "default": ""
+      },
+      "method": "GET",
+      "errorDelay": "5m",
+      "nextOpenDelay": "3,5"
+    },
+    "rule": {
+      "cut": {
+        "re_rule": "(<ul class=\"vT-srch-result-list-bid\">).*?(</ul>)",
+        "rule_option": 16
+      },
+      "next_pages": "(?<=page_index=)\\d{1,3}",
+      "tag_list": "li",
+      "bid_tag": {
+        "name_r": "tagName_find:a|_Text:",
+        "date_r": "tagName_find:span|_Text:",
+        "url_r": "tagName_find:a|href:",
+        "type_r": "tagName_all:strong|_Text:|1"
+      },
+      "bid": {
+        "date_cut": "\\d{4}\\.\\d{1,2}\\.\\d{1,2}(日|) \\d{2}:\\d{2}:\\d{2}"
+      }
+    },
+    "url参数解释": {
+      "url": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=1&dbselect=bidx&kw=&start_time=2022:12:29&end_time=2023:01:05&timeType=2&displayZone=&zoneId=&pppStatus=0&agentName=",
+      "searchtype=": "1:标题检索,2全文检索",
+      "pinMu=": "0:所有类别,1:货物,2:工程,3:服务",
+      "bidType=": "0:所有类型, 1:公开招标,3:竞争性谈判,6:邀请招标,10:竞争性磋商",
+      "start_time=2022%3A12%3A28": "起始时间2022:12:28",
+      "end_time=2023%3A01%3A04": "截止时间2023:01:04",
+      "timeType=": "0:今日, 1:近3天, 2:近一周, 6:指定时间"
+    },
+    "公开招标": {
+      "url": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=1&dbselect=bidx&kw=&displayZone=&zoneId=&pppStatus=0&agentName=",
       "newest": {
         "name": "",
         "date": "",
