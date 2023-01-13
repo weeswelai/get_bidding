@@ -7,7 +7,6 @@
 """
 import traceback
 from datetime import datetime
-from time import sleep
 
 from bs4 import Tag
 
@@ -15,10 +14,11 @@ from module.judge_content import title_trie
 from module.log import logger
 from module.utils import *
 from module.web_brows import *
+from module.web_exception import WebTooManyVisits
 
 DATA_PATH = r"./data"
-RE_OPEN_MAX = 6
-SAVE_ERROR_MAX = 2
+RE_OPEN_MAX = 6  # 异常时最大重新打开次数
+SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
 
 
 class BidState:
@@ -57,10 +57,10 @@ class BidState:
             return datetime.strptime(date, date_format) < \
                    datetime.strptime(end_date, date_format)
 
-        def bid_is_end(self, bid_prj: Bid):
+        def bid_is_end(self, bid_prj: BidProject.Bid):
             """ 判断当前项目是否符合结束条件
             Args:
-                bid_prj (<class> Bid): 当前Bid对象, 保存项目信息
+                bid_prj (<class> BidProject.Bid): 当前Bid对象, 保存项目信息
             """
             if bid_prj.name == self.end_rule["name"] \
                     and bid_prj.url == self.end_rule["url"]:
@@ -87,7 +87,7 @@ class BidState:
             deep_set(self.settings, "interruptUrl", "")
             deep_set(self.settings, "complete", "complete")
 
-        def save_newest_and_interrupt(self, bid: Bid):
+        def save_newest_and_interrupt(self, bid: BidProject.Bid):
             """ 保存最新的招标项目信息, 设置 compelete 为 interrupt
                 仅执行一次, interrupt状态下不执行
             """
@@ -116,7 +116,7 @@ class BidState:
                 list_url (str, dict): 当前访问的url信息, 在get方式下为str
                     post为 dict, 由于传入的是一个新的dict而不是修改dict中的value,
                     所以不用担心value可能在BidTask._get_next_list_url中改变
-                bid (web_brows.Bid): 当前Bid对象
+                bid (web_brows.BidProject.Bid): 当前Bid对象
             """
             if self.start:
                 self.set_interrupt_url(list_url)
@@ -165,7 +165,7 @@ class BidState:
                              "please check settings json file")
                 exit()
 
-        def bid_is_start(self, bid_prj: Bid) -> True:
+        def bid_is_start(self, bid_prj: BidProject.Bid) -> True:
             """判断条件为: name, date, url 三个信息必须全部符合, 符合返回True 并
             将 self.state 置为 True, 若有一个不符合则返回 False .
             仅在 interrupt状态下执行
@@ -217,7 +217,7 @@ class BidState:
 class BidTaskInit:
     state_idx: str  # init at _get_state  "state1" or "state2"
     State: BidState.Complete or BidState.InterruptState
-    bid: Bid
+    bid: BidProject.Bid
     bid_tag: BidTag
     web_brows: ListWebBrows.Html
     bid_web: BidHtml
@@ -227,7 +227,7 @@ class BidTaskInit:
     list_url: str = None
     bid_tag_error = 0
     error_open = True
-
+    
 
     def __init__(self, settings, task_name="test", test=False) -> None:
         self.settings = settings  # zzlh:{}
@@ -235,6 +235,9 @@ class BidTaskInit:
         self.match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
         self.nextRunTime = settings["nextRunTime"]
         self.error_delay = deep_get(self.settings, "urlConfig.errorDelay")
+        self.delay = deep_get(self.settings, "urlConfig.nextOpenDelay")
+        if self.delay:
+            self.delay = [int(t) for t in self.delay.split(",")]
         self._init_brows(settings)
         self._creat_data_file(test)
         logger.info(f"init task {self.task_name}, list brows:\n"
@@ -248,7 +251,7 @@ class BidTaskInit:
             settings (dict): json中 的具体任务
         """
         self.bid_tag = BidTag(settings)
-        self.bid = Bid(settings)
+        self.bid = BidProject.init(settings, self.task_name)
         self.web_brows = ListWebBrows.init(settings, self.task_name)
         self.bid_web = BidHtml(settings)
 
@@ -353,11 +356,8 @@ class BidTask(BidTaskInit):
         """ 获得下次打开的 url 保存在self.list_url
         """
         if not self.list_url:
-            self.list_url = self.State.return_start_url()
-
-            if self.task_name.title() == "Qjc":  # 这段不知道塞哪里好
-                self.web_brows: ListWebBrows.Qjc
-                self.list_url += self.web_brows.url_time()  # ListWebBrows.Qjc.url_time
+            list_url = self.State.return_start_url()
+            self.list_url = self.web_brows.url_extra(list_url)
         else:
             self.list_url = self.web_brows.get_next_pages(self.list_url)
 
@@ -370,6 +370,9 @@ class BidTask(BidTaskInit):
             bidTaskManager.web_break()
         logger.hr("BidTask._open_list_url", 3)
         self.error_open = False
+        cookie = self.web_brows.set_cookie()
+        if cookie:
+            deep_set(self.settings, "headers.Cookie", cookie)
         try:
             self.web_brows.open(url=url)
         except AssertionError:
@@ -378,18 +381,21 @@ class BidTask(BidTaskInit):
             self.error_open = True
         else:
             try:  # 在打开网页后判断网页源码是否符合要求
-                self.web_brows.cut_html()
+                self.web_brows.html_cut = self.web_brows.cut_html()
             except Exception:
                 self.error_open = True
                 if save_error < SAVE_ERROR_MAX:
                     self.web_brows.save_response(
                         save_date=True, extra="cut_Error")
-                    logger.info(f"cut html error, open {self.list_url} again"
-                                f"\nreOpen: {reOpen + 1}")
+                    logger.info(f"cut html error")                                
         if self.error_open:
+            if self.web_brows.too_many_open():
+                raise WebTooManyVisits
             if reOpen < RE_OPEN_MAX:
                 reOpen += 1
-                sleep_random((1.4, 2))
+                sleep_random((2, 3))
+                logger.info(f"open \n{self.list_url}\n"
+                            f"again, reOpen: {reOpen + 1}")
                 self._open_list_url(url, reOpen, save_error)
 
             assert reOpen < RE_OPEN_MAX, \
@@ -427,7 +433,7 @@ class BidTask(BidTaskInit):
         self.State.print_interrupt()
 
     def _bid_receive_bid_tag(self, tag: Tag or dict, idx):
-        """ 由BidTag.get 读取一个项目项目节点, Bid 接收并对信息进行处理
+        """ 由BidTag.get 读取一个项目项目节点, BidProject.Bid 接收并对信息进行处理
         """
         err_flag = False
         try:
@@ -458,11 +464,11 @@ class BidTask(BidTaskInit):
             return False
         return True
 
-    def _title_trie_search(self, bid_prj: Bid):
+    def _title_trie_search(self, bid_prj: BidProject.Bid):
         """ 处理 bid对象
 
         Args:
-            bid_prj (web_brows.Bid): 保存 bid 信息的对象
+            bid_prj (web_brows.BidProject.Bid): 保存 bid 信息的对象
         """
         result: list = title_trie.search_all(bid_prj.name)
         if result:
@@ -505,7 +511,7 @@ def _bid_to_dict(bid_prj=None):
         }
     elif isinstance(bid_prj, dict):
         return bid_prj
-    elif isinstance(bid_prj, Bid):
+    elif isinstance(bid_prj, BidProject.Bid):
         return {
             "name": bid_prj.name,
             "date": bid_prj.date,
@@ -518,15 +524,21 @@ def _bid_to_dict(bid_prj=None):
 if __name__ == "__main__":
     json_file = "./bid_settings/bid_settings.json"
     json_set = read_json(json_file)
-    bid_task_name = "qjc"
+    bid_task_name = "zgzf"
     bid_task_test = BidTask(json_set[bid_task_name], bid_task_name)
 
     # test code
     try:
         bid_task_test.restart()
         bid_task_test.init_state()
-        bid_task_test.process_next_list_web()
+        while 1:
+            state_result = bid_task_test.process_next_list_web()
+            if state_result:
+                sleep_random(message=" you can use 'Ctrl  C' stop now")
+                # yield True
+            else:
+                logger.info(f"{bid_task_test.task_name} {bid_task_test.state_idx} is complete")
+                break
     # use Ctrl + C exit
-    except KeyboardInterrupt:
-        pass
-    save_json(json_set, json_file)
+    except(KeyboardInterrupt, Exception):
+        save_json(json_set, json_file)

@@ -8,11 +8,12 @@ import traceback
 from module.log import logger
 from module.task import BidTask
 from module.utils import *
+from module.web_exception import WebTooManyVisits
 
 RUN_TIME_START = "2022-01-01 00:00:00"  # 默认下次运行时间
-COMPLETE_DELAY = 60  # 默认延迟时间 60分钟
+COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
 ERROR_DELAY = 10  # 网页打开次数过多时延迟时间
-
+NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
 
 # webio点击stop按钮时引发的异常
 class WebBreak(Exception):
@@ -103,7 +104,6 @@ class RunQueue(TaskQueue):
 
 
 class TaskManager:
-    task_name: str = None   # 任务名
     match_list: list = None  
     state: str = None
     last_task_state = None
@@ -134,15 +134,18 @@ class TaskManager:
         """ 完成一个任务
         """
         logger.hr(f"{self.task.task_name}.task_run", 1)
-        
+        delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
         if not self.task.settings["stateQueue"]:  # 若为空,重新写入stateQueue
             self.task.restart()
         self.task.task_end = False
         logger.info(f"task stateQueue: {self.task.settings['stateQueue']}")
-        
-        while self.task.init_state():  # task 按stateQueue顺序完成state
-            self.web_break()
-            state_result = self.state_run()
+        try:
+            while self.task.init_state():  # task 按stateQueue顺序完成state
+                self.web_break()
+                state_result = self.state_run(delay_range)
+        except WebTooManyVisits:
+            state_result = False
+            deep_set(self.task.settings, f"{self.task.state_idx}.error", True)
 
         # 判断结果 计算下次运行时间, 返回 True 则 延迟60分钟, 错误则延迟10分钟或json设置里的时间        
         if state_result:
@@ -150,6 +153,7 @@ class TaskManager:
         else:
             delay = self.task.error_delay if self.task.error_delay \
                 else ERROR_DELAY
+            logger.warning(f"open_list_url_error, delay {delay}")
         nextRunTime = get_time_add(delay=delay)
         # 设置下次运行时间
         deep_set(self.task.settings, "nextRunTime", nextRunTime)
@@ -157,7 +161,7 @@ class TaskManager:
         save_json(self.settings, self.json_file)
         logger.info(f"task {self.task.task_name}" f"next run time: {nextRunTime}")
 
-    def state_run(self):
+    def state_run(self, delay_range):
         """完成一个state"""
         logger.hr(f"{self.task.state_idx}.state_run", 2)
         while 1:
@@ -169,12 +173,10 @@ class TaskManager:
                 self.task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
-                
-                logger.warning(f"open_list_url_error, delay {ERROR_DELAY} min")
                 return False
             save_json(self.settings, self.json_file)  # 处理完一页后save
             if state_result:
-                sleep_random(message="you can use 'Ctrl  C' stop now")
+                sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
                 # yield True
             else:
                 logger.info(f"{self.task.task_name} {self.task.state_idx} is complete")

@@ -10,8 +10,8 @@
 """
 import os
 import shutil
-from time import sleep
 import traceback
+from time import sleep
 
 from module.log import logger
 from module.task_manager import TaskManager
@@ -32,5 +32,7 @@ if __name__ == "__main__":
         try:
             bidTaskManager.loop()
         except Exception:
-            bidTaskManager.exit()
             logger.error(traceback.format_exc())
+        finally:
+            bidTaskManager.exit()
+            
