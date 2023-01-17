@@ -21,15 +21,15 @@ RE_OPEN_MAX = 6  # 异常时最大重新打开次数
 SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
 
 
-class BidState:
+class TaskState:
     class Complete:
         newest = False
         start = True  # process_tag_list 中判断
         state = ""  # 默认为 ""
 
-        def __init__(self, settings, state_idx="test") -> None:
+        def __init__(self, settings, url_task="test") -> None:
             self.end_rule = settings["end_rule"]  # 翻页结束标志
-            self.state_idx = state_idx
+            self.url_task = url_task
             self.settings = settings
             self.init()
 
@@ -41,7 +41,7 @@ class BidState:
             if len(self.end_rule["date"]) <= 10:
                 self.end_rule["date"] = self.end_rule["date"] + " 00:00:00"
             # TODO end_rule 和现在的日期不能超过6天,若超过,则修改为与现在日期差6天的值
-            logger.info(f"json: {self.state_idx}.complete = "
+            logger.info(f"json: {self.url_task}.complete = "
                         f"\"{deep_get(self.settings, 'complete')}"
                         f"\"\nend_rule : {self.end_rule}")
 
@@ -130,7 +130,7 @@ class BidState:
             if self.settings["url"]:
                 return self.settings["url"]
             else:
-                logger.error(f"{self.state_idx}.url: is empty, "
+                logger.error(f"{self.url_task}.url: is empty, "
                              "please check settings json file")
                 exit()
 
@@ -154,14 +154,14 @@ class BidState:
     class InterruptState(Complete):
         state = "interrupt"
 
-        def __init__(self, settings, state_idx="test"):
-            super().__init__(settings, state_idx)
+        def __init__(self, settings, url_task="test"):
+            super().__init__(settings, url_task)
             self.interrupt = self.settings["interrupt"]
             self.newest = True
             self.start = False
 
             if not deep_get(self.settings, "interrupt.name"):
-                logger.error(f"{self.state_idx}.interrupt.name is empty, "
+                logger.error(f"{self.url_task}.interrupt.name is empty, "
                              "please check settings json file")
                 exit()
 
@@ -201,22 +201,22 @@ class BidState:
             if self.settings["interruptUrl"]:
                 return self.settings["interruptUrl"]
             else:
-                logger.error(f"{self.state_idx}.interruptUrl: is empty, "
+                logger.error(f"{self.url_task}.interruptUrl: is empty, "
                              "please check settings json file")
                 exit()
 
     @classmethod
-    def init(cls, settings, state_idx) -> Complete or InterruptState:
+    def init(cls, settings, url_task) -> Complete or InterruptState:
         """根据传入settings返回对应的class"""
         if settings["complete"] == "interrupt":
-            return cls.InterruptState(settings, state_idx)
+            return cls.InterruptState(settings, url_task)
         else:
-            return cls.Complete(settings, state_idx)
+            return cls.Complete(settings, url_task)
 
 
 class BidTaskInit:
-    state_idx: str  # init at _get_state  "state1" or "state2"
-    State: BidState.Complete or BidState.InterruptState
+    url_task: str  # init at _get_state  "state1" or "state2"
+    State: TaskState.Complete or TaskState.InterruptState
     bid: BidProject.Bid
     bid_tag: BidTag
     web_brows: ListWebBrows.Html
@@ -270,21 +270,21 @@ class BidTaskInit:
         self.list_file.write(f"start at {date_now_s()}\n")
         self.match_list_file.write(f"start at {date_now_s()}\n")
 
-    def _get_state_idx(self, queue: list):
-        """ 从stateQueue中取第一个state 赋给 self.state_idx(str)
+    def _get_url_task(self, queue: list):
+        """ 从stateQueue中取第一个state 赋给 self.url_task(str)
         若 queue 为空返回False
         """
         if queue:
-            self.state_idx = queue[0]
-            logger.info(f"{self.task_name}._get_state_idx = {self.state_idx}")
+            self.url_task = queue[0]
+            logger.info(f"{self.task_name}._get_url_task = {self.url_task}")
             return True
         else:
             logger.info(f"{self.task_name}.queue is []")
             return False
 
     def init_state(self):
-        """ 用_get_state_idx 判断 task.stateQueue 中是否还有state
-        有则用 BidState.init() 初始化State, 如果State已初始化将会被新的覆盖
+        """ 用_get_url_task 判断 task.stateQueue 中是否还有state
+        有则用 TaskState.init() 初始化State, 如果State已初始化将会被新的覆盖
         无则返回 False
         
         Returns:
@@ -292,13 +292,13 @@ class BidTaskInit:
         """
         logger.hr(f"{self.task_name}.init_state", 3)
         # 若queue中还有state
-        if self._get_state_idx(deep_get(self.settings, "stateQueue")):
-            self.State = BidState.init(
-                self.settings[self.state_idx], self.state_idx)
+        if self._get_url_task(deep_get(self.settings, "stateQueue")):
+            self.State = TaskState.init(
+                self.settings[self.url_task], self.url_task)
             self.State.print_state_at_start()
 
-            self.list_file.write(f"{self.state_idx}\n")
-            self.match_list_file.write(f"{self.state_idx}\n")
+            self.list_file.write(f"{self.url_task}\n")
+            self.match_list_file.write(f"{self.url_task}\n")
             self.list_url = None
 
             return True
@@ -490,15 +490,15 @@ class BidTask(BidTaskInit):
         """ 将json中 queue 头元素出队,添加到complete中
         """
         stateQueue, stateWait = self._state_queue_move()
-        logger.info(f"{self.state_idx} complete, stateQueue: {stateQueue}\n"
+        logger.info(f"{self.url_task} complete, stateQueue: {stateQueue}\n"
                     f"stateWait: {stateWait}")
         if stateQueue:
-            self.state_idx = stateQueue[0]
+            self.url_task = stateQueue[0]
 
     def set_error_state(self):
         """当网页打开次数过多时设置错误标志,并将当前state移到stateWait"""
         deep_set(self.settings,
-                 f"{self.state_idx}.error", f"{self.State.state}Error")
+                 f"{self.url_task}.error", f"{self.State.state}Error")
         self._state_queue_move()
 
 
@@ -537,7 +537,7 @@ if __name__ == "__main__":
                 sleep_random(message=" you can use 'Ctrl  C' stop now")
                 # yield True
             else:
-                logger.info(f"{bid_task_test.task_name} {bid_task_test.state_idx} is complete")
+                logger.info(f"{bid_task_test.task_name} {bid_task_test.url_task} is complete")
                 break
     # use Ctrl + C exit
     except(KeyboardInterrupt, Exception):
