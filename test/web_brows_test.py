@@ -6,7 +6,7 @@ import traceback
 from sys import getsizeof
 
 from module.log import logger
-from module.web_brows import ListWebBrows, BidTag, Bid
+from module.web_brows import BidProject, ListWebBrows, BidTag
 from module.utils import *
 from module.judge_content import title_trie
 # sys.stderr = logger.handlers[1].stream
@@ -28,21 +28,36 @@ openUrlAndSaveHtml = 0  # 打开网址并保存response
 # 且 json中 zzhl.urlConfig.method = "GET" 或  zzhl.urlConfig 没有 method属性时选用 GET方式
 # url有两种形式, GET 为 str, POST为 dict, 若为POST则必须包含form信息
 
-get_url = "http://www.365trade.com.cn/zbgg/index_2.jhtml?typeId=102"
+# url_str = ""
+url_str = ""
 
 # 一般情况下, post方式只需要修改 url 和 from的表单信息
-post_url = {
-    "url": "http://bid.aited.cn/front/ajax_getBidList.do",
+url_form = {
+    "url": "https://search.ccgp.gov.cn/bxsearch?",
     "form": {
-        "classId": 151,
-        "key": -1,
-        "page": 1
+        "searchtype": 1,
+        "page_index": 1,
+        "bidSort": "",
+        "buyerName": "",
+        "projectId": "",
+        "pinMu": "",
+        "bidType": 1,
+        "dbselect": "bidx",
+        "kw": "",
+        "start_time": "2022:12:29",
+        "end_time": "2023:01:05",
+        "timeType": 2,
+        "displayZone": "", 
+        "zoneId": "",
+        "pppStatus": 0,
+        "agentName": "",
     }
 }
 
 method = "get"  # post 或 get
+have_form = False
 method = method.upper()
-url = get_url if method == "GET" else post_url
+url = url_form if have_form else url_str
 res_file = None
 
 try:
@@ -182,49 +197,50 @@ test_settings = {
     },
     "urlConfig": {
       "root": {
-        "default": "http://bid.aited.cn"
+        "default": ""
       },
-      "method": "POST"
+      "method": method
     },
     "rule": {
       "cut": {
-        "re_rule": "<li>.*?(?=,)",
+        "re_rule": "(<ul class=\"vT-srch-result-list-bid\">).*?(</ul>)",
         "rule_option": 16
       },
-      "next_pages": "",
+      "next_pages": "(?<=page_index=)\\d{1,3}",
       "tag_list": "li",
       "bid_tag": {
-        "name_r": "tagName_find:a|title:",
-        "date_r": "tagName_find:div.span|_Text:",
+        "name_r": "tagName_find:a|_Text:",
+        "date_r": "tagName_find:span|_Text:",
         "url_r": "tagName_find:a|href:",
-        "type_r": ""
+        "type_r": "tagName_all:strong|_Text:|1"
       },
       "bid": {
-        "name_cut": "(?<=\").*?(?=\\\)",
-        "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)",
-        "url_cut": "(?<=\.\.).*?(?=\\\)"
+        # "name_cut": "(?<=\").*?(?=\\\)",
+        "date_cut": "\d{4}\.\d{1,2}\.\d{1,2}(日|) \d{2}:\d{2}:\d{2}"
+        # "url_cut": "(?<=\.\.).*?(?=\\\)"
       }
     }
 }
 
 
 if __name__ == "__main__":
-    rule_test = 0  # 规则测试总开关
+    rule_test = 1  # 规则测试总开关
     get_html_from_open_url = 0  # 衔接测试1打开网址和测试2网页解析
 
-    settings_from_json = 0  # 0: 使用本文件中test_settings, 1: 使用json file的setting,需要指定任务名
-    _cut_html = 0  # 裁剪html源码并保存
-    _li_tag = 0    # 从源码中获得项目列表, 这里使用的是 cut_html_f
-    _bid_tag = 0   # 测试项目列表中项目基本信息提取
-    _bid = 0      # 测试项目信息获取
-    _title_trie = 0  # 前缀树搜索测试
+    settings_from_json = 1  # 0: 使用本文件中test_settings, 1: 使用json file的setting,需要指定任务名
+    _cut_html = 10  # 裁剪html源码并保存, 保存语句已被注释掉
+    save_cut_html = 0  # 是否保存裁剪后的html到文件中
+    _li_tag = 10    # 从源码中获得项目列表, 这里使用的是 cut_html_f
+    _bid_tag = 10   # 测试项目列表中项目基本信息提取
+    _bid = 10      # 测试项目信息获取
+    _title_trie = 10  # 前缀树搜索测试
     _next_pages = 0  # 测试获得下一页网址,需要 全局 url变量
 
-    html_file = r""
+    html_file = r"./html_test/t.html"
     JSON_FILE = "./bid_settings/bid_settings.json"
     json_settings = read_json(JSON_FILE)  # 读取json文件为dict对象
 
-    task_name = "test"
+    task_name = "zgzf"
     if get_html_from_open_url:
         if isinstance(url, dict):
             task_name = "zhzb"
@@ -263,9 +279,9 @@ if __name__ == "__main__":
                     exit(1)
                 logger.info(f"test: page memory size: {getsizeof(web_brows.html_cut)}")
 
-                # 保存裁剪后的html源码, 若不想保存请将下面语句注释掉
-                # web_brows.save_response(rps=web_brows.html_cut, url="cut_test_html",
-                #                         path="./html_test/", extra="cut")
+                if save_cut_html:
+                    web_brows.save_response(rps=web_brows.html_cut, url="cut_test_html",
+                                            path="./html_test/")
             else:
                 html_cut = url_page
 
@@ -281,7 +297,7 @@ if __name__ == "__main__":
             # 测试项目列表中项目基本信息提取
             if _bid_tag:
                 bid_tag = BidTag(settings)
-                bid = Bid(settings)
+                bid = BidProject.init(settings, task_name)
                 for idx, tag in enumerate(tag_list):
                     try:
                         bid_tag.get(tag)
