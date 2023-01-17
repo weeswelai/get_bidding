@@ -145,7 +145,7 @@ class TaskManager:
                 state_result = self.state_run(delay_range)
         except WebTooManyVisits:
             state_result = False
-            deep_set(self.task.settings, f"{self.task.state_idx}.error", True)
+            deep_set(self.task.settings, f"{self.task.url_task}.error", True)
 
         # 判断结果 计算下次运行时间, 返回 True 则 延迟60分钟, 错误则延迟10分钟或json设置里的时间        
         if state_result:
@@ -163,7 +163,7 @@ class TaskManager:
 
     def state_run(self, delay_range):
         """完成一个state"""
-        logger.hr(f"{self.task.state_idx}.state_run", 2)
+        logger.hr(f"{self.task.url_task}.state_run", 2)
         while 1:
             self.web_break()
             try:
@@ -179,7 +179,7 @@ class TaskManager:
                 sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
                 # yield True
             else:
-                logger.info(f"{self.task.task_name} {self.task.state_idx} is complete")
+                logger.info(f"{self.task.task_name} {self.task.url_task} is complete")
                 return True
 
     def web_break(self):

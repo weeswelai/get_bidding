@@ -104,7 +104,6 @@ class UrlOpen:
         """
         # self.url_response_byte (str): 经过urlopen返回的response.read().decode()后的源码
         decoding = "utf-8"
-        self.response = None
         try:
             self.response = self.url_response_byte.decode(decoding)
         except UnicodeDecodeError:
