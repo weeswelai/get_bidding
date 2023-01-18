@@ -367,8 +367,9 @@ def reset_json_file(json_file):
 def cookie_str_to_dict(cookie: str):
     cookie_dict = {}
     for c in cookie.split(";"):
-        key, value = c.strip().split("=")
-        cookie_dict[key] = value
+        if c.strip():
+            key, value = c.strip().split("=")
+            cookie_dict[key] = value
     return cookie_dict
 
 def cookie_dict_to_str(set_cookie: dict):
