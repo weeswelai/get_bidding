@@ -150,6 +150,8 @@ class TaskState:
                 logger.info(
                     f"interrupt.name = '{self.settings['interrupt']['name']}', "
                     f"{self.settings['interrupt']['date']}")
+            else:
+                logger.info("not start")
 
     class InterruptState(Complete):
         state = "interrupt"
@@ -179,11 +181,11 @@ class TaskState:
             """
             for key in self.interrupt:  # name, date, url
                 if getattr(bid_prj, key) == self.interrupt[key] \
-                        and not self.interrupt[key]:
+                        and self.interrupt[key]:
                     continue
                 else:  # 有一个不符合条件直接返回False
                     return False  # 不满足则退出判断
-            logger.info("bid is start")
+            logger.info(f"bid is start, start at {bid_prj.name}")
             self.start = True
             return True
 
@@ -219,7 +221,7 @@ class BidTaskInit:
     State: TaskState.Complete or TaskState.InterruptState
     bid: BidProject.Bid
     bid_tag: BidTag
-    web_brows: ListWebBrows.Html
+    web_brows: DefaultWebBrows
     bid_web: BidHtml
     tag_list = None  # 源码解析后的 list
     list_file = None
@@ -252,7 +254,7 @@ class BidTaskInit:
         """
         self.bid_tag = BidTag(settings)
         self.bid = BidProject.init(settings, self.task_name)
-        self.web_brows = ListWebBrows.init(settings, self.task_name)
+        self.web_brows = web_brows_init(settings, self.task_name)
         self.bid_web = BidHtml(settings)
 
     def _creat_data_file(self, test=False):
@@ -385,7 +387,7 @@ class BidTask(BidTaskInit):
             except Exception:
                 self.error_open = True
                 if save_error < SAVE_ERROR_MAX:
-                    self.web_brows.save_response(
+                    self.web_brows.save_response(url=self.list_url,
                         save_date=True, extra="cut_Error")
                     logger.info(f"cut html error")                                
         if self.error_open:
@@ -422,14 +424,14 @@ class BidTask(BidTaskInit):
             if not self.State.newest:  # 非interrupt 状态只执行一次,interrupt状态该语句结果为False
                 self.State.save_newest_and_interrupt(self.bid)
             if not self.State.start:  # interrupt状态时判断项目是否开始记录
-                if not self.State.bid_is_start(self.bid):
-                    self.State.set_interrupt_url(self.list_url)
-                    continue
+                self.State.bid_is_start(self.bid)
+                continue
 
             self.State.set_interrupt(self.list_url, self.bid)  # 设置每次最后一个为interrupt
             self.list_file.write(f"{str(self.bid.message)}\n")  # 写入文件
             self._title_trie_search(self.bid)  # 使用title trie 查找关键词
         logger.info(f"tag stop at {idx + 1}")
+        self.State.set_interrupt_url(self.list_url)
         self.State.print_interrupt()
 
     def _bid_receive_bid_tag(self, tag: Tag or dict, idx):
