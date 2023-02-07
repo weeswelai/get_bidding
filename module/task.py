@@ -17,8 +17,43 @@ from module.web_brows import *
 from module.web_exception import WebTooManyVisits
 
 DATA_PATH = r"./data"
-RE_OPEN_MAX = 6  # 异常时最大重新打开次数
+RE_OPEN_MAX = 4  # 异常时最大重新打开次数
 SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
+
+
+class PageList:
+    def __init__(self, settings):
+        """ 保存PageQueue, PageWait
+        Args:
+            settings (dict): 整个任务的settings
+        """
+        self.settings = settings
+        self.queue: list = deep_get(settings, "PageQueue")
+        self.wait: list = deep_get(settings, "PageWait")
+        # self.now = self.queue[0]
+
+    def restart(self):
+        """ 将json中 complete 添加到 queue中
+        """
+        logger.hr("BidTask.restart", 3)
+        for page in self.queue:
+            deep_set(self.settings, f"{page}.error", False)
+        for page in self.wait:
+            self.queue.append(page)
+            deep_set(self.settings, f"{page}.error", False)
+        deep_set(self.settings, "PageWait", [])
+        self.wait = deep_get(self.settings, "PageWait")
+        logger.info(f"PageQueue: {self.queue}")
+
+    def queue_is_empty(self):
+        if self.queue:
+            return False
+        return True
+
+    def queue_move(self):
+        """将Queue第一个移到Wait"""
+        self.wait.append(self.queue.pop(0))
+        return self.queue.copy(), self.wait.copy()
 
 
 class TaskState:
@@ -214,32 +249,35 @@ class TaskState:
             return cls.InterruptState(settings, url_task)
         else:
             return cls.Complete(settings, url_task)
-
+            
 
 class BidTaskInit:
-    url_task: str  # init at _get_state  "state1" or "state2"
+    url_task: str  # "公开招标" "邀请招标"
     State: TaskState.Complete or TaskState.InterruptState
     bid: BidProject.Bid
     bid_tag: BidTag
     web_brows: DefaultWebBrows
     bid_web: BidHtml
-    tag_list = None  # 源码解析后的 list
+    tag_list: list = None  # 源码解析后的 list
     list_file = None
     match_list_file = None
     list_url: str = None
     bid_tag_error = 0
+    match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     error_open = True
     
-
     def __init__(self, settings, task_name="test", test=False) -> None:
+        """ 初始化任务, 保存settings 和 task_name
+        Args:
+            settings(dict): 
+        """
         self.settings = settings  # zzlh:{}
         self.task_name = task_name  # 当前任务名
-        self.match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
-        self.nextRunTime = settings["nextRunTime"]
+        self.nextRunTime = settings["nextRunTime"]  # 被外部调用
+        self.page_list = PageList(settings)
         self.error_delay = deep_get(self.settings, "urlConfig.errorDelay")
-        self.delay = deep_get(self.settings, "urlConfig.nextOpenDelay")
-        if self.delay:
-            self.delay = [int(t) for t in self.delay.split(",")]
+        delay = deep_get(self.settings, "urlConfig.nextOpenDelay")
+        self.delay = [int(t) for t in delay.split(",")] if delay else None
         self._init_brows(settings)
         self._creat_data_file(test)
         logger.info(f"init task {self.task_name}, list brows:\n"
@@ -272,20 +310,8 @@ class BidTaskInit:
         self.list_file.write(f"start at {date_now_s()}\n")
         self.match_list_file.write(f"start at {date_now_s()}\n")
 
-    def _get_url_task(self, queue: list):
-        """ 从stateQueue中取第一个state 赋给 self.url_task(str)
-        若 queue 为空返回False
-        """
-        if queue:
-            self.url_task = queue[0]
-            logger.info(f"{self.task_name}._get_url_task = {self.url_task}")
-            return True
-        else:
-            logger.info(f"{self.task_name}.queue is []")
-            return False
-
     def init_state(self):
-        """ 用_get_url_task 判断 task.stateQueue 中是否还有state
+        """ 用_get_url_task 判断 task.PageQueue 中是否还有state
         有则用 TaskState.init() 初始化State, 如果State已初始化将会被新的覆盖
         无则返回 False
         
@@ -294,7 +320,9 @@ class BidTaskInit:
         """
         logger.hr(f"{self.task_name}.init_state", 3)
         # 若queue中还有state
-        if self._get_url_task(deep_get(self.settings, "stateQueue")):
+        if not self.page_list.queue_is_empty():
+            self.url_task = self.page_list.queue[0]
+            logger.info(f"{self.task_name}._get_url_task = {self.url_task}")
             self.State = TaskState.init(
                 self.settings[self.url_task], self.url_task)
             self.State.print_state_at_start()
@@ -304,6 +332,7 @@ class BidTaskInit:
             self.list_url = None
 
             return True
+        logger.info(f"{self.task_name}.queue is []")
         return False
 
 
@@ -314,18 +343,6 @@ class BidTask(BidTaskInit):
         """关闭已打开的文件,一般在程序结束时使用"""
         self.list_file.close()
         self.match_list_file.close()
-
-    def restart(self):
-        """ 将json中 complete 添加到 queue中
-        """
-        logger.hr("BidTask.restart", 3)
-        queue = deep_get(self.settings, "stateQueue")
-        complete = deep_get(self.settings, "stateWait")
-        queue += complete
-        deep_set(self.settings, "stateWait", [])
-        for state in queue:
-            deep_set(self.settings, f"{state}.error", False)
-        logger.info(f"stateQueue: {queue}")
 
     def process_next_list_web(self):
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
@@ -342,7 +359,7 @@ class BidTask(BidTaskInit):
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
         self.tag_list = self.web_brows.get_tag_list()
         if not self.tag_list:
-            self._complete_state()
+            self._complete_page_task()
             logger.warning("tag list is []")
             return False
         self._process_tag_list()
@@ -350,7 +367,7 @@ class BidTask(BidTaskInit):
         if not self.match_num:
             logger.info("no match")
         if self.State.state == "complete":
-            self._complete_state()
+            self._complete_page_task()
             return False  # state结束
         return True  # state继续
 
@@ -389,7 +406,8 @@ class BidTask(BidTaskInit):
                 if save_error < SAVE_ERROR_MAX:
                     self.web_brows.save_response(url=self.list_url,
                         save_date=True, extra="cut_Error")
-                    logger.info(f"cut html error")                                
+                    save_error += 1
+                logger.info(f"cut html error")                                
         if self.error_open:
             if self.web_brows.too_many_open():
                 raise WebTooManyVisits
@@ -420,6 +438,8 @@ class BidTask(BidTaskInit):
                 self.State.complete()  # set self.State.state = "complete"
                 logger.info(f"bid end at {self.bid.message}")
                 logger.info(f"end_rule: {self.State.end_rule}")
+                if idx == 0:
+                    logger.info(f"idx = {idx}, tag now: {self.bid.message}")
                 break
             if not self.State.newest:  # 非interrupt 状态只执行一次,interrupt状态该语句结果为False
                 self.State.save_newest_and_interrupt(self.bid)
@@ -479,29 +499,22 @@ class BidTask(BidTaskInit):
             self.match_list_file.write(f"{str(result)}\n")
             self.match_num += 1
 
-    def _state_queue_move(self):
-        """将stateQueue第一个移到stateWait"""
-        queue = deep_get(self.settings, "stateQueue")
-        complete = deep_get(self.settings, "stateWait")
-        complete.append(queue.pop(0))
-        deep_set(self.settings, "stateQueue", queue)
-        deep_set(self.settings, "stateWait", complete)
-        return queue, complete
-
-    def _complete_state(self):
+    def _complete_page_task(self):
         """ 将json中 queue 头元素出队,添加到complete中
         """
-        stateQueue, stateWait = self._state_queue_move()
-        logger.info(f"{self.url_task} complete, stateQueue: {stateQueue}\n"
-                    f"stateWait: {stateWait}")
-        if stateQueue:
-            self.url_task = stateQueue[0]
+        # PageQueue, PageWait = self._state_queue_move()
+        PageQueue, PageWait = self.page_list.queue_move()
+        logger.info(f"{self.url_task} complete, PageQueue: {PageQueue}\n"
+                    f"PageWait: {PageWait}")
+        if PageQueue:
+            self.url_task = PageQueue[0]
 
     def set_error_state(self):
         """当网页打开次数过多时设置错误标志,并将当前state移到stateWait"""
         deep_set(self.settings,
                  f"{self.url_task}.error", f"{self.State.state}Error")
-        self._state_queue_move()
+        # self._state_queue_move()
+        self.page_list.queue_move()
 
 
 def _bid_to_dict(bid_prj=None):
