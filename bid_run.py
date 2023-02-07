@@ -11,7 +11,6 @@
 import os
 import shutil
 import traceback
-from time import sleep
 
 from module.log import logger
 from module.task_manager import TaskManager
