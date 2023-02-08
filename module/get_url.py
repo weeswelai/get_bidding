@@ -213,7 +213,14 @@ class ReqOpen(GetUrl):
         return None
 
 
-# class SocketOpen(ReqOpen):
+class RequestsOpen(GetUrl):
+    
+    
+    pass
+
+
+class SocketOpen(ReqOpen):
+    pass
 #     """
 #     使用socket 建立连接
 #     """
