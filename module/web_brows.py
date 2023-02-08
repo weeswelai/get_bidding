@@ -11,7 +11,7 @@ import gzip
 import json
 import re
 from time import time
-from urllib.parse import urlencode
+from urllib.parse import urlencode  
 
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
@@ -266,8 +266,8 @@ class ListWeb:
         logger.hr(f"{type(self).__name__}._list_web_init", 3)
         if settings:
             # init rule
-            self.cut_rule = init_re(deep_get(settings, "rule.cut"))
-            self.tag_rule = deep_get(settings, "rule.tag_list")
+            self.cut_rule = init_re(deep_get(settings, "cut"))
+            self.tag_rule = deep_get(settings, "tag_list")
 
     def cut_html(self, cut_rule: dict or str = None):
         """ 裁剪得到的html源码, 保存到 self.html_cut
@@ -349,6 +349,7 @@ class Qjc(DefaultWebBrows):
         """
         logger.info("web_brows.Qjc.cut_html")
         self.html_cut = json.loads(self.response)
+        return self.html_cut
 
     def get_tag_list(self, page=None, tag_rule=None, *args):
         """ 得到json中的列表
@@ -356,10 +357,11 @@ class Qjc(DefaultWebBrows):
         logger.info("web_brows.Qjc.get_tag_list")
         if not tag_rule:
             tag_rule = self.tag_rule
-        if isinstance(page, dict):
-            self.html_cut = page
-        elif isinstance(page, str):
-            self.html_cut = loads(page)
+        if page:
+            if isinstance(page, dict):
+                self.html_cut = page
+            elif isinstance(page, str):
+                self.html_cut = loads(page)
         self.bs = self.html_cut
         return deep_get(self.bs, tag_rule)
 
