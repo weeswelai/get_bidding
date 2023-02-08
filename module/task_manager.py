@@ -71,6 +71,7 @@ class RunQueue(TaskQueue):
         # for key in settings:
         #     if key in ("task", "default"):
         #         continue
+        # self.task_set = set()
         for key in settings["task"]["list"]:
             task = BidTask(settings[key], key)
             self.set_next_run_time(task)
@@ -133,12 +134,13 @@ class TaskManager:
         """
         logger.hr(f"{self.task.task_name}.task_run", 1)
         delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
-        if not self.task.settings["stateQueue"]:  # 若为空,重新写入stateQueue
-            self.task.restart()
+        if self.task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
+            self.task.page_list.restart()
         self.task.task_end = False
-        logger.info(f"task stateQueue: {self.task.settings['stateQueue']}")
+        logger.info(f"task PageQueue: {self.task.settings['PageQueue']}")
         try:
-            while self.task.init_state():  # task 按stateQueue顺序完成state
+            result = True
+            while self.task.init_state():  # task 按PageQueue顺序完成state
                 self.web_break()
                 result = self.url_task_run(delay_range)
         except WebTooManyVisits:
@@ -168,14 +170,13 @@ class TaskManager:
                 result = self.task.process_next_list_web()
                 self.web_break()
             except AssertionError:  # from task.BidTask._open_list_url
-                self.task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
+                self.task.set_error_state()  # 设置state.error为True, 将当前state移动到PageWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
                 return False
             save_json(self.settings, self.json_file)  # 处理完一页后save
             if result:
                 sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
-                # yield True
             else:
                 logger.info(f"{self.task.task_name} {self.task.url_task} is complete")
                 return True
