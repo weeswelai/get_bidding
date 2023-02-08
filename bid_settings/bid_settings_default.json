@@ -16,17 +16,17 @@
       "zhzb",
       "zgzf"
     ],
-    "run_time": "2023-01-13 10:34:01",
+    "run_time": "",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt"
   },
   "zzlh": {
     "nextRunTime": "",
-    "stateQueue": [
+    "PageQueue": [
       "货物",
       "服务"
     ],
-    "stateWait": [],
+    "PageWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -100,10 +100,10 @@
   },
   "hkgy": {
     "nextRunTime": "",
-    "stateQueue": [
+    "PageQueue": [
       "招标公告"
     ],
-    "stateWait": [],
+    "PageWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -156,12 +156,12 @@
   },
   "jdcg": {
     "nextRunTime": "",
-    "stateQueue": [
+    "PageQueue": [
       "公开招标",
       "邀请招标",
       "竞争性谈判"
     ],
-    "stateWait": [],
+    "PageWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -256,7 +256,7 @@
   },
   "qjc": {
     "nextRunTime": "",
-    "stateQueue": [
+    "PageQueue": [
       "公告1_公开招标",
       "公告1_邀请招标",
       "公告1_竞争性谈判",
@@ -266,7 +266,7 @@
       "需求1",
       "需求2"
     ],
-    "stateWait": [],
+    "PageWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -466,10 +466,10 @@
   },
   "zhzb": {
     "nextRunTime": "",
-    "stateQueue": [
+    "PageQueue": [
       "招标公告"
     ],
-    "stateWait": [],
+    "PageWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
@@ -532,10 +532,10 @@
   },
   "zgzf": {
     "nextRunTime": "",
-    "stateQueue": [
+    "PageQueue": [
       "公开招标"
     ],
-    "stateWait": [],
+    "PageWait": [],
     "test": [
       "竞争性谈判",
       "邀请公告",
@@ -545,11 +545,13 @@
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       ],
-      "Cookie": "",
+      "Cookie": "Hm_lvt_9459d8c503dd3c37b526898ff5aacadd=1673575725,1673832752,1673922133,1674005880",
       "Referer": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&start_time=&end_time=&timeType=2&searchparam=&searchchannel=0&dbselect=bidx&kw=&bidSort=0&pinMu=0&bidType=0&buyerName=&projectId=&displayZone=&zoneId=&agentName=",
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
       "Accept-Language": "zh-CN,zh;q=0.9",
-      "Connection": "keep-alive"
+      "Connection": "keep-alive",
+      "Accept-Encoding": "gzip",
+      "Host": "search.ccgp.gov.cn"
     },
     "urlConfig": {
       "root": {
@@ -557,7 +559,7 @@
       },
       "method": "GET",
       "errorDelay": "5m",
-      "nextOpenDelay": "3,5"
+      "nextOpenDelay": "2,3"
     },
     "rule": {
       "cut": {
@@ -609,10 +611,10 @@
   },
   "default": {
     "nextRunTime": "",
-    "stateQueue": [
+    "PageQueue": [
       "state1"
     ],
-    "stateWait": [],
+    "PageWait": [],
     "headers": {
       "User-Agent": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"

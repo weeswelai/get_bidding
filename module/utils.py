@@ -344,13 +344,13 @@ def reset_task(settings: dict, task_name: dict, json_file=""):
     if isinstance(settings, str) and not json_file:
         json_file = settings
         settings = read_json(settings)
-    stateQueue = settings[task_name]["stateQueue"]
-    stateWait = settings[task_name]["stateWait"]
-    for _ in range(len(stateWait)):
-        stateQueue.append(stateWait.pop(0))
+    PageQueue = settings[task_name]["PageQueue"]
+    PageWait = settings[task_name]["PageWait"]
+    for _ in range(len(PageWait)):
+        PageQueue.append(PageWait.pop(0))
 
     settings[task_name]["nextRunTime"] = ""
-    for state in settings[task_name]["stateQueue"]:
+    for state in settings[task_name]["PageQueue"]:
         reset_state(settings, f"{task_name}.{state}")
     if json_file:
         save_json(json_file)
@@ -367,8 +367,9 @@ def reset_json_file(json_file):
 def cookie_str_to_dict(cookie: str):
     cookie_dict = {}
     for c in cookie.split(";"):
-        key, value = c.strip().split("=")
-        cookie_dict[key] = value
+        if c.strip():
+            key, value = c.strip().split("=")
+            cookie_dict[key] = value
     return cookie_dict
 
 def cookie_dict_to_str(set_cookie: dict):

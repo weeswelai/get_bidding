@@ -71,6 +71,7 @@ class RunQueue(TaskQueue):
         # for key in settings:
         #     if key in ("task", "default"):
         #         continue
+        # self.task_set = set()
         for key in settings["task"]["list"]:
             task = BidTask(settings[key], key)
             self.set_next_run_time(task)
@@ -105,8 +106,6 @@ class RunQueue(TaskQueue):
 
 class TaskManager:
     match_list: list = None  
-    state: str = None
-    last_task_state = None
     restart: bool = False
     break_ = False
     task: BidTask
@@ -135,20 +134,21 @@ class TaskManager:
         """
         logger.hr(f"{self.task.task_name}.task_run", 1)
         delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
-        if not self.task.settings["stateQueue"]:  # 若为空,重新写入stateQueue
-            self.task.restart()
+        if self.task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
+            self.task.page_list.restart()
         self.task.task_end = False
-        logger.info(f"task stateQueue: {self.task.settings['stateQueue']}")
+        logger.info(f"task PageQueue: {self.task.settings['PageQueue']}")
         try:
-            while self.task.init_state():  # task 按stateQueue顺序完成state
+            result = True
+            while self.task.init_state():  # task 按PageQueue顺序完成state
                 self.web_break()
-                state_result = self.state_run(delay_range)
+                result = self.url_task_run(delay_range)
         except WebTooManyVisits:
-            state_result = False
+            result = False
             deep_set(self.task.settings, f"{self.task.url_task}.error", True)
 
-        # 判断结果 计算下次运行时间, 返回 True 则 延迟60分钟, 错误则延迟10分钟或json设置里的时间        
-        if state_result:
+        # 判断结果 计算下次运行时间, 返回 True 则 延迟 COMPLETE_DELAY , 错误则延迟10分钟或json设置里的时间        
+        if result:
             delay = COMPLETE_DELAY
         else:
             delay = self.task.error_delay if self.task.error_delay \
@@ -161,23 +161,22 @@ class TaskManager:
         save_json(self.settings, self.json_file)
         logger.info(f"task {self.task.task_name}" f"next run time: {nextRunTime}")
 
-    def state_run(self, delay_range):
+    def url_task_run(self, delay_range):
         """完成一个state"""
-        logger.hr(f"{self.task.url_task}.state_run", 2)
+        logger.hr(f"{self.task.url_task}.url_task_run", 2)
         while 1:
             self.web_break()
             try:
-                state_result = self.task.process_next_list_web()
+                result = self.task.process_next_list_web()
                 self.web_break()
             except AssertionError:  # from task.BidTask._open_list_url
-                self.task.set_error_state()  # 设置state.error为True, 将当前state移动到stateWait
+                self.task.set_error_state()  # 设置state.error为True, 将当前state移动到PageWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
                 return False
             save_json(self.settings, self.json_file)  # 处理完一页后save
-            if state_result:
+            if result:
                 sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
-                # yield True
             else:
                 logger.info(f"{self.task.task_name} {self.task.url_task} is complete")
                 return True
@@ -221,8 +220,8 @@ class TaskManager:
             # 任务执行
             self.web_break()
             self.sleep_now = False
-            self.task_run()
-            self.run_queue.insert_task(self.task)
+            self.task_run()  # 运行单个任务
+            self.run_queue.insert_task(self.task)  # 将任务插入队列中
             self.run_queue.print_all_next_time()
 
     def sleep(self, nex_run_tieme: int):
