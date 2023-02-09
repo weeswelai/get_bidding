@@ -7,7 +7,6 @@
  4. 获得招标信息
 
 """
-import gzip
 import json
 import re
 from time import time
