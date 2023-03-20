@@ -23,7 +23,7 @@ class WebBreak(Exception):
 class TaskQueue(list):
     """ 继承list对象,拥有list所有方法,新增自定义方法
     pop_q: 出队一个元素
-    insert_task : 将一个任务按下次执行时间插入到队列中
+    insert_task : 将一个已初始化好的任务按下次执行时间插入到队列中
     print_all_next_time : 
     """
     def pop_q(self) -> BidTask:
@@ -34,7 +34,7 @@ class TaskQueue(list):
             return None
 
     def insert_task(self, task: BidTask):
-        """ 任务插入队列中,按nexRunTime排序
+        """ 将已初始化好的任务插入队列中,按nexRunTime排序
         """
         queue_iter = iter(self)
         try:
@@ -73,6 +73,7 @@ class RunQueue(TaskQueue):
         #         continue
         # self.task_set = set()
         for key in settings["task"]["list"]:
+            # 初始化任务并加入队列
             task = BidTask(settings[key], key)
             self.set_next_run_time(task)
             self.insert_task(task)
@@ -137,6 +138,8 @@ class TaskManager:
         if self.task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
             self.task.page_list.restart()
         self.task.task_end = False
+        if not self.task.file_open:
+            self.task.creat_data_file()
         logger.info(f"task PageQueue: {self.task.settings['PageQueue']}")
         try:
             result = True
@@ -159,6 +162,7 @@ class TaskManager:
         deep_set(self.task.settings, "nextRunTime", nextRunTime)
         self.task.nextRunTime = nextRunTime
         save_json(self.settings, self.json_file)
+        self.task.data_file_exit()
         logger.info(f"task {self.task.task_name}" f"next run time: {nextRunTime}")
 
     def url_task_run(self, delay_range):
@@ -229,7 +233,7 @@ class TaskManager:
         if t1_slow_than_t2(date_now_s(), nex_run_tieme):
             return None
         time_sleep = time_difference_second(nex_run_tieme, date_now_s())
-        logger.debug(f"time sleep {time_sleep}")
+        logger.debug(f"sleep {time_sleep}")
         interval = 5
         while 1:
             self.web_break()
