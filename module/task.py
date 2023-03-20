@@ -265,6 +265,7 @@ class BidTaskInit:
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     error_open = True
+    file_open = False
     
     def __init__(self, settings, task_name="test", test=False) -> None:
         """ 初始化任务, 保存settings 和 task_name
@@ -279,7 +280,7 @@ class BidTaskInit:
         delay = deep_get(self.settings, "urlConfig.nextOpenDelay")
         self.delay = [int(t) for t in delay.split(",")] if delay else None
         self._init_brows(settings)
-        self._creat_data_file(test)
+        self.creat_data_file(test)
         logger.info(f"init task {self.task_name}, list brows:\n"
                     f"url settings:\n{str_dict(settings['urlConfig'])}\n"
                     f"rule:\n{str_dict(settings['rule'])}")
@@ -295,20 +296,30 @@ class BidTaskInit:
         self.web_brows = web_brows_init(settings, self.task_name)
         self.bid_web = BidHtml(settings)
 
-    def _creat_data_file(self, test=False):
+    def creat_data_file(self, test=False):
         """ 创建数据保存文件, add 方式
         Args:
             test (bool): 测试开关,仅在测试中使用
         """
-        file = "test" if test else self.task_name
-        list_save = f"{DATA_PATH}/bid_list_{file}.txt"
-        match_list_save = f"{DATA_PATH}/bid_match_list_{file}.txt"
-        creat_folder(list_save)
-        self.list_file = open(list_save, "a", encoding="utf-8")
-        self.match_list_file = open(match_list_save, "a", encoding="utf-8")
-        # 写入一行运行时间
-        self.list_file.write(f"start at {date_now_s()}\n")
-        self.match_list_file.write(f"start at {date_now_s()}\n")
+        if not self.file_open:
+            file = "test" if test else self.task_name
+            list_save = f"{DATA_PATH}/bid_list_{file}.txt"
+            match_list_save = f"{DATA_PATH}/bid_match_list_{file}.txt"
+            creat_folder(list_save)
+            self.list_file = open(list_save, "a", encoding="utf-8")
+            self.match_list_file = open(match_list_save, "a", encoding="utf-8")
+            # 写入一行运行时间
+            self.list_file.write(f"start at {date_now_s()}\n")
+            self.match_list_file.write(f"start at {date_now_s()}\n")
+            self.file_open = True
+            logger.info(f"list data: {list_save}\nmatch list data: {match_list_save}")
+            logger.info(f"{self.task_name}.file_open={self.file_open}")
+
+    def data_file_exit(self):
+        self.match_list_file.close()
+        self.list_file.close()
+        self.file_open = False
+        logger.info(f"{self.task_name}.file_open={self.file_open}")
 
     def init_state(self):
         """ 用_get_url_task 判断 task.PageQueue 中是否还有state
