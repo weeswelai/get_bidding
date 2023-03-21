@@ -42,7 +42,14 @@ json_read = "./data/api front list cggg list LMID=1149231276155707394&pageNo=1&p
 json_file = f""
 list_html = f'.{"".join(file.split(".")[: -1])}{date_now_s(True)}.htm'
 match_html = f'.{"".join(match_file.split(".")[: -1])}{date_now_s(True)}.htm'
+file_out = "list"  # list match
 
+if file_out == "list":
+    file_head = "list"
+elif file_out == "match":
+    file_head = "match_list"
+else:
+    exit()
 
 if file:
     txt_to_html(file, list_html)
@@ -51,7 +58,7 @@ if isinstance(task_name, str) and match_file:
     txt_to_html(match_file, match_html)
 elif isinstance(task_name, list):
     for name in task_name:
-        match_file = f"./data/bid_match_list_{name}.txt"  # ./data/bid_match_list_{name}.txt  ./data/bid_list_{name}.txt
+        match_file = f"./data/bid_{file_head}_{name}.txt"  # ./data/bid_match_list_{name}.txt  ./data/bid_list_{name}.txt
         match_html = f'.{"".join(match_file.split(".")[: -1])}{date_now_s(True)}.htm'
         txt_to_html(match_file, match_html)
 
