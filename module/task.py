@@ -307,6 +307,7 @@ class BidTaskInit:
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     error_open = True
+    file_open = False
     
     def __init__(self, settings, task_name="test", test=False) -> None:
         """ 初始化任务, 保存settings 和 task_name
@@ -321,7 +322,9 @@ class BidTaskInit:
         delay = deep_get(self.settings, "urlConfig.nextOpenDelay")
         self.delay = [int(t) for t in delay.split(",")] if delay else None
         self._init_brows(settings)
+
         self.txt = DataFileTxt(self.task_name)
+
         logger.info(f"init task {self.task_name}, list brows:\n"
                     f"url settings:\n{str_dict(settings['urlConfig'])}\n"
                     f"rule:\n{str_dict(settings['rule'])}")

@@ -42,6 +42,7 @@ json_read = "./data/api front list cggg list LMID=1149231276155707394&pageNo=1&p
 json_file = f""
 list_html = f'.{"".join(file.split(".")[: -1])}{date_now_s(True)}.htm'
 match_html = f'.{"".join(match_file.split(".")[: -1])}{date_now_s(True)}.htm'
+
 file_out = "list"  # list match
 
 if file_out == "list":

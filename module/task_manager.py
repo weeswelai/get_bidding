@@ -138,8 +138,10 @@ class TaskManager:
         if self.task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
             self.task.page_list.restart()
         self.task.task_end = False
+
         if not self.task.txt.file_open:
             self.task.txt.data_file_open()
+
         logger.info(f"task PageQueue: {self.task.settings['PageQueue']}")
         try:
             result = True
