@@ -133,8 +133,7 @@ class BidWeb:
                 next(log_put)
                 sleep(0.5)
                 if self.stroll and not bidTaskManager.sleep_now:
-                    height = eval_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scrollHeight')
-                    run_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scroll(0,height)', height=height)
+                    scroll_bottom()
 
         except KeyboardInterrupt:
             # from bid_run import bidTaskManager
@@ -170,9 +169,14 @@ def print_log_queue():
             text = next(log_print)
             put_text(text, scope="log")
     except StopIteration:
-        height = eval_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scrollHeight')
-        run_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scroll(0,height)', height=height)
+        scroll_bottom()
         return None
+
+
+def scroll_bottom():
+    height = eval_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scrollHeight')
+    run_js('document.getElementsByClassName("webio-scrollable scrollable-border")[0].scroll(0,height)', height=height)
+
 
 if __name__ == "__main__":
     log_queue = LogQueue()
