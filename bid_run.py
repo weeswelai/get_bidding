@@ -30,6 +30,8 @@ if __name__ == "__main__":
     if runFlag:
         try:
             bidTaskManager.loop()
+        except KeyboardInterrupt:
+            pass
         except Exception:
             logger.error(traceback.format_exc())
         finally:

@@ -7,6 +7,7 @@
 """
 import traceback
 from datetime import datetime
+from io import TextIOWrapper
 
 from bs4 import Tag
 
@@ -249,7 +250,50 @@ class TaskState:
             return cls.InterruptState(settings, url_task)
         else:
             return cls.Complete(settings, url_task)
+
+
+class DataFileTxt:
+    list_file: TextIOWrapper
+    match_file: TextIOWrapper
+
+    def __init__(self, task_name="test") -> None:
+        self.file_open = False
+        self.task_name = task_name
+        self.list_f = f"{DATA_PATH}/bid_list_{task_name}.txt"
+        self.match_list_f = f"{DATA_PATH}/bid_match_list_{task_name}.txt"
+        creat_folder(self.list_f)
+        logger.info(f"list data: {self.list_f}\n"
+                    f"{' ' * 26}match list data: {self.match_list_f}")
+
+    def data_file_open(self):
+        if not self.file_open:
+            self.list_file = open(self.list_f, "a", encoding="utf-8")
+            self.match_file = open(self.match_list_f, "a", encoding="utf-8")
+            # 写入运行时间
+            self.list_file.write(f"start at {date_now_s()}\n")
+            self.match_file.write(f"start at {date_now_s()}\n")
+            self.file_open = True
+        logger.info(f"{self.task_name}.file_open={self.file_open}")
             
+    def data_file_exit(self):
+        if self.file_open:
+            self.match_file.close()
+            self.list_file.close()
+            self.file_open = False
+        logger.info(f"{self.task_name}.file_open={self.file_open}")
+
+
+    def write(self, file_name, data):
+        if data[-1] != "\n":
+            data = f"{data}\n"
+        if file_name == "match":
+            self.match_file.write(data)
+        elif file_name == "list":
+            self.list_file.write(data)
+
+    def writeall(self, data):
+        self.write("list", data)
+        self.write("match", data)
 
 class BidTaskInit:
     url_task: str  # "公开招标" "邀请招标"
@@ -257,15 +301,12 @@ class BidTaskInit:
     bid: BidProject.Bid
     bid_tag: BidTag
     web_brows: DefaultWebBrows
-    bid_web: BidHtml
+    # bid_web: BidHtml
     tag_list: list = None  # 源码解析后的 list
-    list_file = None
-    match_list_file = None
     list_url: str = None
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     error_open = True
-    file_open = False
     
     def __init__(self, settings, task_name="test", test=False) -> None:
         """ 初始化任务, 保存settings 和 task_name
@@ -280,7 +321,7 @@ class BidTaskInit:
         delay = deep_get(self.settings, "urlConfig.nextOpenDelay")
         self.delay = [int(t) for t in delay.split(",")] if delay else None
         self._init_brows(settings)
-        self.creat_data_file(test)
+        self.txt = DataFileTxt(self.task_name)
         logger.info(f"init task {self.task_name}, list brows:\n"
                     f"url settings:\n{str_dict(settings['urlConfig'])}\n"
                     f"rule:\n{str_dict(settings['rule'])}")
@@ -294,32 +335,7 @@ class BidTaskInit:
         self.bid_tag = BidTag(settings)
         self.bid = BidProject.init(settings, self.task_name)
         self.web_brows = web_brows_init(settings, self.task_name)
-        self.bid_web = BidHtml(settings)
-
-    def creat_data_file(self, test=False):
-        """ 创建数据保存文件, add 方式
-        Args:
-            test (bool): 测试开关,仅在测试中使用
-        """
-        if not self.file_open:
-            file = "test" if test else self.task_name
-            list_save = f"{DATA_PATH}/bid_list_{file}.txt"
-            match_list_save = f"{DATA_PATH}/bid_match_list_{file}.txt"
-            creat_folder(list_save)
-            self.list_file = open(list_save, "a", encoding="utf-8")
-            self.match_list_file = open(match_list_save, "a", encoding="utf-8")
-            # 写入一行运行时间
-            self.list_file.write(f"start at {date_now_s()}\n")
-            self.match_list_file.write(f"start at {date_now_s()}\n")
-            self.file_open = True
-            logger.info(f"list data: {list_save}\nmatch list data: {match_list_save}")
-            logger.info(f"{self.task_name}.file_open={self.file_open}")
-
-    def data_file_exit(self):
-        self.match_list_file.close()
-        self.list_file.close()
-        self.file_open = False
-        logger.info(f"{self.task_name}.file_open={self.file_open}")
+        # self.bid_web = BidHtml(settings)
 
     def init_state(self):
         """ 用_get_url_task 判断 task.PageQueue 中是否还有state
@@ -337,9 +353,7 @@ class BidTaskInit:
             self.State = TaskState.init(
                 self.settings[self.url_task], self.url_task)
             self.State.print_state_at_start()
-
-            self.list_file.write(f"{self.url_task}\n")
-            self.match_list_file.write(f"{self.url_task}\n")
+            self.txt.writeall(f"{self.url_task}\n")
             self.list_url = None
 
             return True
@@ -350,10 +364,7 @@ class BidTaskInit:
 class BidTask(BidTaskInit):
     task_end = False  # 由 pywebio设置
 
-    def close(self):
-        """关闭已打开的文件,一般在程序结束时使用"""
-        self.list_file.close()
-        self.match_list_file.close()
+    # def close(self):
 
     def process_next_list_web(self):
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
@@ -459,7 +470,7 @@ class BidTask(BidTaskInit):
                 continue
 
             self.State.set_interrupt(self.list_url, self.bid)  # 设置每次最后一个为interrupt
-            self.list_file.write(f"{str(self.bid.message)}\n")  # 写入文件
+            self.txt.write("list", f"{str(self.bid.message)}\n")  # 写入文件
             self._title_trie_search(self.bid)  # 使用title trie 查找关键词
         logger.info(f"tag stop at {idx + 1}")
         self.State.set_interrupt_url(self.list_url)
@@ -507,7 +518,7 @@ class BidTask(BidTaskInit):
         if result:
             logger.info(f"{result} {self.bid.message}")
             result.append(bid_prj.message)
-            self.match_list_file.write(f"{str(result)}\n")
+            self.txt.write("match", f"{str(result)}\n")
             self.match_num += 1
 
     def _complete_page_task(self):

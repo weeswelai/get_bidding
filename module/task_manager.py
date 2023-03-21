@@ -138,8 +138,8 @@ class TaskManager:
         if self.task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
             self.task.page_list.restart()
         self.task.task_end = False
-        if not self.task.file_open:
-            self.task.creat_data_file()
+        if not self.task.txt.file_open:
+            self.task.txt.data_file_open()
         logger.info(f"task PageQueue: {self.task.settings['PageQueue']}")
         try:
             result = True
@@ -162,7 +162,7 @@ class TaskManager:
         deep_set(self.task.settings, "nextRunTime", nextRunTime)
         self.task.nextRunTime = nextRunTime
         save_json(self.settings, self.json_file)
-        self.task.data_file_exit()
+        self.task.txt.data_file_exit()
         logger.info(f"task {self.task.task_name}" f"next run time: {nextRunTime}")
 
     def url_task_run(self, delay_range):
@@ -198,7 +198,7 @@ class TaskManager:
         if hasattr(self, "run_queue"):
             for task in self.run_queue:
                 task: BidTask
-                task.close()
+                task.txt.data_file_exit()
 
     def loop(self):
         """ 死循环, 等待、完成 task.list内的任务
