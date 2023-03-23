@@ -26,7 +26,8 @@ newFlag = False
 bidTaskManager = TaskManager(SETTINGS_JSON,
                              creat_new=(True if newFlag else False))
 
-if __name__ == "__main__":
+
+def main():
     if runFlag:
         try:
             bidTaskManager.loop()
@@ -36,4 +37,8 @@ if __name__ == "__main__":
             logger.error(traceback.format_exc())
         finally:
             bidTaskManager.exit()
+
+
+if __name__ == "__main__":
+    main()
             
