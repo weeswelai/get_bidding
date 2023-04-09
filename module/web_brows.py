@@ -154,10 +154,10 @@ def _parse_json_rule(tag: list or dict,
 class BidProject:
     @classmethod
     def init(cls, settings, class_name: str):
-        if class_name in ("zzlh", "hkgy", "jdcg", "qjc", "zhzb", "test", ""):
-            return cls.Bid(settings)
-        else:  # zgzf
+        if class_name == "zgzf":
             return getattr(cls, class_name.title())(settings)
+        else:
+            return cls.Bid(settings)
 
     class Bid:
         type: str
@@ -485,7 +485,7 @@ def web_brows_init(settings: dict = None, url_task="test") -> DefaultWebBrows:
         if url_task in settings:
             settings = settings[url_task]
         c = glob["DefaultWebBrows"] if url_task in \
-            ("zzlh", "hkgy", "jdcg", "test", "") else glob[url_task.title()]
+            ("zzlh", "hkgy", "jdcg", "cebpub", "test", "") else glob[url_task.title()]
         web_brows: DefaultWebBrows = c(settings)
 
         # get_url

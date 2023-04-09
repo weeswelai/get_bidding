@@ -98,9 +98,11 @@ class TaskState:
             Args:
                 bid_prj (<class> BidProject.Bid): 当前Bid对象, 保存项目信息
             """
+            # 名称和Url都相同时停止
             if bid_prj.name == self.end_rule["name"] \
                     and bid_prj.url == self.end_rule["url"]:
                 return True
+            # 超出时间限制时停止
             if self.end_rule["date"]:
                 if self._date_is_end(bid_prj.date, len(bid_prj.date)):
                     return True
@@ -132,6 +134,9 @@ class TaskState:
             deep_set(self.settings, "newest", bid_message)
             deep_set(self.settings, "complete", "interrupt")  # 启动后状态设为interrupt
             self.newest = True
+            logger.info(f"set newest: {bid_message}, "
+                        f"set complete: {deep_get(self.settings, 'complete')}")
+            
 
         def set_interrupt_url(self, list_url):
             """设置interruptUrl"""
@@ -475,7 +480,7 @@ class BidTask(BidTaskInit):
             self.State.set_interrupt(self.list_url, self.bid)  # 设置每次最后一个为interrupt
             self.txt.write("list", f"{str(self.bid.message)}\n")  # 写入文件
             self._title_trie_search(self.bid)  # 使用title trie 查找关键词
-        logger.info(f"tag stop at {idx + 1}")
+        logger.info(f"tag stop at {idx + 1}, tag counting from 0")
         self.State.set_interrupt_url(self.list_url)
         self.State.print_interrupt()
 
