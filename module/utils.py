@@ -102,11 +102,13 @@ def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
     return bs_deep_get(s_tag.find(rule[0]), rule[1:])
 
 
-def date_now_s(file_new=False) -> str:
+def date_now_s(file_new=False, format=None) -> str:
     """ 返回当前日期
     Args:
         file_new (bool): 为True时将-变为_
     """
+    if format is not None:
+        return dt.now().strftime(format)
     if file_new:
         return dt.now().strftime('_%Y_%m_%d-%H_%M_%S')
     else:
@@ -368,7 +370,7 @@ def cookie_str_to_dict(cookie: str):
     cookie_dict = {}
     for c in cookie.split(";"):
         if c.strip():
-            key, value = c.strip().split("=")
+            key, value = c.strip().split("=", 1)
             cookie_dict[key] = value
     return cookie_dict
 
