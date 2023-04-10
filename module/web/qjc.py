@@ -1,5 +1,5 @@
 
-import time
+from time import time
 
 import module.web_brows as web_brows
 from module.log import logger
