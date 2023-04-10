@@ -580,11 +580,12 @@ def web_brows_init(settings, url_task):
     from os.path import exists
     # # web_brows
     # settings = settings[url_task]
-
-    if exists(f"./module/web{url_task}.py"):
+    web_module = f"./module/web/{url_task}.py"
+    if exists(web_module):
         mod = import_module(f"module.web.{url_task}")
         web_brows: DefaultWebBrows = mod.Brows(settings)
         bid = mod.Bid(settings)
+        logger.info(f"load {web_module}")
     else:
         web_brows: DefaultWebBrows = DefaultWebBrows(settings)
         bid = BidBase(settings)
