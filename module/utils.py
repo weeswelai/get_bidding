@@ -172,7 +172,7 @@ def read_json(file):
         return loads(f_read)
 
 
-def save_json(data, json_file, indent=2, creat_new=False):
+def save_json(data, json_file, indent=2):
     """ 覆写json文件
     Args:
         data (dict): 保存的数据
@@ -185,15 +185,11 @@ def save_json(data, json_file, indent=2, creat_new=False):
     from module.log import logger
     creat_folder(json_file)
 
-    if creat_new:  # 是否创建新文件保存
-        json_file = f"{json_file.split('.json')[0]}{date_now_s(creat_new)}.json"
-
     with open(json_file, "w", encoding="utf-8") as json_file_w:
         write_data = dumps(data, indent=indent, ensure_ascii=False,
                            sort_keys=False, default=str)
         json_file_w.write(write_data)
     logger.info(f"save {json_file}")
-    return json_file
 
 
 def save_file(file, data, mode="w", bytes=False):

@@ -79,6 +79,7 @@ class RunQueue(TaskQueue):
             self.insert_task(task)
         self.print_all_next_time()
         self.print_queue()
+        logger.info("RunQueue init complete")
 
     def set_next_run_time(self, task: BidTask):
         # 判断 "nextRunTime", 若没有值则写入默认起始时间
@@ -106,7 +107,6 @@ class RunQueue(TaskQueue):
 
 
 class TaskManager:
-    match_list: list = None  
     restart: bool = False
     break_ = False
     task: BidTask
@@ -122,12 +122,13 @@ class TaskManager:
         """
         logger.hr("TaskManager.__init__", 3)
         self.settings = read_json(json_file)  # 读取json文件
-        self.json_file = json_file
-        # self.list = deep_get(self.settings, "task.list")
+
         deep_set(self.settings, "task.run_time", date_now_s())  # 写入运行时间
-        if save:  # 当前文件，可选是否保存新副本
-            self.json_file = save_json(self.settings, json_file,
-                                       creat_new=creat_new)
+        if creat_new:  # 是否创建新文件保存
+            json_file = f"{json_file.split('.json')[0]}{date_now_s(True)}.json"
+        if creat_new:  # 当前文件，可选是否保存新副本
+            save_json(self.settings, json_file)
+        self.json_file = json_file
 
     # TODO 写得很*, 重写
     def task_run(self):
@@ -208,6 +209,7 @@ class TaskManager:
         if self.restart:
             self.break_ = self.restart = False
             self.settings = read_json(self.json_file)
+            
         logger.info(f"task.list: {self.settings['task']['list']}")
         self.run_queue = RunQueue(self.settings)
 
@@ -217,7 +219,7 @@ class TaskManager:
         while 1:
             # 判断 TimerQueue第一个任务是否可执行
             if self.run_queue.next_task_ready():
-                self.task = self.run_queue.pop_q()
+                self.task = self.run_queue.pop_q()  # 第一个任务出队
             else:
                 # 阻塞sleep定时
                 self.sleep_now = True
@@ -233,7 +235,7 @@ class TaskManager:
     def sleep(self, nex_run_tieme: int):
         """阻塞的定时器,阻塞间隔为5秒"""
         if t1_slow_than_t2(date_now_s(), nex_run_tieme):
-            return None
+            return
         time_sleep = time_difference_second(nex_run_tieme, date_now_s())
         logger.debug(f"sleep {time_sleep}")
         interval = 5
@@ -243,7 +245,7 @@ class TaskManager:
                 sleep(interval)
                 time_sleep -= interval
             else:
-                return None
+                return
 
 
 if __name__ == "__main__":
