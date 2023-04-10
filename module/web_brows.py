@@ -7,11 +7,6 @@
  4. 获得招标信息
 
 """
-import json
-import re
-from time import time
-from urllib.parse import urlencode  
-
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
 
@@ -151,81 +146,69 @@ def _parse_json_rule(tag: list or dict,
         return tag[list_idx]
 
 
-class BidProject:
-    @classmethod
-    def init(cls, settings, class_name: str):
-        if class_name == "zgzf":
-            return getattr(cls, class_name.title())(settings)
+class BidBase:
+    type: str
+    url: str
+    date: str
+    name: str
+    name_cut: re.Pattern = None
+    date_cut: re.Pattern = None
+    type_cut: re.Pattern = None
+    url_cut: re.Pattern = None
+    url_root: dict
+    message: list = None
+    rule_now: str
+
+    def __init__(self, settings=None):
+        """ 定义项目对象,
+
+        Args:
+            settings (dict): 需要一整个task的设置
+        """
+        logger.hr("Bid.__init__", 3)
+        if settings:
+            rule = settings["rule"]["bid"]
+            for r in rule:
+                setattr(self, r, init_re(rule[r]))
+                logger.debug(f"rule init {r}: {getattr(self, r)}")
+            self.url_root = deep_get(settings, "urlConfig.root")
+
+    def receive(self, *args):
+        """ 接收BidTag.get()返回的list
+        Args:
+            *args: (name, date, url, type)
+        """
+        for idx, key in enumerate(("name", "date", "url", "type")):
+            self.rule_now = key
+            rule = getattr(self, f"{key}_cut")
+            setattr(self, key, _re_get_str(args[idx], rule))
+        
+        self._url()  # TODO 是否应该根据type进行选择?
+        self._date()
+        self._name()
+        self._date()
+        self.message = [self.name, self.date, self.url, self.type]
+
+    def _url(self):
+        """ 用 前缀加上后缀得到网址
+        输入bid_root对 json中的 name.url_open.url_root 进行查表
+        Args:
+            bid_root (str): 前缀索引
+            bid_tail (str): 后缀
+        """
+        if self.type in self.url_root:
+            self.url = f"{self.url_root[self.type]}{self.url}"
         else:
-            return cls.Bid(settings)
+            self.url = f"{self.url_root['default']}{self.url}"
 
-    class Bid:
-        type: str
-        url: str
-        date: str
-        name: str
-        name_cut: re.Pattern = None
-        date_cut: re.Pattern = None
-        type_cut: re.Pattern = None
-        url_cut: re.Pattern = None
-        url_root: dict
-        message: list = None
-        rule_now: str
+    def _name(self):
+        pass
 
-        def __init__(self, settings=None):
-            """ 定义项目对象,
+    def _type(self):
+        pass
 
-            Args:
-                settings (dict): 需要一整个task的设置
-            """
-            logger.hr("Bid.__init__", 3)
-            if settings:
-                rule = settings["rule"]["bid"]
-                for r in rule:
-                    setattr(self, r, init_re(rule[r]))
-                    logger.debug(f"rule init {r}: {getattr(self, r)}")
-                self.url_root = deep_get(settings, "urlConfig.root")
-
-        def receive(self, *args):
-            """ 接收BidTag.get()返回的list
-            Args:
-                *args: (name, date, url, type)
-            """
-            for idx, key in enumerate(("name", "date", "url", "type")):
-                self.rule_now = key
-                rule = getattr(self, f"{key}_cut")
-                setattr(self, key, _re_get_str(args[idx], rule))
-            
-            self._url()  # TODO 是否应该根据type进行选择?
-            self._date()
-            self._name()
-            self._date()
-            self.message = [self.name, self.date, self.url, self.type]
-
-        def _url(self):
-            """ 用 前缀加上后缀得到网址
-            输入bid_root对 json中的 name.url_open.url_root 进行查表
-            Args:
-                bid_root (str): 前缀索引
-                bid_tail (str): 后缀
-            """
-            if self.type in self.url_root:
-                self.url = f"{self.url_root[self.type]}{self.url}"
-            else:
-                self.url = f"{self.url_root['default']}{self.url}"
-
-        def _name(self):
-            pass
-
-        def _type(self):
-            pass
-
-        def _date(self):
-            self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
-
-    class Zgzf(Bid):
-        def _date(self):
-            self.date = self.date.replace(".", "-")
+    def _date(self):
+        self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
 
 
 def _re_get_str(obj: str, rule: re.Pattern = None, cut_rule=None):
@@ -330,186 +313,14 @@ class ListWeb:
 class DefaultWebBrows(ListWeb, ReqOpen):
     """继承于 ListWeb和UrlOpen"""
     def __init__(self, settings={}):
+        # 需要整个task 的 dict
         if settings:
             self._list_web_init(settings["rule"])
 
 
-class Qjc(DefaultWebBrows):
-    def url_extra(self, url):
-        """ 只在以complete状态开始的任务获取开始网址时调用一次
-            在qjc的网址后面
-        """
-        if url[-13:].isdigit():  # 若url末尾有时间
-            return url
-        return f"{url}&_t={str(time()).replace('.', '')[:13]}"
-
-    def cut_html(self, *args):
-        """ 用json.loads将字符串转换为dict
-        """
-        logger.info("web_brows.Qjc.cut_html")
-        self.html_cut = json.loads(self.response)
-        return self.html_cut
-
-    def get_tag_list(self, page=None, tag_rule=None, *args):
-        """ 得到json中的列表
-        """
-        logger.info("web_brows.Qjc.get_tag_list")
-        if not tag_rule:
-            tag_rule = self.tag_rule
-        if page:
-            if isinstance(page, dict):
-                self.html_cut = page
-            elif isinstance(page, str):
-                self.html_cut = loads(page)
-        self.bs = self.html_cut
-        return deep_get(self.bs, tag_rule)
-
-
-class Zhzb(DefaultWebBrows):
-    def get_next_pages(self, list_url: dict, next_rule=None, *args):
-        """ 针对post方式发送表单的下一页获取
-        """
-        pages = list_url["form"]["page"]
-        if isinstance(pages, int):
-            list_url["form"]["page"] += 1
-        elif isinstance(pages, str):
-            list_url["form"]["page"] = int(pages) + 1
-        logger.info(f"web_brows.Zhzb.get_next_pages: {list_url}")
-        return list_url
-
-
-class Zgzf(DefaultWebBrows):
-    COOKIE_TIME_START_KEY = "Hm_lvt_9459d8c503dd3c37b526898ff5aacadd"
-    COOKIE_TIME_KEY = "Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd"
-
-    def __init__(self, settings) -> None:
-        self._list_web_init(settings)
-
-    def url_extra(self, url):
-        result = re.search("&start.*timeType=?\d", url)
-        if result is None:
-            # 加上今天日期和类型
-            format = "%Y:%m:%d"
-            data = {
-                "start_time": date_days(format=format),
-                "end_time": date_days(-6, format=format),
-                "timeType": 2
-            }
-            idx = url.find("&displayZone=")  # 和正常访问的网址一样, 也保证Referer相同
-            url = f"{url[:idx]}&{urlencode(data)}{url[idx:]}"  # 转换为url中的ASCII码
-        else:
-            result = result.group()
-            time_type_re = re.compile("(?<=timeType=)\d")
-            # 将时间改为指定日期
-            if time_type_re.search(result) != "6":
-                url = time_type_re.sub("6", url)
-        return url
-
-    def get_next_pages(self, list_url, next_rule=None, *args):
-        url = super().get_next_pages(list_url, next_rule, *args)
-        self.headers["Referer"] = list_url  # 更新Referer
-        return url
-
-    # def open(self, url):
-    #     return super().open(url, headers=self.headers)    
-
-    # def decode_response(self):
-    #     try:
-    #         self.response = gzip.decompress(self.res_body).decode("utf-8")
-    #     except OSError as e:
-    #         logger.warning(e)
-    #     except Exception:
-    #         self.response = self.res_body.decode("utf-8")
-
-    def too_many_open(self):
-        """判断ip是否被限制访问"""
-        if self.response:
-            bs = btfs(self.response, "html.parser")
-            result = _parse_bs_rule(bs,"tag_find","div.p",None,"_Text")
-            if result.find("您的访问过于频繁,请稍后再试") > 0 or \
-                result.find("您的访问行为异常,请稍后再试") > 0:
-                logger.warning(cookie_dict_to_str(self.cookie))
-                logger.warning(self.req.headers)
-                return True
-        return False
-
-    def set_cookie(self):
-        if self.response:
-            re_text = r'(?<=document.cookie = \").*?(?=;)'
-            if re_text:
-                cookie_find = re.findall(re_text, self.response)
-                logger.debug(f"html cookie: {cookie_find}")
-                for cookie_add in cookie_find:
-                    key, value = cookie_add.split("=")
-                    self.cookie[key] = value.replace("\"", "").replace("+","")
-
-        if self.url_response_open:
-            headers: list = self.url_response_open.getheaders()
-            for key in headers:
-                if key[0] == "Set-Cookie":
-                    cookie = key[1].split(";")[0]
-                    logger.debug(f"res set-cookie: {key[1]}")
-                    self._set_cookie(cookie)
-            time_now = str(time())[:10]
-            if self.COOKIE_TIME_START_KEY not in self.cookie:
-                self.cookie[self.COOKIE_TIME_START_KEY] = time_now
-            self.cookie[self.COOKIE_TIME_KEY] = time_now
-        if self.cookie:
-            self.headers["cookie"] = cookie_dict_to_str(self.cookie)
-            # logger.info(self.cookie)
-
-    def _set_cookie(self, set_cookie: str):
-        key, value = set_cookie.split("=")
-        if key == "HOY_TR":
-            logger.debug(f"{key}: {value}")
-        if key in self.cookie and value == "deleted":
-            del(self.cookie[key])
-        else:
-            self.cookie[key] = value
-
-
-
-def web_brows_init(settings: dict = None, url_task="test") -> DefaultWebBrows:
-    """ 根据输入的 url_task 返回初始化好的 web_brows对象
-
-    Args:
-        settings (dict): 初始化要用到的settings, 为整个task的dict
-        url_task (str): task_name, json 里第一级的key, 一般为 zzlh, zhzb等
-    Returns:
-        web_brows.DefaultWebBrows 或其他继承 DefaultWebBrows 的对象
-        对于zgzf : 返回 Zgzf对象: class Zgzf(ListWeb, SocketOpen)
-    """
-    if settings:
-        # web_brows
-        glob = globals()
-        if url_task in settings:
-            settings = settings[url_task]
-        c = glob["DefaultWebBrows"] if url_task in \
-            ("zzlh", "hkgy", "jdcg", "cebpub", "test", "") else glob[url_task.title()]
-        web_brows: DefaultWebBrows = c(settings)
-
-        # get_url
-        headers = {}
-        method = settings["urlConfig"]["method"] \
-            if "method" in settings["urlConfig"] else "GET"
-        for key, value in settings["headers"].items():
-            if key == "User-Agent" and value:
-                headers["User-Agent"] = value[0]
-            elif key == "Cookie" and value:  # key == "Cookie" and value: True and [] = []
-                headers["Cookie"] = value
-                web_brows.cookie = cookie_str_to_dict(value)
-            elif key not in ("User-Agent", "Cookie"):
-                headers[key] = value
-        web_brows._get_url_init(headers, method)
-        web_brows.next_rule = init_re(deep_get(settings, "rule.next_pages"))
-        return web_brows
-    else:
-        return DefaultWebBrows()
-
 class BidHtml(ReqOpen):
     def __init__(self, settings):
         pass
-
 
 
 if __name__ == "__main__":
@@ -519,8 +330,8 @@ if __name__ == "__main__":
     # html_file = r"./html_test/search.ccgp.gov.cn bxsearch searchtype=1&page_index=1&pinMu=0&bidType=1&kw=&start_time=2023%3A01%3A05&end_time=2022%3A12%3A30&timeType=3_2023_01_05-16_39_55_cut_Error.html"
     # url = ""
     task = "zgzf"
-    zgzf = web_brows_init(json_settings, task)
-    zgzf.open("http://127.0.0.1:19999/get")
+    # zgzf = web_brows_init(json_settings, task)
+    # zgzf.open("http://127.0.0.1:19999/get")
     # zgzf.get_response_from_file(html_file)
     # zgzf.set_cookie()
     pass

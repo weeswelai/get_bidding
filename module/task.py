@@ -8,6 +8,7 @@
 import traceback
 from datetime import datetime
 from io import TextIOWrapper
+from importlib import import_module
 
 from bs4 import Tag
 
@@ -93,10 +94,10 @@ class TaskState:
             return datetime.strptime(date, date_format) < \
                    datetime.strptime(end_date, date_format)
 
-        def bid_is_end(self, bid_prj: BidProject.Bid):
+        def bid_is_end(self, bid_prj: BidBase):
             """ 判断当前项目是否符合结束条件
             Args:
-                bid_prj (<class> BidProject.Bid): 当前Bid对象, 保存项目信息
+                bid_prj (<class> BidBase): 当前Bid对象, 保存项目信息
             """
             # 名称和Url都相同时停止
             if bid_prj.name == self.end_rule["name"] \
@@ -125,7 +126,7 @@ class TaskState:
             deep_set(self.settings, "interruptUrl", "")
             deep_set(self.settings, "complete", "complete")
 
-        def save_newest_and_interrupt(self, bid: BidProject.Bid):
+        def save_newest_and_interrupt(self, bid: BidBase):
             """ 保存最新的招标项目信息, 设置 compelete 为 interrupt
                 仅执行一次, interrupt状态下不执行
             """
@@ -157,7 +158,7 @@ class TaskState:
                 list_url (str, dict): 当前访问的url信息, 在get方式下为str
                     post为 dict, 由于传入的是一个新的dict而不是修改dict中的value,
                     所以不用担心value可能在BidTask._get_next_list_url中改变
-                bid (web_brows.BidProject.Bid): 当前Bid对象
+                bid (web_brows.BidBase): 当前Bid对象
             """
             if self.start:
                 self.set_interrupt_url(list_url)
@@ -208,7 +209,7 @@ class TaskState:
                              "please check settings json file")
                 exit()
 
-        def bid_is_start(self, bid_prj: BidProject.Bid) -> True:
+        def bid_is_start(self, bid_prj: BidBase) -> True:
             """判断条件为: name, date, url 三个信息必须全部符合, 符合返回True 并
             将 self.state 置为 True, 若有一个不符合则返回 False .
             仅在 interrupt状态下执行
@@ -303,7 +304,7 @@ class DataFileTxt:
 class BidTaskInit:
     url_task: str  # "公开招标" "邀请招标"
     State: TaskState.Complete or TaskState.InterruptState
-    bid: BidProject.Bid
+    bid: BidBase
     bid_tag: BidTag
     web_brows: DefaultWebBrows
     # bid_web: BidHtml
@@ -335,14 +336,13 @@ class BidTaskInit:
                     f"rule:\n{str_dict(settings['rule'])}")
 
     def _init_brows(self, settings):
-        """ 初始化网页对象模型, 只在初始化时调用一次
+        """ 初始化网页对象, 只在初始化时调用一次
         
         Args:
             settings (dict): json中 的具体任务
         """
         self.bid_tag = BidTag(settings)
-        self.bid = BidProject.init(settings, self.task_name)
-        self.web_brows = web_brows_init(settings, self.task_name)
+        self.web_brows, self.bid = web_brows_init(settings, self.task_name)
         # self.bid_web = BidHtml(settings)
 
     def init_state(self):
@@ -485,7 +485,7 @@ class BidTask(BidTaskInit):
         self.State.print_interrupt()
 
     def _bid_receive_bid_tag(self, tag: Tag or dict, idx):
-        """ 由BidTag.get 读取一个项目项目节点, BidProject.Bid 接收并对信息进行处理
+        """ 由BidTag.get 读取一个项目项目节点, BidBase 接收并对信息进行处理
         """
         err_flag = False
         try:
@@ -516,11 +516,11 @@ class BidTask(BidTaskInit):
             return False
         return True
 
-    def _title_trie_search(self, bid_prj: BidProject.Bid):
+    def _title_trie_search(self, bid_prj: BidBase):
         """ 处理 bid对象
 
         Args:
-            bid_prj (web_brows.BidProject.Bid): 保存 bid 信息的对象
+            bid_prj (web_brows.BidBase): 保存 bid 信息的对象
         """
         result: list = title_trie.search_all(bid_prj.name)
         if result:
@@ -556,7 +556,7 @@ def _bid_to_dict(bid_prj=None):
         }
     elif isinstance(bid_prj, dict):
         return bid_prj
-    elif isinstance(bid_prj, BidProject.Bid):
+    elif isinstance(bid_prj, BidBase):
         return {
             "name": bid_prj.name,
             "date": bid_prj.date,
@@ -564,6 +564,47 @@ def _bid_to_dict(bid_prj=None):
         }
     else:
         return {key: "" for key in ("name", "date", "url")}
+
+
+def web_brows_init(settings, url_task):
+    """ 根据输入的 url_task 返回初始化好的 web_brows对象
+
+    Args:
+        settings (dict): 初始化要用到的settings, 为整个task的dict
+        url_task (str): task_name, json 里第一级的key, 一般为 zzlh, zhzb等
+    Returns:
+        web_brows.DefaultWebBrows 或其他继承 DefaultWebBrows 的对象
+        对于zgzf : 返回 Zgzf对象: class Zgzf(ListWeb, SocketOpen)
+    """
+
+    from os.path import exists
+    # # web_brows
+    # settings = settings[url_task]
+
+    if exists(f"./module/web{url_task}.py"):
+        mod = import_module(f"module.web.{url_task}")
+        web_brows: DefaultWebBrows = mod.Brows(settings)
+        bid = mod.Bid(settings)
+    else:
+        web_brows: DefaultWebBrows = DefaultWebBrows(settings)
+        bid = BidBase(settings)
+    
+    # get_url
+    headers = {}
+    method = settings["urlConfig"]["method"] \
+        if "method" in settings["urlConfig"] else "GET"
+    for key, value in settings["headers"].items():
+        if key == "User-Agent" and value:
+            headers["User-Agent"] = value[0]
+        elif key == "Cookie" and value:  # key == "Cookie" and value: True and [] = []
+            headers["Cookie"] = value
+            web_brows.cookie = cookie_str_to_dict(value)
+        elif key not in ("User-Agent", "Cookie"):
+            headers[key] = value
+    web_brows._get_url_init(headers, method)
+    web_brows.next_rule = init_re(deep_get(settings, "rule.next_pages"))
+    return web_brows, bid
+
 
 
 if __name__ == "__main__":
