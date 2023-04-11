@@ -1,18 +1,9 @@
 import datetime as dt
 import json
-from module.utils import jsdump
+from module.utils import jsdump, date_now_s
 
-def date_now_s(file_new=False):
-    """ 返回当前日期
-    Args:
-        file_new (bool): 为True时返回小数点精确到
-    """
-    if file_new:
-        return dt.datetime.now().strftime('_%Y_%m_%d-%H_%M_%S_%f')[:-3]
-    else:
-        return dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-def txt_to_html(file, html):
+def txt_to_html(file, html, match):
     with open(file, "r", encoding="utf-8") as f, \
             open(html, "w", encoding="utf-8") as html_f:
             idx = 1
@@ -24,7 +15,10 @@ def txt_to_html(file, html):
                 html_t1 = line_l[0]
                 html_a = f'<a href="{line_l[-2]}">{line_l[-4]}</a>'
                 html_t2 = f"{line_l[-3]}, {line_l[-1]}"
-                html_f.write(f"<li> {str(idx)}. [{html_t1}]: {html_a} ,{html_t2}<li>\n")
+                if match:
+                    html_f.write(f"<li> {str(idx)}. [{html_t1}]: {html_a} ,{html_t2}<li>\n")
+                else:
+                    html_f.write(f"<li> {str(idx)}. {html_a} ,{html_t2}<li>\n")
                 idx += 1
 
 # def json_to_html(json_data=None, html=None, file=False):
@@ -47,8 +41,10 @@ file_out = "list"  # list match
 
 if file_out == "list":
     file_head = "list"
+    match = False
 elif file_out == "match":
     file_head = "match_list"
+    match = True
 else:
     exit()
 
@@ -61,7 +57,7 @@ elif isinstance(task_name, list):
     for name in task_name:
         match_file = f"./data/bid_{file_head}_{name}.txt"  # ./data/bid_match_list_{name}.txt  ./data/bid_list_{name}.txt
         match_html = f'.{"".join(match_file.split(".")[: -1])}{date_now_s(True)}.htm'
-        txt_to_html(match_file, match_html)
+        txt_to_html(match_file, match_html, match)
 
 if json_file:
     with open(json_read, "r", encoding="utf-8") as f:
