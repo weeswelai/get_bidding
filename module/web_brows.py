@@ -212,7 +212,8 @@ class BidBase:
         self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
 
     def message(self) -> str:
-        return "; ".join(self.infoList)
+        # infoList 的最后一位可能是 None
+        return f"{'; '.join(self.infoList[:-1])}; {str(self.infoList[-1])}"
 
 
 def _re_get_str(obj: str, rule: re.Pattern = None, cut_rule=None):
