@@ -13,3 +13,6 @@ class Bid(web_brows.BidBase):
 
 class Brows(web_brows.DefaultWebBrows):
     pass
+
+    def open_url(self, timeout=180):
+        return super().open_url(timeout)
