@@ -6,7 +6,7 @@
       "hkgy",
       "jdcg",
       "zhzb",
-      "zgzf"
+      "cebpub"
     ],
     "test": [
       "qjc",
@@ -14,9 +14,10 @@
       "hkgy",
       "jdcg",
       "zhzb",
-      "zgzf"
+      "zgzf",
+      "cebpub"
     ],
-    "run_time": "",
+    "run_time": "2023-04-14 18:21:32",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt"
   },
@@ -507,7 +508,7 @@
         "form": {
           "classId": 151,
           "key": -1,
-          "page": 3
+          "page": 8
         }
       },
       "newest": {
@@ -563,7 +564,7 @@
     },
     "rule": {
       "cut": {
-        "re_rule": "(<ul class=\"vT-srch-result-list-bid\">).*?(</ul>)",
+        "re_rule": "",
         "rule_option": 16
       },
       "next_pages": "(?<=page_index=)\\d{1,3}",
@@ -589,6 +590,174 @@
     },
     "公开招标": {
       "url": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=1&dbselect=bidx&kw=&displayZone=&zoneId=&pppStatus=0&agentName=",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "",
+      "error": false
+    }
+  },
+  "cebpub": {
+    "nextRunTime": "",
+    "PageQueue": [
+      "航空航天",
+      "信息电子",
+      "广电通信",
+      "民航",
+      "其他"
+    ],
+    "PageWait": [],
+    "headers": {
+      "User-Agent": [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+      ],
+      "Cookie": ""
+    },
+    "urlConfig": {
+      "root": {
+        "default": ""
+      },
+      "method": "GET"
+    },
+    "rule": {
+      "cut": {
+        "re_rule": "(?<=</tr>).*(?=</table>)",
+        "rule_option": 16
+      },
+      "next_pages": "(?<=&page=)\\d{1,3}",
+      "tag_list": "tr",
+      "bid_tag": {
+        "name_r": "tagName_find:a|title:",
+        "date_r": "tagName_find:td|id:",
+        "url_r": "tagName_find:a|href:",
+        "type_r": "tagName_find:span|title:"
+      },
+      "bid": {
+        "url_cut": "(?<=').*?(?=')",
+        "date_cut": null
+      }
+    },
+    "公开招标": {
+      "说明": "该项目非常杂,且无用信息数量庞大,4天就有500页,不再启用",
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1996-06-21&dates=300&word=&categoryId=88&industryName=&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "newest": {
+        "name": "北票市交警队摩托车考试场地建设实施",
+        "date": "2023-04-04 12:54:23",
+        "url": "https://bulletin.cebpubservice.com/biddingBulletin/2023-04-04/9505618.html"
+      },
+      "interruptUrl": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1996-06-21&dates=300&word=&categoryId=88&industryName=&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=125",
+      "interrupt": {
+        "name": "中国电信股份有限公司阿坝分公司2023年至2025年车辆驾驶员外包服务采购项目比选公告",
+        "date": "2023-04-03 16:54:03",
+        "url": "https://bulletin.cebpubservice.com/biddingBulletin/2023-04-03/9499106.html"
+      },
+      "end_rule": {
+        "name": "",
+        "date": "2023-03-29 11:26:03",
+        "url": ""
+      },
+      "complete": "interrupt",
+      "error": false
+    },
+    "航空航天": {
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G17&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "",
+      "error": false
+    },
+    "信息电子": {
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G20&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "",
+      "error": false
+    },
+    "广电通信": {
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G09&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "",
+      "error": false
+    },
+    "民航": {
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G05&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "",
+      "error": false
+    },
+    "其他": {
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-06&dates=300&word=&categoryId=88&industryName=G99&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
       "newest": {
         "name": "",
         "date": "",

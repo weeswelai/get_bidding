@@ -17,7 +17,7 @@ from module.utils import *
 
 # 仅对li_tag中的元素(可能为Tag或dict)进行处理
 class BidTag:
-    message: list = None
+    infoList: list = None
     type_r: tuple
     url_r: tuple
     date_r: tuple
@@ -65,13 +65,13 @@ class BidTag:
             bid_tag (Tag or dict): 招标项目对象
         """
         self.tag = bid_tag
-        self.message = []
-        self.message.append(self.parse_rule(bid_tag, *getattr(self, "name_r")))
-        self.message.append(self.parse_rule(bid_tag, *getattr(self, "date_r")))
-        self.message.append(self.parse_rule(bid_tag, *getattr(self, "url_r")))
-        self.message.append(self.parse_rule(bid_tag, *getattr(self, "type_r")))
+        self.infoList = []
+        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "name_r")))
+        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "date_r")))
+        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "url_r")))
+        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "type_r")))
         # for key in ("name_r", "date_r", "url_r", "type_r"):
-        return self.message
+        return self.infoList
 
     # TODO 写的太*了，记得重写,包括下面的_parse_bs_rule
     def parse_rule(self, tag: Tag or dict, *args) -> Tag or None or str:
@@ -147,6 +147,7 @@ def _parse_json_rule(tag: list or dict,
 
 
 class BidBase:
+    # BidBase: 用于 module.web 中的继承，保存一个网页列表中招标项目的最终信息
     type: str
     url: str
     date: str
@@ -156,7 +157,7 @@ class BidBase:
     type_cut: re.Pattern = None
     url_cut: re.Pattern = None
     url_root: dict
-    message: list = None
+    infoList: list = None
     rule_now: str
 
     def __init__(self, settings=None):
@@ -187,7 +188,7 @@ class BidBase:
         self._date()
         self._name()
         self._date()
-        self.message = [self.name, self.date, self.url, self.type]
+        self.infoList = [self.name, self.date, self.url, self.type]
 
     def _url(self):
         """ 用 前缀加上后缀得到网址
@@ -209,6 +210,9 @@ class BidBase:
 
     def _date(self):
         self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
+
+    def message(self) -> str:
+        return "; ".join(self.infoList)
 
 
 def _re_get_str(obj: str, rule: re.Pattern = None, cut_rule=None):
@@ -301,12 +305,12 @@ class ListWeb:
         self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
         return self.bs.find_all(tag_rule)
 
-    def compare_last_first(self, message):
+    def compare_last_first(self, infoList):
         """ 比较每页第一个项目信息是否与上一页第一个完全相等, 若相等返回True
         """
-        if message == self.first_bid:
+        if infoList == self.first_bid:
             return True
-        self.first_bid = message
+        self.first_bid = infoList
         return False
 
 

@@ -11,12 +11,12 @@ def txt_to_html(file, html, match):
                 if line[0] != "[":
                     html_f.write(f"<li> {line.strip()} <li>\n")
                     continue
-                line_l = line.replace("\'","").replace("[","").replace("]","").split(",")
+                line_l = line.split("; ")
                 html_t1 = line_l[0]
                 html_a = f'<a href="{line_l[-2]}">{line_l[-4]}</a>'
                 html_t2 = f"{line_l[-3]}, {line_l[-1]}"
                 if match:
-                    html_f.write(f"<li> {str(idx)}. [{html_t1}]: {html_a} ,{html_t2}<li>\n")
+                    html_f.write(f"<li> {str(idx)}. {html_t1}: {html_a} ,{html_t2}<li>\n")
                 else:
                     html_f.write(f"<li> {str(idx)}. {html_a} ,{html_t2}<li>\n")
                 idx += 1
@@ -37,7 +37,7 @@ json_file = f""
 list_html = f'.{"".join(file.split(".")[: -1])}{date_now_s(True)}.htm'
 match_html = f'.{"".join(match_file.split(".")[: -1])}{date_now_s(True)}.htm'
 
-file_out = "list"  # list match
+file_out = "match"  # list match
 
 if file_out == "list":
     file_head = "list"
