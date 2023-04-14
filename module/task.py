@@ -480,7 +480,7 @@ class BidTask(BidTaskInit):
             self.State.set_interrupt(self.list_url, self.bid)  # 设置每次最后一个为interrupt
             self.txt.write("list", f"{str(self.bid.message)}\n")  # 写入文件
             self._title_trie_search(self.bid)  # 使用title trie 查找关键词
-        logger.info(f"tag stop at {idx + 1}, tag counting from 0")
+        logger.info(f"tag stop at {idx + 1}, tag counting from 1")
         self.State.set_interrupt_url(self.list_url)
         self.State.print_interrupt()
 

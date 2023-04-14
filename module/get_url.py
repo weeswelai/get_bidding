@@ -77,7 +77,7 @@ class GetUrl:
         #     for head, value in headers.items():
         #         self.req.add_header(head, value)
 
-    def open_url(self, timeout=6):
+    def open_url(self, timeout=12):
         """ 打开self.REQ的网页,保存源码(bytes)
         
         """
