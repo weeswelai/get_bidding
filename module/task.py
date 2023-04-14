@@ -460,16 +460,16 @@ class BidTask(BidTaskInit):
             # bid对象接收bid_tag解析结果
             if not self._bid_receive_bid_tag(tag, idx):
                 continue
-            if not idx and self.web_brows.compare_last_first(self.bid.message):
+            if not idx and self.web_brows.compare_last_first(self.bid.infoList):
                 self.State.complete()
                 logger.info(f"open out of pages, pages now is {self.list_url}")
                 break
             if self.State.bid_is_end(self.bid):  # 判断是否符合结束条件
                 self.State.complete()  # set self.State.state = "complete"
-                logger.info(f"bid end at {self.bid.message}")
+                logger.info(f"bid end at {self.bid.infoList}")
                 logger.info(f"end_rule: {self.State.end_rule}")
                 if idx == 0:
-                    logger.info(f"idx = {idx}, tag now: {self.bid.message}")
+                    logger.info(f"idx = {idx}, tag now: {self.bid.infoList}")
                 break
             if not self.State.newest:  # 非interrupt 状态只执行一次,interrupt状态该语句结果为False
                 self.State.save_newest_and_interrupt(self.bid)
@@ -478,7 +478,7 @@ class BidTask(BidTaskInit):
                 continue
 
             self.State.set_interrupt(self.list_url, self.bid)  # 设置每次最后一个为interrupt
-            self.txt.write("list", f"{str(self.bid.message)}\n")  # 写入文件
+            self.txt.write("list", f"{self.bid.message()}\n")  # 写入文件
             self._title_trie_search(self.bid)  # 使用title trie 查找关键词
         logger.info(f"tag stop at {idx + 1}, tag counting from 1")
         self.State.set_interrupt_url(self.list_url)
@@ -489,8 +489,8 @@ class BidTask(BidTaskInit):
         """
         err_flag = False
         try:
-            message = self.bid_tag.get(tag)
-            # logger.debug(str(message))  # 打印每次获得的项目信息
+            infoList = self.bid_tag.get(tag)
+            # logger.debug(str(infoList))  # 打印每次获得的项目信息
         except Exception:
             err_flag = True
             logger.error(f"tag get error: {tag},\nidx: {idx}"
@@ -498,8 +498,8 @@ class BidTask(BidTaskInit):
                          f"{traceback.format_exc()}")
         if not err_flag:
             try:
-                self.bid.receive(*message)
-                # logger.debug(self.bid.message)
+                self.bid.receive(*infoList)
+                # logger.debug(self.bid.infoList)
             except Exception:
                 err_flag = True
                 logger.error(f"bid receive failed, idx: {idx}, rule: {self.bid.rule_now}"
@@ -524,9 +524,9 @@ class BidTask(BidTaskInit):
         """
         result: list = title_trie.search_all(bid_prj.name)
         if result:
-            logger.info(f"{result} {self.bid.message}")
-            result.append(bid_prj.message)
-            self.txt.write("match", f"{str(result)}\n")
+            result.append(bid_prj.message())
+            logger.info(result)
+            self.txt.write("match", f"{'; '.join(result)}\n")
             self.match_num += 1
 
     def _complete_page_task(self):
