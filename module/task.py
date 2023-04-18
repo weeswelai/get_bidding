@@ -58,6 +58,10 @@ class PageList:
         return self.queue.copy(), self.wait.copy()
 
 
+# 状态的切换
+# 当满足end rule时,
+
+
 class TaskState:
     class Complete:
         newest = False
@@ -235,7 +239,7 @@ class TaskState:
             # interrupt状态不执行
             pass
 
-        def save_newest_and_set_interrupt(self):
+        def save_newest_and_set_interrupt(self, *args):
             # interrupt状态不执行
             pass
 
@@ -524,9 +528,9 @@ class BidTask(BidTaskInit):
         """
         result: list = title_trie.search_all(bid_prj.name)
         if result:
-            result.append(bid_prj.message())
+            result = f"[{','.join(result)}]; {bid_prj.message()}"
             logger.info(result)
-            self.txt.write("match", f"{'; '.join(result)}\n")
+            self.txt.write("match", result)
             self.match_num += 1
 
     def _complete_page_task(self):
