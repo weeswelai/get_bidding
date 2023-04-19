@@ -1,0 +1,12 @@
+__pycache__
+__settings__
+.vscode
+.idea
+get_bid.code-workspace
+data
+log
+html_test
+html_error
+test
+bid_dev.env
+bid_settings/bid_settings.json
