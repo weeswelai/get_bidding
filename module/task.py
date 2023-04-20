@@ -270,7 +270,7 @@ class DataFileTxt:
         self.file_open = False
         self.task_name = task_name
         self.list_f = f"{DATA_PATH}/bid_list_{task_name}.txt"
-        self.match_list_f = f"{DATA_PATH}/bid_match_list_{task_name}.txt"
+        self.match_list_f = f"{DATA_PATH}/bid_match_{task_name}.txt"
         creat_folder(self.list_f)
         logger.info(f"list data: {self.list_f}\n"
                     f"{' ' * 26}match list data: {self.match_list_f}")
