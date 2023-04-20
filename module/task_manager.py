@@ -87,17 +87,6 @@ class RunQueue(TaskQueue):
             deep_set(task.settings, "nextRunTime", RUN_TIME_START)
             task.nextRunTime = RUN_TIME_START
 
-    def next_task_ready(self) -> bool:
-        """ 若第一个任务时间到了执行时间则返回True
-        """
-        task: BidTask = self[0]
-        logger.info(f"first task {task.task_name} nextRunTime: {task.nextRunTime}")
-        sleep(1.1)  # 防止两个时间秒数相等
-        if t1_slow_than_t2(date_now_s(), task.nextRunTime):
-            return True
-        else:
-            return False
-    
     def print_queue(self):
         """输出当前list里所有任务名"""
         task_queue = []
@@ -218,10 +207,11 @@ class TaskManager:
             raise WebBreak
         while 1:
             # 判断 TimerQueue第一个任务是否可执行
-            if self.run_queue.next_task_ready():
+            if self.next_task_ready():
                 self.task = self.run_queue.pop_q()  # 第一个任务出队
             else:
                 # 阻塞sleep定时
+                save_json(self.settings, self.json_file)
                 self.sleep_now = True
                 self.sleep(self.run_queue[0].nextRunTime)
                 continue
@@ -246,6 +236,26 @@ class TaskManager:
                 time_sleep -= interval
             else:
                 return
+
+    def next_task_ready(self) -> bool:
+        """ 若第一个任务时间到了执行时间则返回True
+        """
+        task: BidTask = self.run_queue[0]
+        logger.info(f"first task {task.task_name} nextRunTime: {task.nextRunTime}")
+        now = date_now_s()
+        # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天08点
+        if not during_runtime(task.nextRunTime) or not during_runtime(now):
+            task.nextRunTime = f"{date_days(1, 'day')} 08:00:00"
+            deep_set(self.settings, f"{task.task_name}.nextRunTime", task.nextRunTime)
+            logger.info(f"set {task.task_name} nextRunTime {task.nextRunTime}")
+            self.run_queue.insert_task(self.run_queue.pop_q())
+            self.run_queue.print_all_next_time()
+            return False
+        
+        if now == task.nextRunTime or t1_slow_than_t2(now, task.nextRunTime):
+            return True
+        else:
+            return False
 
 
 if __name__ == "__main__":

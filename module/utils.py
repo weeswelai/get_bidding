@@ -124,7 +124,17 @@ def date_days(change_days=0, format=None):
     """
     if not format:
         format = _DATE_TIME_FORMAT
+    if format == "day":
+        format = "%Y-%m-%d"
     return (dt.now() + timedelta(days=change_days)).strftime(format)
+
+
+def during_runtime(time):
+    today09 = f"{date_days(format='day')} 09:00:00"
+    today22 = f"{date_days(format='day')} 22:00:00"
+    if t1_slow_than_t2(today09, time) or t1_slow_than_t2(time, today22):
+        return False
+    return True
 
 
 def get_time_add(time_base=None, delay="1h"):
