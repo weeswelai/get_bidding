@@ -1,66 +1,104 @@
-import datetime as dt
-import json
-from module.utils import jsdump, date_now_s
+from os.path import exists
+from module.utils import date_now_s
+
+DATAPATH = "./data"
+MATCH = "bid_match"
+LIST = "bid_list"
+STBFUN = "scrollToBottom()"  # write_function 中的js函数名
+
+TITLE = -4
+DATE = -3
+URL = -2
+TYPE = -1
+
+# "jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"
+WEB = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"]
+
+# ["list", "match"]
+TRANSFILE = ["list"]
 
 
-def txt_to_html(file, html, match):
-    with open(file, "r", encoding="utf-8") as f, \
-            open(html, "w", encoding="utf-8") as html_f:
-            idx = 1
-            for line in f:
-                if line[0] != "[":
-                    html_f.write(f"<li> {line.strip()} <li>\n")
-                    continue
-                line_l = line.split("; ")
-                html_t1 = line_l[0]
-                html_a = f'<a href="{line_l[-2]}">{line_l[-4]}</a>'
-                html_t2 = f"{line_l[-3]}, {line_l[-1]}"
-                if match:
-                    html_f.write(f"<li> {str(idx)}. {html_t1}: {html_a} ,{html_t2}<li>\n")
-                else:
-                    html_f.write(f"<li> {str(idx)}. {html_a} ,{html_t2}<li>\n")
-                idx += 1
+def write_head(html, name: str, fileType):
+    # html <head>标签, 显示标题
+    html.write(f"""<head>
+    <title>{name}_{fileType}</title>
+</head>\n""")
 
-# def json_to_html(json_data=None, html=None, file=False):
-#     if file:
-#         with open (json_data, "r", encoding="utf-8") as f:
-#             json_data = json.loads(f.read())
-#     with open(html, "w", encoding="utf-8") as f:
 
-# ["jdcg", "zzlh", "hkgy", "zhzb", "qjc"]
-task_name = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc"]
-file = f"./data/bid_list_{task_name}.txt"  # ./data/bid_match_list_.txt
-file = ""
-match_file = f"./data/bid_match_list_{task_name}.txt"  # ./data/bid_match_list_.txt
-json_read = "./data/api front list cggg list LMID=1149231276155707394&pageNo=1&purchaseType=公开招标&_t=1671776534822_2022_12_23-14_28_22_test.html"
-json_file = f""
-list_html = f'.{"".join(file.split(".")[: -1])}{date_now_s(True)}.htm'
-match_html = f'.{"".join(match_file.split(".")[: -1])}{date_now_s(True)}.htm'
+def write_body(html, body):
+    if body == "top":
+        html.write(f"<body onload={STBFUN}>\n")
+    elif body == "bottom":
+        html.write("</body>")
 
-file_out = "match"  # list match
 
-if file_out == "list":
-    file_head = "list"
-    match = False
-elif file_out == "match":
-    file_head = "match_list"
-    match = True
-else:
-    exit()
+def write_function(html):
+    # 页面渲染完成后自动滚到底部
+    html.write("""
+    <script>
+        // 页面渲染完成后自动滚到底部
+        function scrollToBottom()
+        {
+            window.scrollTo(0, document.getElementsByTagName("body")[0].scrollHeight);
+        }
+    </script>
+    """)
 
-if file:
-    txt_to_html(file, list_html)
 
-if isinstance(task_name, str) and match_file:
-    txt_to_html(match_file, match_html)
-elif isinstance(task_name, list):
-    for name in task_name:
-        match_file = f"./data/bid_{file_head}_{name}.txt"  # ./data/bid_match_list_{name}.txt  ./data/bid_list_{name}.txt
-        match_html = f'.{"".join(match_file.split(".")[: -1])}{date_now_s(True)}.htm'
-        txt_to_html(match_file, match_html, match)
+def labels_a(title, url):
+    return f"<a href=\"{url}\">{title}</a>"
 
-if json_file:
-    with open(json_read, "r", encoding="utf-8") as f:
-        json_data = json.loads(f.read())
-    with open(json_file, "w", encoding="utf-8") as f:
-        f.write(jsdump(json_data))
+
+def wirte_li(html, line: str, idx, fileType):
+    
+    line_list = line.rstrip().split("; ")
+    labelsA = labels_a(line_list[TITLE], line_list[URL])
+    
+    # TODO 有没有更好的写法
+    if fileType == "match":  # match 一行会分为5个 [匹配关键词]; 标题; 日期; url; 类型
+        html.write(f"<li>{str(idx)}. {line_list[0]}: {labelsA},"
+                   f"{line_list[DATE]},{line_list[TYPE]}</li>\n")
+    else:
+        html.write(f"<li>{str(idx)}. {labelsA},"
+                   f"{line_list[DATE]},{line_list[TYPE]}</li>\n")
+
+def write_html(webName, fileType, txtFile):
+    webFIle = get_file_name(fileType, webName, 'htm')
+    with open(webFIle, "w", encoding="utf-8") as html:
+        write_head(html, webName, fileType)
+        write_body(html, "top")
+        write_function(html)
+        # TODO 有没有更好的写法
+        idx = 1
+        for line in txtFile:
+            if not ";" in line:  # 忽略掉干扰信息
+                html.write(f"<li> {line.strip()} <li>\n")
+                continue
+            wirte_li(html, line, idx, fileType)
+            idx += 1
+        write_body(html, "bottom")
+
+
+def get_file_name(fileType, webName, Type):
+    # 在 html 文件前缀前
+    if Type == "txt":
+        return f"{DATAPATH}/bid_{fileType}_{webName}.txt"
+    elif Type in ["htm", "html"]:
+        return f"{DATAPATH}/bid_{fileType}_{webName}{date_now_s(True)}.htm"
+
+
+def main():
+    # TODO 有没有更好的写法    
+    for fileType in TRANSFILE:
+        for webName in WEB:
+            fileName = get_file_name(fileType, webName, "txt")
+            if not exists(fileName):
+                print(f"{fileName} is not exists")
+                return
+
+            with open(fileName, "r", encoding="utf-8") as file:
+                write_html(webName, fileType, file)
+
+
+if __name__ == "__main__":
+    main()
