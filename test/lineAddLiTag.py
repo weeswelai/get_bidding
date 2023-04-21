@@ -15,7 +15,7 @@ TYPE = -1
 WEB = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"]
 
 # ["list", "match"]
-TRANSFILE = ["list"]
+TRANSFILE = ["match"]
 
 
 def write_head(html, name: str, fileType):
@@ -29,6 +29,8 @@ def write_body(html, body):
     if body == "top":
         html.write(f"<body onload={STBFUN}>\n")
     elif body == "bottom":
+        for _ in range(0,3):
+            html.write("<li></li>\n")
         html.write("</body>")
 
 
