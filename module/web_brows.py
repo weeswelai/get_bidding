@@ -10,7 +10,7 @@
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
 
-from module.get_url import SocketOpen, ReqOpen
+from module.get_url import ReqOpen
 from module.log import logger
 from module.utils import *
 
@@ -147,6 +147,7 @@ def _parse_json_rule(tag: list or dict,
 
 
 class BidBase:
+    # 解析后的bid信息
     # BidBase: 用于 module.web 中的继承，保存一个网页列表中招标项目的最终信息
     type: str
     url: str

@@ -43,12 +43,14 @@ class GetUrl:
             url (str,dict): GET方式输入str, POST方式输入dict,
                 dict应包含 form 信息
             **kwargs (dict): headers信息, method方式
+        Returns:
+            self.response (str): decode后的源码
         """
         if isinstance(url, dict):
             self.init_req(**url, headers=headers, method=method)
         else:
             self.init_req(url, headers=headers, method=method)
-        self.open_url()
+        self._open_url()
         return self.decode_response()
 
     def init_req(self, url="http://127.0.0.1", 
@@ -77,9 +79,12 @@ class GetUrl:
         #     for head, value in headers.items():
         #         self.req.add_header(head, value)
 
-    def open_url(self, timeout=12):
-        """ 打开self.REQ的网页,保存源码(bytes)
-        
+    def _open_url(self, timeout=12):
+        """ 打开self.REQ的网页,保存源码(bytes)到self.url_response_byte中
+        Args:
+            timeout (int, float): 超时时间，默认为12秒
+        Returns:
+            self.url_response_byte (byte): 原始的网页byte数据
         """
         logger.info(f"open {self.req.full_url}\n"
                     f"method:{self.req.method}, data:{self.req.data}")
@@ -121,6 +126,7 @@ class GetUrl:
                 self.decode_response()
         except AttributeError:
             if self.url_response_byte is None:
+                # Q: 是否抛出异常
                 logger.error("url_response_byte is None")  # 当网站无返回时
             else:
                 self.response = self.url_response_byte  # 仅用于读取文件给url_response
@@ -136,6 +142,8 @@ class GetUrl:
             path (str): html文件相对路径,默认为 ./html_error
             save_date (bool): 是带有保存带时间的新文件
             仅在浏览列表页面出错时或测试时保存使用
+        Returns:
+            file_name (str): 保存的文件名
         """
         url = self.url if not url else url
         if isinstance(url, dict):
@@ -168,8 +176,6 @@ class GetUrl:
             file (str): file路径或html字符串
             save (str): url_response_byte: 保存在 self.url_response中
                         html_cut: 保存在 self.html_cut中
-        Returns:
-            (str):  file 是文件还是 字符串
         """
         logger.hr("get_url.get_response_from_file", 3)
         try:
@@ -191,6 +197,8 @@ class ReqOpen(GetUrl):
         Args:
             list_url (str): 项目列表网址
             next_rule (str): 项目列表网址下一页规则,仅在测试时使用
+        Returns:
+            next_pages_url (str): 即将打开的url
         """
         if not next_rule:
             next_rule = self.next_rule
@@ -219,76 +227,6 @@ class RequestsOpen(GetUrl):
     pass
 
 
-class SocketOpen(ReqOpen):
-    pass
-#     """
-#     使用socket 建立连接
-#     """
-#     session: socket.socket = None
-#     connect_ = False
-#     host = ""
-#     port = 80
-#     res_head = None
-#     res_body = b""
-
-#     def _get_url_init(self, headers, method):
-#         self.headers = _HEADERS if headers in (None, {}, "") else headers
-#         self.method = "GET" if method in (None, "") else method.upper()
-#         try:
-#             import requests
-#         except ModuleNotFoundError:
-#             import socket
-#             self.session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-#     def open(self, url: str, headers=None, method=None):
-#         if not headers:
-#             headers = self.headers
-#         if not method:
-#             method = self.method
-#         if not self.host:
-#             self.host = urlparse(url=url).hostname
-#             self.session.connect((self.host, self.port))
-#         url_head = "http://search.ccgp.gov.cn"
-#         head = f"{method.upper()} {url.replace(url_head, '')} HTTP/1.1\n".encode("utf-8")
-#         logger.debug(f"head: {head}")
-#         request_header = bytes(head) + self._request_headers(headers) + b"\r\n\r\n"
-#         logger.debug(f"req_head: {request_header}")
-#         self.session.send(request_header)
-#         rec = self.session.recv(1024)
-#         rec_idx = 0
-#         end_find = bytes("0\r\n\r\n".encode("utf-8"))
-#         self.response_open = b""
-#         self.res_body = b""
-#         while rec:
-#             rec_idx += 1
-#             self.response_open += rec
-#             end_idx = rec.find(end_find)
-#             if end_idx > 0:
-#                 self.response_open += rec[:end_idx]
-#                 break
-#             rec = self.session.recv(1024)
-#         res_split = self.response_open.split(b"\r\n\r\n")
-#         self.res_head = self.response_open.split(b"\r\n\r\n")[0].decode("utf-8")
-#         if len(res_split) > 1:
-#             res_body_temp = b"".join(res_split[1:]).split(b"\r\n")
-#         else:
-#             res_body_temp = self.response_open.split(b"\r\n\r\n")[1].split(b"\r\n")
-#         # self.res_body = res_body_temp[1] + res_body_temp[3]
-#         for body in res_body_temp:
-#             try:
-#                 body.decode("utf-8")
-#             except UnicodeDecodeError:
-#                 self.res_body += body
-#         self.decode_response()
-        
-
-#     def _request_headers(self, headers: dict):
-#         request_headers = ""
-#         for key, value in headers.items():
-#             request_headers = f"{request_headers}\n{key}: {value}"
-#         return bytes(request_headers.strip().encode("utf-8"))
-
-
 if __name__ == "__main__":
     pass
     # #  POST
@@ -306,7 +244,7 @@ if __name__ == "__main__":
     # }
     # url_obj = UrlReq(method="POST")
     # url_obj.init_req(url_open, headers=test_headers)
-    # url_obj.open_url()
+    # url_obj._open_url()
     # print(url_obj.decode_response())
     # url_obj.save_response(save_date=True, path="./html_test/", extra="test")
     
@@ -318,6 +256,6 @@ if __name__ == "__main__":
     # }
     # url_obj = UrlReq(method="GET")
     # url_obj.init_req(url_open, headers=test_headers)
-    # url_obj.open_url()
+    # url_obj._open_url()
     # print(url_obj.decode_response())
     # url_obj.save_response(save_date=True, path="./html_test/", extra="test")
