@@ -226,7 +226,7 @@ class TaskManager:
         """阻塞的定时器,阻塞间隔为5秒"""
         if t1_slow_than_t2(date_now_s(), nex_run_tieme):
             return
-        time_sleep = time_difference_second(nex_run_tieme, date_now_s())
+        time_sleep = time_difference(nex_run_tieme, date_now_s())
         logger.debug(f"sleep {time_sleep}")
         interval = 5
         while 1:

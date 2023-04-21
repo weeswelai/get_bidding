@@ -74,11 +74,15 @@ class Complete:
     def init(self):
         """ 判断 end_rule 是否合法
         """
+        date_6 = date_days(change_days=-6)
         if not self.end_rule["date"]:
-            self.end_rule["date"] = date_days(change_days=-6)
+            self.end_rule["date"] = date_6
         if len(self.end_rule["date"]) <= 10:
             self.end_rule["date"] = self.end_rule["date"] + " 00:00:00"
-        # TODO end_rule 和现在的日期不能超过6天,若超过,则修改为与现在日期差6天的值
+        if time_difference(self.end_rule["date"], date_days(), "day") < -6:
+            logger.info(f"end_rule: {self.end_rule['date']} is beyond 6 days")
+            self.end_rule["date"] = date_6
+            deep_set(self.settings, "end_rule.date", date_6)
         logger.info(f"json: {self.url_task}.complete = "
                     f"\"{deep_get(self.settings, 'complete')}"
                     f"\"\nend_rule : {self.end_rule}")
@@ -251,12 +255,12 @@ class InterruptState(Complete):
             exit()
 
 
-def TaskState_init(cls, settings, url_task) -> Complete or InterruptState:
+def TaskState_init(settings, url_task) -> Complete or InterruptState:
     """根据传入settings返回对应的class"""
     if settings["complete"] == "interrupt":
-        return cls.InterruptState(settings, url_task)
+        return InterruptState(settings, url_task)
     else:
-        return cls.Complete(settings, url_task)
+        return Complete(settings, url_task)
 
 
 class DataFileTxt:
@@ -301,6 +305,7 @@ class DataFileTxt:
     def writeall(self, data):
         self.write("list", data)
         self.write("match", data)
+
 
 class BidTaskInit:
     url_task: str  # "公开招标" "邀请招标"
@@ -609,14 +614,14 @@ def web_brows_init(settings, url_task):
 
 
 if __name__ == "__main__":
-    json_file = "./bid_settings/bid_settings.json"
+    json_file = "./bid_settings/bid_settings_test.json"
     json_set = read_json(json_file)
-    bid_task_name = "zgzf"
+    bid_task_name = "qjc"
     bid_task_test = BidTask(json_set[bid_task_name], bid_task_name)
 
     # test code
     try:
-        bid_task_test.restart()
+        # bid_task_test.restart()
         bid_task_test.init_state()
         while 1:
             state_result = bid_task_test.process_next_list_web()
@@ -627,5 +632,6 @@ if __name__ == "__main__":
                 logger.info(f"{bid_task_test.task_name} {bid_task_test.url_task} is complete")
                 break
     # use Ctrl + C exit
-    except(KeyboardInterrupt, Exception):
+    except(KeyboardInterrupt, Exception) as error:
         save_json(json_set, json_file)
+        print(error)

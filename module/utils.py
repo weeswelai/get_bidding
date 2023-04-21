@@ -329,10 +329,20 @@ def sleep_random(time_range: tuple = (2, 3), message: str = None):
     print("sleep end")
 
 
-def time_difference_second(time1, time2):
-    """获得时间差,单位为秒,返回 time1 - time2"""
-    return (dt.strptime(time1, "%Y-%m-%d %H:%M:%S") -
-            dt.strptime(time2, "%Y-%m-%d %H:%M:%S")).seconds
+def time_difference(time1, time2, unit="second"):
+    """获得时间差,单位为秒,返回 time1 - time2
+    Args:
+        unit (str): second or day 要求格式 "%Y-%m-%d %H:%M:%S"
+    Returns:
+        (int): 若 unit == second 返回秒的差值
+               若 unit == day    返回日的差值
+    """
+    dif = dt.strptime(time1, "%Y-%m-%d %H:%M:%S") - \
+          dt.strptime(time2, "%Y-%m-%d %H:%M:%S")
+    if unit == "second":
+        return dif.seconds
+    elif unit == "day":
+        return dif.days
 
 
 def reset_state(settings, key, json_file=""):
