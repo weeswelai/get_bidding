@@ -14,5 +14,10 @@ class Bid(web_brows.BidBase):
 class Brows(web_brows.DefaultWebBrows):
     pass
 
-    def open_url(self, timeout=180):
-        return super().open_url(timeout)
+    def _open_url(self, timeout=180):
+        return super()._open_url(timeout)
+
+    def url_extra(self, url, *argv, **kwargv):
+        # 暂时不知道规律，先用1998年加上今日日期
+        date = date_days(0, "day")[-5:]
+        return f"{url}&searchDate=1998-{date}"

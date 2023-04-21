@@ -17,7 +17,7 @@
       "zgzf",
       "cebpub"
     ],
-    "run_time": "2023-04-14 18:21:32",
+    "run_time": "",
     "save_data": "./data/bid_list.txt",
     "match_data": "./data/match_list.txt"
   },
@@ -673,7 +673,7 @@
       "error": false
     },
     "航空航天": {
-      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G17&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G17&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
       "newest": {
         "name": "",
         "date": "",
@@ -694,7 +694,7 @@
       "error": false
     },
     "信息电子": {
-      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G20&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G20&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
       "newest": {
         "name": "",
         "date": "",
@@ -715,7 +715,7 @@
       "error": false
     },
     "广电通信": {
-      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G09&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G09&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
       "newest": {
         "name": "",
         "date": "",
@@ -736,7 +736,7 @@
       "error": false
     },
     "民航": {
-      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-04&dates=300&word=&categoryId=88&industryName=G05&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G05&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
       "newest": {
         "name": "",
         "date": "",
@@ -757,7 +757,7 @@
       "error": false
     },
     "其他": {
-      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-04-06&dates=300&word=&categoryId=88&industryName=G99&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
+      "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G99&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
       "newest": {
         "name": "",
         "date": "",
