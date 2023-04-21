@@ -243,9 +243,12 @@ class TaskManager:
         task: BidTask = self.run_queue[0]
         logger.info(f"first task {task.task_name} nextRunTime: {task.nextRunTime}")
         now = date_now_s()
-        # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天08点
+        # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天09点 或当天9点
         if not during_runtime(task.nextRunTime) or not during_runtime(now):
-            task.nextRunTime = f"{date_days(1, 'day')} 08:00:00"
+            if task.nextRunTime[:10] == date_days(0, "day"):
+                task.nextRunTime = f"{date_days(0, 'day')} 09:00:00"
+            else:
+                task.nextRunTime = f"{date_days(1, 'day')} 09:00:00"
             deep_set(self.settings, f"{task.task_name}.nextRunTime", task.nextRunTime)
             logger.info(f"set {task.task_name} nextRunTime {task.nextRunTime}")
             self.run_queue.insert_task(self.run_queue.pop_q())
