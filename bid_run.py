@@ -20,15 +20,16 @@ SETTINGS_DEFAULT = "./bid_settings/bid_settings_default.json"
 SETTINGS_JSON = "./bid_settings/bid_settings.json"
 if not os.path.exists(SETTINGS_JSON):
     shutil.copyfile(SETTINGS_DEFAULT, SETTINGS_JSON)
-runFlag = True
-newFlag = False
+
+RUN = True
+NEW = False
+
 # 初始化任务
-bidTaskManager = TaskManager(SETTINGS_JSON,
-                             creat_new=(True if newFlag else False))
+bidTaskManager = TaskManager(SETTINGS_JSON, creat_new=(True if NEW else False))
 
 
 def main():
-    if runFlag:
+    if RUN:
         try:
             bidTaskManager.loop()
         except KeyboardInterrupt:

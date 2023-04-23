@@ -24,8 +24,22 @@ class TaskQueue(list):
     """ 继承list对象,拥有list所有方法,新增自定义方法
     pop_q: 出队一个元素
     insert_task : 将一个已初始化好的任务按下次执行时间插入到队列中
-    print_all_next_time : 
     """
+    def __init__(self, settings) -> None:
+        """ 运行队列
+        
+        Args:
+            settings (dict): 整个json文件的信息
+        """
+        for webName in settings["task"]["list"]:
+            # 初始化任务并加入队列
+            task = BidTask(settings[webName], webName)
+            self.set_next_run_time(task)
+            self.insert_task(task)
+        self.print_all_next_time()
+        self.print_queue()
+        logger.info("RunQueue init complete")
+
     def pop_q(self) -> BidTask:
         """出队第一个元素"""
         if self:
@@ -57,29 +71,15 @@ class TaskQueue(list):
         if self:
             for t in self:
                 t: BidTask
-                log = f"{log}{t.task_name}.nextRunTime: {t.nextRunTime}\n"
+                log = f"{log}{t.name}.nextRunTime: {t.nextRunTime}\n"
         logger.info(log.strip())
 
-
-class RunQueue(TaskQueue):
-    def __init__(self, settings) -> None:
-        """ 运行队列
-        
-        Args:
-            settings (dict): 整个json文件的信息
-        """
-        # for key in settings:
-        #     if key in ("task", "default"):
-        #         continue
-        # self.task_set = set()
-        for key in settings["task"]["list"]:
-            # 初始化任务并加入队列
-            task = BidTask(settings[key], key)
-            self.set_next_run_time(task)
-            self.insert_task(task)
-        self.print_all_next_time()
-        self.print_queue()
-        logger.info("RunQueue init complete")
+    def print_queue(self):
+        """输出当前list里所有任务名"""
+        task_queue = []
+        for task in self:
+            task_queue.append(task.name)
+        logger.info(f"queue: {task_queue}")
 
     def set_next_run_time(self, task: BidTask):
         # 判断 "nextRunTime", 若没有值则写入默认起始时间
@@ -87,25 +87,18 @@ class RunQueue(TaskQueue):
             deep_set(task.settings, "nextRunTime", RUN_TIME_START)
             task.nextRunTime = RUN_TIME_START
 
-    def print_queue(self):
-        """输出当前list里所有任务名"""
-        task_queue = []
-        for task in self:
-            task_queue.append(task.task_name)
-        logger.info(f"queue: {task_queue}")
-
 
 class TaskManager:
-    restart: bool = False
+    restart = False
     break_ = False
     task: BidTask
-    run_queue: RunQueue
+    run_queue: TaskQueue
     sleep_now = False
 
     def __init__(self, json_file, save=True, creat_new=False):
         """ 读取json_file; 设置 settings, json_file , queue
         Args:
-            json_file (str):
+            json_file (str): 文件json
             save (bool): True: 是否保存到json中
             creat_new (bool): True: 保存到新的配置文件,默认为False
         """
@@ -113,17 +106,19 @@ class TaskManager:
         self.settings = read_json(json_file)  # 读取json文件
 
         deep_set(self.settings, "task.run_time", date_now_s())  # 写入运行时间
+
         if creat_new:  # 是否创建新文件保存
             json_file = f"{json_file.split('.json')[0]}{date_now_s(True)}.json"
         if creat_new:  # 当前文件，可选是否保存新副本
             save_json(self.settings, json_file)
+
         self.json_file = json_file
 
     # TODO 写得很*, 重写
     def task_run(self):
         """ 完成一个任务
         """
-        logger.hr(f"{self.task.task_name}.task_run", 1)
+        logger.hr(f"task_run {self.task.name}", 1)
         delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
         if self.task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
             self.task.page_list.restart()
@@ -155,7 +150,7 @@ class TaskManager:
         self.task.nextRunTime = nextRunTime
         save_json(self.settings, self.json_file)
         self.task.txt.data_file_exit()
-        logger.info(f"task {self.task.task_name}" f"next run time: {nextRunTime}")
+        logger.info(f"task {self.task.name}" f"next run time: {nextRunTime}")
 
     def url_task_run(self, delay_range):
         """完成一个state"""
@@ -174,7 +169,7 @@ class TaskManager:
             if result:
                 sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
             else:
-                logger.info(f"{self.task.task_name} {self.task.url_task} is complete")
+                logger.info(f"{self.task.name} {self.task.url_task} is complete")
                 return True
 
     def web_break(self):
@@ -200,7 +195,7 @@ class TaskManager:
             self.settings = read_json(self.json_file)
             
         logger.info(f"task.list: {self.settings['task']['list']}")
-        self.run_queue = RunQueue(self.settings)
+        self.run_queue = TaskQueue(self.settings)
 
         if not self.run_queue:
             logger.info(f"json: task.list is {self.run_queue}")
@@ -227,13 +222,15 @@ class TaskManager:
         if t1_slow_than_t2(date_now_s(), nex_run_tieme):
             return
         time_sleep = time_difference(nex_run_tieme, date_now_s())
-        logger.debug(f"sleep {time_sleep}")
+        logger.info(f"sleep {time_sleep}")
         interval = 5
         while 1:
             self.web_break()
-            if time_sleep > 0:
+            if time_sleep > 5:
                 sleep(interval)
                 time_sleep -= interval
+            elif 0 < time_sleep < 5:
+                sleep(time_sleep)
             else:
                 return
 
@@ -241,7 +238,7 @@ class TaskManager:
         """ 若第一个任务时间到了执行时间则返回True
         """
         task: BidTask = self.run_queue[0]
-        logger.info(f"first task {task.task_name} nextRunTime: {task.nextRunTime}")
+        logger.info(f"first task {task.name} nextRunTime: {task.nextRunTime}")
         now = date_now_s()
         # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天09点 或当天9点
         if not during_runtime(now):
@@ -249,8 +246,8 @@ class TaskManager:
                 task.nextRunTime = f"{date_days(0, 'day')} 09:00:00"
             else:
                 task.nextRunTime = f"{date_days(1, 'day')} 09:00:00"
-            deep_set(self.settings, f"{task.task_name}.nextRunTime", task.nextRunTime)
-            logger.info(f"set {task.task_name} nextRunTime {task.nextRunTime}")
+            deep_set(self.settings, f"{task.name}.nextRunTime", task.nextRunTime)
+            logger.info(f"set {task.name} nextRunTime {task.nextRunTime}")
             self.run_queue.insert_task(self.run_queue.pop_q())
             self.run_queue.print_all_next_time()
             return False
@@ -260,6 +257,9 @@ class TaskManager:
         else:
             return False
 
+    def _set_delay_range(self):
+        delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
+        return delay_range
 
 if __name__ == "__main__":
     settings_json = "./bid_settings/bid_settings.json"

@@ -306,7 +306,7 @@ def creat_folder(file):
         os.mkdir(folder)
 
 
-def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False):
+def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False) -> str:
     """简化版json.dumps, 自带默认参数"""
     return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii,
                       sort_keys=sort_keys)
@@ -316,7 +316,7 @@ def sleep_random(time_range: tuple = (2, 3), message: str = None):
     """ 在随机范围内sleep, 并带有提示, 默认为1.7秒到3秒内
     """
     from module.log import logger
-    sleep_time = uniform(*time_range)
+    sleep_time = round(uniform(*time_range), 3)
     if message:
         print(f"wait {sleep_time} s, {message}")
     logger.info(f"sleep {sleep_time}")
