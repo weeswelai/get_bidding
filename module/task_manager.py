@@ -231,6 +231,7 @@ class TaskManager:
                 time_sleep -= interval
             elif 0 < time_sleep < 5:
                 sleep(time_sleep)
+                return
             else:
                 return
 
@@ -241,28 +242,26 @@ class TaskManager:
         logger.info(f"first task {task.name} nextRunTime: {task.nextRunTime}")
         now = date_now_s()
         # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天09点 或当天9点
-        if not during_runtime(now):
-            if task.nextRunTime[:10] == date_days(0, "day"):
-                task.nextRunTime = f"{date_days(0, 'day')} 09:00:00"
-            else:
-                task.nextRunTime = f"{date_days(1, 'day')} 09:00:00"
+        timeResult = during_runtime(now)
+        if timeResult:
+            task.nextRunTime = timeResult
             deep_set(self.settings, f"{task.name}.nextRunTime", task.nextRunTime)
             logger.info(f"set {task.name} nextRunTime {task.nextRunTime}")
             self.run_queue.insert_task(self.run_queue.pop_q())
             self.run_queue.print_all_next_time()
             return False
-        
-        if now == task.nextRunTime or t1_slow_than_t2(now, task.nextRunTime):
-            return True
         else:
-            return False
+            if now == task.nextRunTime or t1_slow_than_t2(now, task.nextRunTime):
+                return True
+            else:
+                return False
 
     def _set_delay_range(self):
         delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
         return delay_range
 
 if __name__ == "__main__":
-    settings_json = "./bid_settings/bid_settings.json"
+    settings_json = "./bid_settings/bid_settings_test.json"
     task_manager = TaskManager(settings_json, save=True)
     try:
         task_manager.loop()

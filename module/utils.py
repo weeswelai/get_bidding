@@ -130,11 +130,15 @@ def date_days(change_days=0, format=None):
 
 
 def during_runtime(time):
+    yesterday22 = f"{date_days(-1, format='day')} 22:00:00"
     today09 = f"{date_days(format='day')} 09:00:00"
     today22 = f"{date_days(format='day')} 22:00:00"
-    if t1_slow_than_t2(today09, time) or t1_slow_than_t2(time, today22):
-        return False
-    return True
+    tomorrow00 = f"{date_days(1, format='day')} 00:00:00"
+    if t1_slow_than_t2(time, yesterday22) and t1_slow_than_t2(today09, time):
+        return f"{time[:10]} 09:00:00"
+    elif t1_slow_than_t2(time, today22) and t1_slow_than_t2(tomorrow00, time):
+        return f"{date_days(1, format='day')} 09:00:00"
+    return None
 
 
 def get_time_add(time_base=None, delay="1h"):
@@ -339,6 +343,8 @@ def time_difference(time1, time2, unit="second"):
     """
     dif = dt.strptime(time1, "%Y-%m-%d %H:%M:%S") - \
           dt.strptime(time2, "%Y-%m-%d %H:%M:%S")
+    if dif.days < 0:
+        return 1
     if unit == "second":
         return dif.seconds
     elif unit == "day":
