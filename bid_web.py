@@ -26,6 +26,7 @@ class LogQueueNode:
         self.next: LogQueueNode = None
 
 class LogQueue:
+    MAXLENGTH = 300
     tail: LogQueueNode = None  # 头指针
     head: LogQueueNode = None  # 尾指针
     node: LogQueueNode = None
@@ -38,12 +39,12 @@ class LogQueue:
             self.tail = node  # 尾指针为该节点的指针
             self.length += 1
 
-        elif self.length < 100:
+        elif self.length < self.MAXLENGTH:
             self.tail.next = node
             self.tail = node
             self.length += 1
 
-        elif self.length >= 100:
+        elif self.length >= self.MAXLENGTH:
             self.pop()
             self.add(text)
         
