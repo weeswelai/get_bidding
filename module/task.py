@@ -179,8 +179,8 @@ class Complete:
         if self.settings["url"]:
             url = self.settings["url"]
             if isinstance(url, dict):
-                list_url = deepcopy(url)
-            return list_url
+                return deepcopy(url) 
+            return url
         else:
             logger.error(f"{self.url_task}.url: is empty, "
                             "please check settings json file")
@@ -204,6 +204,7 @@ class Complete:
                 f"{self.settings['interrupt']['date']}")
         else:
             logger.info("not start")
+
 
 class InterruptState(Complete):
     state = "interrupt"
