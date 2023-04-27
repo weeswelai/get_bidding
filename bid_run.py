@@ -21,7 +21,6 @@ SETTINGS_JSON = "./bid_settings/bid_settings.json"
 if not os.path.exists(SETTINGS_JSON):
     shutil.copyfile(SETTINGS_DEFAULT, SETTINGS_JSON)
 
-RUN = True
 NEW = False
 
 # 初始化任务
@@ -29,15 +28,14 @@ bidTaskManager = TaskManager(SETTINGS_JSON, creat_new=(True if NEW else False))
 
 
 def main():
-    if RUN:
-        try:
-            bidTaskManager.loop()
-        except KeyboardInterrupt:
-            pass
-        except Exception:
-            logger.error(traceback.format_exc())
-        finally:
-            bidTaskManager.exit()
+    try:
+        bidTaskManager.loop()
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        logger.error(traceback.format_exc())
+    finally:
+        bidTaskManager.exit()
 
 
 if __name__ == "__main__":
