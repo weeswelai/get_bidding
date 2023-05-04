@@ -2,7 +2,7 @@
     "jsonFIle": "./bid_settings/bid_settings.json",
     "dataFolder": "./data",
     "test": false,
-    "testFolder": "./testData",
+    "testFolder": "./dataTest",
     "creatNewJsonFile": false,
     "transFileDefault":["list", "match"],
     "transFile": ["list", "match"]
