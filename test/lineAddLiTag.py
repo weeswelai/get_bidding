@@ -1,5 +1,7 @@
 from os.path import exists
+from json import loads
 from module.utils import date_now_s
+from module import CONFIG
 
 DATAPATH = "./data"
 MATCH = "bid_match"
@@ -14,8 +16,17 @@ TYPE = -1
 # "jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"
 WEB = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"]
 
-# ["list", "match"]
-TRANSFILE = ["match"]
+with open(CONFIG, "r", encoding="utf-8") as f:
+    config =  loads(f.read())
+    TRANSFILE = config["transFile"]
+
+if not TRANSFILE:
+    print(f"please check {CONFIG}")
+    exit()
+for tf in TRANSFILE:
+    if tf not in ["list", "match"]:
+        print(f"please check {CONFIG}")
+        exit()
 
 
 def write_head(html, name: str, fileType):

@@ -12,14 +12,10 @@ import os
 import shutil
 import traceback
 
+from module import SETTINGS_JSON
 from module.log import logger
 from module.task_manager import TaskManager
 
-# 读取配置json
-SETTINGS_DEFAULT = "./bid_settings/bid_settings_default.json"
-SETTINGS_JSON = "./bid_settings/bid_settings.json"
-if not os.path.exists(SETTINGS_JSON):
-    shutil.copyfile(SETTINGS_DEFAULT, SETTINGS_JSON)
 
 RUN = True
 NEW = False
