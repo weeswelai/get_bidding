@@ -10,3 +10,5 @@ html_error
 test
 bid_dev.env
 bid_settings/bid_settings.json
+bid_settings/config.json
+bid_settings/*test*
