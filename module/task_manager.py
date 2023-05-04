@@ -4,7 +4,9 @@
 
 # import asyncio
 import traceback
+from datetime import datetime, timedelta
 
+from module import config
 from module.log import logger
 from module.task import BidTask
 from module.utils import *
@@ -20,82 +22,100 @@ class WebBreak(Exception):
     pass
 
 
-class TaskQueue(list):
-    """ 继承list对象,拥有list所有方法,新增自定义方法
-    pop_q: 出队一个元素
-    insert_task : 将一个已初始化好的任务按下次执行时间插入到队列中
-    """
-    def __init__(self, settings) -> None:
-        """ 运行队列
+class TaskNode:
+    # 仅保存下次运行时间和任务名
+    nextRunTime: datetime = None
+    name: str = "test"
+    next = None
+
+    def __init__(self, task: str=None) -> None:
+        if task:
+            self.name = task
+            self.nextRunTime = deep_get(config, f"{task}.nextRunTime")
+        if not self.nextRunTime:
+            self.nextRunTime = RUN_TIME_START
+        self.nextRunTime = str2time(self.nextRunTime)
         
-        Args:
-            settings (dict): 整个json文件的信息
-        """
-        for webName in settings["task"]["list"]:
-            # 初始化任务并加入队列
-            task = BidTask(settings[webName], webName)
-            self.set_next_run_time(task)
-            self.insert_task(task)
-        self.print_all_next_time()
-        self.print_queue()
-        logger.info("RunQueue init complete")
 
-    def pop_q(self) -> BidTask:
-        """出队第一个元素"""
-        if self:
-            return self.pop(0)
-        else:
-            return None
+class TaskQueue:
+    head: TaskNode = None
+    len = 0
 
-    def insert_task(self, task: BidTask):
-        """ 将已初始化好的任务插入队列中,按nexRunTime排序
-        """
-        queue_iter = iter(self)
-        try:
-            idx = 0
-            while 1:
-                t: BidTask = next(queue_iter)
-                if t1_slow_than_t2(t.nextRunTime, task.nextRunTime):
+    def __init__(self) -> None:
+        for t in config.taskList:
+            self.insert(t)
+            self.len += 1
+
+    def insert(self, task):
+        if not isinstance(task, TaskNode):
+            task = TaskNode(task)
+
+        if self.is_empty():
+            self.head = task
+            return
+
+        fast = self.head
+        idx = 0
+        while 1:
+            if task.nextRunTime <= fast.nextRunTime:
+                # 插在前面
+                if idx == 0:
+                    self._insert_first(task)
                     break
-                else:
-                    idx += 1
-        # 到底了
-        except StopIteration:
-            idx = self.__len__()
-        self.insert(idx, task)
-        return idx
+                slow.next = task
+                task.next = fast
+                break
+                
+            if fast.next is None:
+                fast.next = task
+                break
+            else:
+                idx += 1
+                slow = fast
+                fast: TaskNode = fast.next
 
-    def print_all_next_time(self):
-        """依次输出队列下次运行时间"""
-        log = ""
-        if self:
-            for t in self:
-                t: BidTask
-                log = f"{log}{t.name}.nextRunTime: {t.nextRunTime}\n"
-        logger.info(log.strip())
+    def is_empty(self):
+        if self.head is None and self.len == 0:
+            return True
+        return False
 
-    def print_queue(self):
-        """输出当前list里所有任务名"""
-        task_queue = []
-        for task in self:
-            task_queue.append(task.name)
-        logger.info(f"queue: {task_queue}")
+    def len_is_one(self):
+        if self.len == 1:
+            return True
+        return False
 
-    def set_next_run_time(self, task: BidTask):
-        # 判断 "nextRunTime", 若没有值则写入默认起始时间
-        if not deep_get(task.settings, "nextRunTime"):
-            deep_set(task.settings, "nextRunTime", RUN_TIME_START)
-            task.nextRunTime = RUN_TIME_START
+    def _insert_first(self, task: TaskNode):
+        next = self.head
+        self.head = task
+        task.next = next
+
+    def print(self):
+        q = self.head
+        while 1:
+            logger.info(f"{q.name}: {time2str(q.nextRunTime)}")
+            q = q.next
+            if q is None:
+                break
+
+    def pop(self):
+        q = self.head
+        self.head = q.next
+        q.next = None
+        self.len -= 1
+        return q
+
+    def first_runtime(self):
+        return self.head.nextRunTime
 
 
 class TaskManager:
     restart = False
     break_ = False
     task: BidTask
-    run_queue: TaskQueue
+    name: str = None
     sleep_now = False
 
-    def __init__(self, json_file, save=True, creat_new=False):
+    def __init__(self):
         """ 读取json_file; 设置 settings, json_file , queue
         Args:
             json_file (str): 文件json
@@ -103,16 +123,7 @@ class TaskManager:
             creat_new (bool): True: 保存到新的配置文件,默认为False
         """
         logger.hr("TaskManager.__init__", 3)
-        self.settings = read_json(json_file)  # 读取json文件
-
-        deep_set(self.settings, "task.run_time", date_now_s())  # 写入运行时间
-
-        if creat_new:  # 是否创建新文件保存
-            json_file = f"{json_file.split('.json')[0]}{date_now_s(True)}.json"
-        if creat_new:  # 当前文件，可选是否保存新副本
-            save_json(self.settings, json_file)
-
-        self.json_file = json_file
+        deep_set(config, "task.run_time", date_now_s())  # 写入运行时间
 
     # TODO 写得很*, 重写
     def task_run(self):
@@ -148,9 +159,10 @@ class TaskManager:
         # 设置下次运行时间
         deep_set(self.task.settings, "nextRunTime", nextRunTime)
         self.task.nextRunTime = nextRunTime
-        save_json(self.settings, self.json_file)
+        config.save()
         self.task.txt.data_file_exit()
-        logger.info(f"task {self.task.name}" f"next run time: {nextRunTime}")
+        logger.info(f"task {self.task.name} " f"next run time: {nextRunTime}")
+        return nextRunTime
 
     def url_task_run(self, delay_range):
         """完成一个state"""
@@ -165,7 +177,7 @@ class TaskManager:
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
                 return False
-            save_json(self.settings, self.json_file)  # 处理完一页后save
+            config.save()  # 处理完一页后save
             if result:
                 sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
             else:
@@ -181,47 +193,42 @@ class TaskManager:
     def exit(self):
         """关闭任务中占用的文件,保存settings"""
         logger.hr("TaskManager.exit")
-        save_json(self.settings, self.json_file)
-        if hasattr(self, "run_queue"):
-            for task in self.run_queue:
-                task: BidTask
-                task.txt.data_file_exit()
+        config.save()
 
     def loop(self):
         """ 死循环, 等待、完成 task.list内的任务
         """
         if self.restart:
             self.break_ = self.restart = False
-            self.settings = read_json(self.json_file)
-            
-        logger.info(f"task.list: {self.settings['task']['list']}")
-        self.run_queue = TaskQueue(self.settings)
 
-        if not self.run_queue:
-            logger.info(f"json: task.list is {self.run_queue}")
+        logger.info(f"task.list: {config['task']['list']}")
+
+        if queue.is_empty():
+            logger.info(f"json: task.list is {config.taskList}")
             raise WebBreak
         while 1:
             # 判断 TimerQueue第一个任务是否可执行
             if self.next_task_ready():
-                self.task = self.run_queue.pop_q()  # 第一个任务出队
+                task: TaskNode = queue.pop()    # 第一个任务出队
+                self.task = BidTask(config[task.name], task.name)
             else:
                 # 阻塞sleep定时
-                save_json(self.settings, self.json_file)
+                config.save()
                 self.sleep_now = True
-                self.sleep(self.run_queue[0].nextRunTime)
+                self.sleep(queue.first_runtime())
                 continue
             # 任务执行
             self.web_break()
             self.sleep_now = False
-            self.task_run()  # 运行单个任务
-            self.run_queue.insert_task(self.task)  # 将任务插入队列中
-            self.run_queue.print_all_next_time()
+            task.nextRunTime = str2time(self.task_run())  # 运行单个任务
+            queue.insert(task)  # 将任务插回队列中 
+            queue.print()
 
-    def sleep(self, nex_run_tieme: int):
+
+    def sleep(self, nextRunTime: datetime):
         """阻塞的定时器,阻塞间隔为5秒"""
-        if t1_slow_than_t2(date_now_s(), nex_run_tieme):
-            return
-        time_sleep = time_difference(nex_run_tieme, date_now_s())
+        
+        time_sleep = (nextRunTime - datetime.now()).total_seconds() + 1
         logger.info(f"sleep {time_sleep}")
         interval = 5
         while 1:
@@ -229,42 +236,48 @@ class TaskManager:
             if time_sleep > 5:
                 sleep(interval)
                 time_sleep -= interval
-            elif 0 < time_sleep < 5:
+            elif 0 < time_sleep <= 5:
                 sleep(time_sleep)
                 return
             else:
                 return
 
-    def next_task_ready(self) -> bool:
+    def next_task_ready(self) -> None or BidTask:
         """ 若第一个任务时间到了执行时间则返回True
         """
-        task: BidTask = self.run_queue[0]
+        task: TaskNode = queue.head
         logger.info(f"first task {task.name} nextRunTime: {task.nextRunTime}")
-        now = date_now_s()
+        now = datetime.now().replace(microsecond=0)
+        print(time2str(now))
         # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天09点 或当天9点
-        timeResult = during_runtime(now)
-        if timeResult:
-            task.nextRunTime = timeResult
-            deep_set(self.settings, f"{task.name}.nextRunTime", task.nextRunTime)
-            logger.info(f"set {task.name} nextRunTime {task.nextRunTime}")
-            self.run_queue.insert_task(self.run_queue.pop_q())
-            self.run_queue.print_all_next_time()
+        nextRunTime = during_runtime(time2str(now))
+        if nextRunTime:
+            task.nextRunTime = str2time(nextRunTime)
+            deep_set(config, f"{task.name}.nextRunTime", nextRunTime)
+            logger.info(f"set {task.name} nextRunTime {nextRunTime}")
+            queue.insert(queue.pop())
+            # queue.print()
+            print("False 1")
             return False
         else:
-            if now == task.nextRunTime or t1_slow_than_t2(now, task.nextRunTime):
+            if task.nextRunTime <= now:
+                print("True 1")
                 return True
             else:
+                print("False 2")
                 return False
 
     def _set_delay_range(self):
         delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
         return delay_range
 
+
+bidTaskManager = TaskManager()
+queue = TaskQueue()
+
 if __name__ == "__main__":
-    settings_json = "./bid_settings/bid_settings_test.json"
-    task_manager = TaskManager(settings_json, save=True)
     try:
-        task_manager.loop()
+        bidTaskManager.loop()
     except Exception:
-        task_manager.exit()
-        save_json(settings_json, task_manager.settings)
+        bidTaskManager.exit()
+        config.save()

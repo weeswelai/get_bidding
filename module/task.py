@@ -13,13 +13,14 @@ from importlib import import_module
 
 from bs4 import Tag
 
+from module import config
 from module.judge_content import title_trie
 from module.log import logger
 from module.utils import *
 from module.web_brows import *
 from module.web_exception import WebTooManyVisits
 
-DATA_PATH = r"./data"
+DATA_PATH = config.dataFolder
 RE_OPEN_MAX = 4  # 异常时最大重新打开次数
 SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
 

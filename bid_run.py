@@ -8,19 +8,10 @@
  判断时间，判断访问频率是否合适
  调度网页的打开、项目列表页面的翻页
 """
-import os
-import shutil
 import traceback
 
-from module import SETTINGS_JSON
 from module.log import logger
-from module.task_manager import TaskManager
-
-
-NEW = False
-
-# 初始化任务
-bidTaskManager = TaskManager(SETTINGS_JSON, creat_new=(True if NEW else False))
+from module.task_manager import bidTaskManager
 
 
 def main():

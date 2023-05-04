@@ -7,7 +7,7 @@ data
 log
 html_test
 html_error
-test
+*test*
 bid_dev.env
 bid_settings/bid_settings.json
 bid_settings/config.json

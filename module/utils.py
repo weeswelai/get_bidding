@@ -5,7 +5,7 @@
 import json
 import os
 import re
-from datetime import datetime as dt
+from datetime import datetime
 from datetime import timedelta
 from json import dumps, loads
 from random import uniform
@@ -13,7 +13,7 @@ from time import sleep
 
 from bs4 import Tag
 
-_DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 __URL_FIND__ = {
     "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ],
     "qjc": [24, "http://www.weain.mil.cn/"],
@@ -44,6 +44,26 @@ __URL_REPLACE__ = {
     }
 }
 
+
+def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
+    """
+    Args:
+        s_tag (bs4.element.Tag): 要检索的tag
+        rule (str, list): 检索规则,用 "." 分开
+    Returns:
+        tag (bs4.element.Tag)
+    """
+    if isinstance(rule, str):
+        rule = rule.split(".")
+    assert type(rule) is tuple or list
+    if s_tag is None:
+        return None
+    if not rule:
+        return s_tag
+    return bs_deep_get(s_tag.find(rule[0]), rule[1:])
+
+
+# json or file
 
 def deep_set(d: dict, keys: list or str, value):
     """
@@ -84,95 +104,7 @@ def deep_get(d: dict, keys: list or str, default=None):
     return deep_get(d.get(keys[0]), keys[1:], default)
 
 
-def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
-    """
-    Args:
-        s_tag (bs4.element.Tag): 要检索的tag
-        rule (str, list): 检索规则,用 "." 分开
-    Returns:
-        tag (bs4.element.Tag)
-    """
-    if isinstance(rule, str):
-        rule = rule.split(".")
-    assert type(rule) is tuple or list
-    if s_tag is None:
-        return None
-    if not rule:
-        return s_tag
-    return bs_deep_get(s_tag.find(rule[0]), rule[1:])
-
-
-def date_now_s(file_new=False, format=None) -> str:
-    """ 返回当前日期
-    Args:
-        file_new (bool): 为True时将-变为_
-    """
-    if format is not None:
-        return dt.now().strftime(format)
-    if file_new:
-        return dt.now().strftime('_%Y_%m_%d-%H_%M_%S')
-    else:
-        return dt.now().strftime(_DATE_TIME_FORMAT)
-
-
-def date_days(change_days=0, format=None):
-    """ 返回当前日期,仅到日
-    Args:
-        change_days (int): 增加或减少的天数
-    Retruns:
-        str : 返回计算后日期的字符串
-    """
-    if not format:
-        format = _DATE_TIME_FORMAT
-    if format == "day":
-        format = "%Y-%m-%d"
-    return (dt.now() + timedelta(days=change_days)).strftime(format)
-
-
-def during_runtime(time):
-    yesterday22 = f"{date_days(-1, format='day')} 22:00:00"
-    today09 = f"{date_days(format='day')} 09:00:00"
-    today22 = f"{date_days(format='day')} 22:00:00"
-    tomorrow00 = f"{date_days(1, format='day')} 00:00:00"
-    if t1_slow_than_t2(time, yesterday22) and t1_slow_than_t2(today09, time):
-        return f"{time[:10]} 09:00:00"
-    elif t1_slow_than_t2(time, today22) and t1_slow_than_t2(tomorrow00, time):
-        return f"{date_days(1, format='day')} 09:00:00"
-    return None
-
-
-def get_time_add(time_base=None, delay="1h"):
-    """
-    Args:
-        min:
-        time_base:
-    Returns:
-        time_base + time_add
-    """
-    time_base = dt.strptime(time_base) if time_base else dt.now()
-    if isinstance(delay, int):
-        time_add = timedelta(minutes=delay)
-    if isinstance(delay, str):
-        time_ , unit = int(delay[:-1]), delay[-1]
-        if unit == "h":
-            time_add = timedelta(hours=time_)
-        elif unit == "d":
-            time_add = timedelta(days=time_)
-        elif unit == "m":
-            time_add = timedelta(minutes=time_)
-    return (time_base + time_add).strftime('%Y-%m-%d %H:%M:%S')
-
-
-def t1_slow_than_t2(time1, time2) -> bool:
-    """ 若time1 慢于 time2(time1在time2后) 返回True, 否则返回 False
-    """
-    if dt.strptime(time1, _DATE_TIME_FORMAT) > \
-            dt.strptime(time2, _DATE_TIME_FORMAT):
-        return True
-    return False
-
-
-def read_json(file):
+def read_json(file) -> dict:
     """ 读取json文件,并返回dict
     Args:
         file (str): josn文件路径
@@ -206,6 +138,18 @@ def save_json(data, json_file, indent=2):
     logger.info(f"save {json_file}")
 
 
+def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False) -> str:
+    """简化版json.dumps, 自带默认参数, dict -> str"""
+    return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii,
+                      sort_keys=sort_keys)
+
+
+def creat_folder(file):
+    folder = os.path.dirname(file)
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
+
 def save_file(file, data, mode="w", bytes=False):
     """ 保存文件
     """
@@ -217,6 +161,130 @@ def save_file(file, data, mode="w", bytes=False):
         with open(file, mode, encoding="utf-8") as f:
             f.write(str(data))
 
+
+# time
+
+_DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+def time2str(time: timedelta, format=None) -> str:
+    if format:
+        return datetime.strftime(time, format)
+    return datetime.strftime(time, _DATE_TIME_FORMAT)
+
+
+def str2time(time: str, format=None) -> datetime:
+    if format:
+        return datetime.strptime(time, format)
+    return datetime.strptime(time, _DATE_TIME_FORMAT)
+
+
+def date_now_s(file_new=False, format=None) -> str:
+    """ 返回当前日期
+    Args:
+        file_new (bool): 为True时将-变为_
+    """
+    if format is not None:
+        return datetime.now().strftime(format)
+    if file_new:
+        return datetime.now().strftime('_%Y_%m_%d-%H_%M_%S')
+    else:
+        return datetime.now().strftime(_DATE_TIME_FORMAT)
+
+
+def date_days(change_days=0, format=None):
+    """ 返回当前日期,仅到日
+    Args:
+        change_days (int): 增加或减少的天数
+    Retruns:
+        str : 返回计算后日期的字符串
+    """
+    if not format:
+        format = _DATE_TIME_FORMAT
+    if format == "day":
+        format = "%Y-%m-%d"
+    return (datetime.now() + timedelta(days=change_days)).strftime(format)
+
+
+def during_runtime(time):
+    yesterday22 = f"{date_days(-1, format='day')} 22:00:00"
+    today09 = f"{date_days(format='day')} 09:00:00"
+    today22 = f"{date_days(format='day')} 22:00:00"
+    tomorrow00 = f"{date_days(1, format='day')} 00:00:00"
+    if t1_slow_than_t2(time, yesterday22) and t1_slow_than_t2(today09, time):
+        return f"{time[:10]} 09:00:00"
+    elif t1_slow_than_t2(time, today22) and t1_slow_than_t2(tomorrow00, time):
+        return f"{date_days(1, format='day')} 09:00:00"
+    return None
+
+
+def get_time_add(time_base=None, delay="1h"):
+    """
+    Args:
+        min:
+        time_base:
+    Returns:
+        time_base + time_add
+    """
+    time_base = datetime.strptime(time_base) if time_base else datetime.now()
+    if isinstance(delay, int):
+        time_add = timedelta(minutes=delay)
+    if isinstance(delay, str):
+        time_ , unit = int(delay[:-1]), delay[-1]
+        if unit == "h":
+            time_add = timedelta(hours=time_)
+        elif unit == "d":
+            time_add = timedelta(days=time_)
+        elif unit == "m":
+            time_add = timedelta(minutes=time_)
+    return (time_base + time_add).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def sleep_random(time_range: tuple = (2, 3), message: str = None):
+    """ 在随机范围内sleep, 并带有提示, 默认为1.7秒到3秒内
+    """
+    from module.log import logger
+    sleep_time = round(uniform(*time_range), 3)
+    if message:
+        print(f"wait {sleep_time} s, {message}")
+    logger.info(f"sleep {sleep_time}")
+    sleep_idx = int(sleep_time)
+    for idx in range(1, sleep_idx + 1):
+        print(f"sleep {idx} now")
+        sleep(1)
+    print(f"sleep {sleep_time} now")
+    sleep(sleep_time - sleep_idx)
+    print("sleep end")
+
+
+def time_difference(time1, time2, unit="second"):
+    """获得时间差,单位为秒,返回 time1 - time2
+    Args:
+        unit (str): second or day 要求格式 "%Y-%m-%d %H:%M:%S"
+    Returns:
+        (int): 若 unit == second 返回秒的差值
+               若 unit == day    返回日的差值
+    """
+    dif = datetime.strptime(time1, "%Y-%m-%d %H:%M:%S") - \
+          datetime.strptime(time2, "%Y-%m-%d %H:%M:%S")
+    if dif.days < 0:
+        return 1
+    if unit == "second":
+        return dif.seconds
+    elif unit == "day":
+        return dif.days
+
+
+def t1_slow_than_t2(time1, time2) -> bool:
+    """ 若time1 慢于 time2(time1在time2后) 返回True, 否则返回 False
+    """
+    if datetime.strptime(time1, _DATE_TIME_FORMAT) > \
+            datetime.strptime(time2, _DATE_TIME_FORMAT):
+        return True
+    return False
+
+
+# 
 
 def url_to_filename(url: str):
     """
@@ -304,53 +372,6 @@ def init_re(re_rule, flag=16):
         return None
 
 
-def creat_folder(file):
-    folder = os.path.dirname(file)
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-
-
-def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False) -> str:
-    """简化版json.dumps, 自带默认参数"""
-    return json.dumps(d, indent=indent, ensure_ascii=ensure_ascii,
-                      sort_keys=sort_keys)
-
-
-def sleep_random(time_range: tuple = (2, 3), message: str = None):
-    """ 在随机范围内sleep, 并带有提示, 默认为1.7秒到3秒内
-    """
-    from module.log import logger
-    sleep_time = round(uniform(*time_range), 3)
-    if message:
-        print(f"wait {sleep_time} s, {message}")
-    logger.info(f"sleep {sleep_time}")
-    sleep_idx = int(sleep_time)
-    for idx in range(1, sleep_idx + 1):
-        print(f"sleep {idx} now")
-        sleep(1)  
-    print(f"sleep {sleep_time} now")
-    sleep(sleep_time - sleep_idx)
-    print("sleep end")
-
-
-def time_difference(time1, time2, unit="second"):
-    """获得时间差,单位为秒,返回 time1 - time2
-    Args:
-        unit (str): second or day 要求格式 "%Y-%m-%d %H:%M:%S"
-    Returns:
-        (int): 若 unit == second 返回秒的差值
-               若 unit == day    返回日的差值
-    """
-    dif = dt.strptime(time1, "%Y-%m-%d %H:%M:%S") - \
-          dt.strptime(time2, "%Y-%m-%d %H:%M:%S")
-    if dif.days < 0:
-        return 1
-    if unit == "second":
-        return dif.seconds
-    elif unit == "day":
-        return dif.days
-
-
 def reset_state(settings, key, json_file=""):
     """ 重置一个 state  如 zzlh的'货物'"""
     if isinstance(settings, str) and not json_file:
@@ -401,6 +422,7 @@ def cookie_dict_to_str(set_cookie: dict):
     for key, value in set_cookie.items():
         cookie += (f"{key}={value}",)
     return "; ".join(cookie).strip()
+
 
 if __name__ == "__main__":
     # 本模块测试
