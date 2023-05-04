@@ -35,4 +35,4 @@ if pyw_name not in IGNORE:
             save_json(self, self.file)
 
     config = Config()
-    print()
+    logger.info("config ready")
