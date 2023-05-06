@@ -4,6 +4,6 @@
     "test": false,
     "testFolder": "./dataTest",
     "creatNewJsonFile": false,
-    "transFileDefault":["list", "match"],
-    "transFile": ["list", "match"]
+    "transFileDefault":["list", "match","dayFile"],
+    "transFile": ["list", "match","dayFile"]
 }

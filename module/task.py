@@ -271,47 +271,71 @@ def TaskState_init(settings, url_task) -> Complete or InterruptState:
 
 
 class DataFileTxt:
-    list_file: TextIOWrapper
-    match_file: TextIOWrapper
+    filePath = {
+        "list": None,
+        "match": None,
+        "dayMatch": None,
+        "dayList": None
+    }
+    file = {
+        "list": None,
+        "match": None,
+        "dayMatch": None,
+        "dayList": None
+    }
 
     def __init__(self, name="test") -> None:
         self.file_open = False
         self.name = name
-        self.list_f = f"{DATA_PATH}/bid_list_{name}.txt"
-        self.match_list_f = f"{DATA_PATH}/bid_match_{name}.txt"
-        creat_folder(self.list_f)
-        logger.info(f"list data: {self.list_f}\n"
-                    f"{' ' * 26}match list data: {self.match_list_f}")
+        self._file_init(name)
+        creat_folder(self.filePath["list"])
+        log = ""
+        for k, v in self.filePath.items():
+            log += f"{k}: {v}\n{' '*26}"
+        logger.info(log.strip())
+
+    def _file_init(self, name):
+        for k in self.filePath.keys():
+            if "day" in k:
+                self.filePath[k] = f"{DATA_PATH}/bid_{k}_{date_days(format='day')}.txt"
+            else:
+                self.filePath[k] = f"{DATA_PATH}/bid_{k}_{name}.txt"
 
     def data_file_open(self):
         if not self.file_open:
-            self.list_file = open(self.list_f, "a", encoding="utf-8")
-            self.match_file = open(self.match_list_f, "a", encoding="utf-8")
+            for k, v in self.filePath.items():
+                self.file[k] = open(v, "a", encoding="utf-8")
             # 写入运行时间
-            self.list_file.write(f"start at {date_now_s()}\n")
-            self.match_file.write(f"start at {date_now_s()}\n")
+            self.write_all(f"{self.name} start at {date_now_s()}\n")
             self.file_open = True
         logger.info(f"{self.name}.file_open={self.file_open}")
-            
+
     def data_file_exit(self):
         if self.file_open:
-            self.match_file.close()
-            self.list_file.close()
+            for v in self.file.values():
+                v.close()
             self.file_open = False
         logger.info(f"{self.name}.file_open={self.file_open}")
 
+    def write_match(self, data):
+        self._write("match", data)
 
-    def write(self, file_name, data):
+    def write_list(self, data):
+        self._write("list", data)
+
+    def _write(self, file, data):
         if data[-1] != "\n":
             data = f"{data}\n"
-        if file_name == "match":
-            self.match_file.write(data)
-        elif file_name == "list":
-            self.list_file.write(data)
+        if file == "match":
+            self.file["match"].write(data)
+            self.file["dayMatch"].write(data)
+        elif file == "list":
+            self.file["list"].write(data)
+            self.file["dayList"].write(data)
 
-    def writeall(self, data):
-        self.write("list", data)
-        self.write("match", data)
+    def write_all(self, data):
+        self.write_match(data)
+        self.write_list(data)
 
 
 class BidTaskInit:
@@ -371,7 +395,7 @@ class BidTaskInit:
             self.State = TaskState_init(
                 self.settings[self.url_task], self.url_task)
             self.State.print_state_at_start()
-            self.txt.writeall(f"{self.url_task}\n")
+            self.txt.write_all(f"{self.url_task}\n")
             self.list_url = None
 
             return True
@@ -488,7 +512,7 @@ class BidTask(BidTaskInit):
                 continue
 
             self.State.set_interrupt(self.bid)  # 设置每次最后一个为interrupt
-            self.txt.write("list", f"{self.bid.message()}\n")  # 写入文件
+            self.txt.write_list(f"{self.bid.message()}\n")  # 写入文件
             self._title_trie_search(self.bid)  # 使用title trie 查找关键词
         logger.info(f"tag stop at {idx + 1}, tag counting from 1")
         self.State.set_interrupt_url(self.list_url)
@@ -536,7 +560,7 @@ class BidTask(BidTaskInit):
         if result:
             result = f"[{','.join(result)}]; {bid_prj.message()}"
             logger.info(result)
-            self.txt.write("match", result)
+            self.txt.write_match(result)
             self.match_num += 1
 
     def _complete_page_task(self):
