@@ -385,7 +385,7 @@ def reset_state(settings, key, json_file=""):
         save_json(settings, json_file)
 
 
-def reset_task(settings: dict, task_name: dict, json_file=""):
+def reset_task(settings: dict, task_name: str, json_file=""):
     """ 重置一个任务的nextRunTime, newest interrupt end_rule"""
     if isinstance(settings, str) and not json_file:
         json_file = settings
@@ -402,11 +402,18 @@ def reset_task(settings: dict, task_name: dict, json_file=""):
         save_json(json_file)
 
 
-def reset_json_file(json_file):
+def reset_time(settings: dict, task_name: str):
+    settings[task_name]["nextRunTime"] = ""
+
+
+def reset_json_file(json_file, time=False):
     """ 重置一个json文件task.list里所有任务"""
     settings = read_json(json_file)
-    for task_name in settings["task"]["test"]:
-        reset_task(settings, task_name)
+    for task_name in settings["task"]["list"]:
+        if time:
+            reset_time(settings, task_name)
+        else:
+            reset_task(settings, task_name)
     save_json(settings, json_file)
 
 
@@ -428,5 +435,5 @@ def cookie_dict_to_str(set_cookie: dict):
 if __name__ == "__main__":
     # 本模块测试
     # test code
-    reset_json_file("./bid_settings/bid_settings.json")
+    reset_json_file("./bid_settings/bid_settings.json", time=True)
     pass
