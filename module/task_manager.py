@@ -44,6 +44,7 @@ class TaskQueue:
             self.insert(t)
         self.print()
 
+
     def insert(self, task) -> None:
         if not isinstance(task, TaskNode):
             task = TaskNode(task)
