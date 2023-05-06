@@ -36,49 +36,43 @@ class TaskNode:
         
 
 class TaskQueue:
-    head: TaskNode = None
+    head = None
     len = 0
 
     def __init__(self) -> None:
         for t in config.taskList:
             self.insert(t)
-            self.len += 1
 
-    def insert(self, task):
+    def insert(self, task) -> None:
         if not isinstance(task, TaskNode):
             task = TaskNode(task)
 
-        if self.is_empty():
+        node = self.head
+        if not node:  # empty queue
             self.head = task
-            return
+        else:
+            if task.nextRunTime <= node.nextRunTime:  # insert before first
+                self._insert_first(task)
+            else:
+                self._insert(task)
+        self.len += 1
 
-        fast = self.head
-        idx = 0
+    def _insert(self, task:TaskNode):
+        node = self.head
         while 1:
-            if task.nextRunTime <= fast.nextRunTime:
-                # 插在前面
-                if idx == 0:
-                    self._insert_first(task)
-                    break
-                slow.next = task
-                task.next = fast
+            if node.next is None:
+                node.next = task
                 break
-                
-            if fast.next is None:
-                fast.next = task
+            if  task.nextRunTime <= node.next.nextRunTime:
+                task.next = node.next
+                node.next = task
                 break
             else:
-                idx += 1
-                slow = fast
-                fast: TaskNode = fast.next
+                node: TaskNode = node.next
 
     def is_empty(self):
         if self.head is None and self.len == 0:
-            return True
-        return False
-
-    def len_is_one(self):
-        if self.len == 1:
+            logger.info("queue is empty")
             return True
         return False
 
@@ -88,6 +82,8 @@ class TaskQueue:
         task.next = next
 
     def print(self):
+        if self.is_empty():
+            logger.info(f"queue is empty")
         q = self.head
         while 1:
             logger.info(f"{q.name}: {time2str(q.nextRunTime)}")
@@ -96,6 +92,8 @@ class TaskQueue:
                 break
 
     def pop(self):
+        if self.is_empty():
+            return None
         q = self.head
         self.head = q.next
         q.next = None
@@ -103,6 +101,8 @@ class TaskQueue:
         return q
 
     def first_runtime(self):
+        if self.is_empty():
+            return None
         return self.head.nextRunTime
 
 
