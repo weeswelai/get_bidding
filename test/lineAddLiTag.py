@@ -1,7 +1,9 @@
-from os.path import exists
+import sys
 from json import loads
-from module.utils import date_now_s
+from os.path import exists
+
 from module import CONFIG
+from module.utils import date_days, date_now_s
 
 DATAPATH = "./data"
 MATCH = "bid_match"
@@ -24,7 +26,7 @@ if not TRANSFILE:
     print(f"please check {CONFIG}")
     exit()
 for tf in TRANSFILE:
-    if tf not in ["list", "match"]:
+    if tf not in ["list", "match", "dayFile"]:
         print(f"please check {CONFIG}")
         exit()
 
@@ -76,6 +78,12 @@ def wirte_li(html, line: str, idx, fileType):
                    f"{line_list[DATE]},{line_list[TYPE]}</li>\n")
 
 def write_html(webName, fileType, txtFile):
+    """
+    Args:
+        webName(str): qjc or dayFile
+        fileType(str): match or list
+        txtFile(TextIOWrapper): TextIOWrapper
+    """
     webFIle = get_file_name(fileType, webName, 'htm')
     with open(webFIle, "w", encoding="utf-8") as html:
         write_head(html, webName, fileType)
@@ -92,9 +100,16 @@ def write_html(webName, fileType, txtFile):
         write_body(html, "bottom")
 
 
-def get_file_name(fileType, webName, Type):
-    # 在 html 文件前缀前
-    if Type == "txt":
+def get_file_name(fileType, webName, Type="htm"):
+    """
+    Argv:
+        fileType(str): match or list
+        webName(str): qjc or zzlh or dayFile
+        Type(str): htm or txt, input html = htm
+    """
+    if webName == "dayFile":
+        return f"{DATAPATH}/bid_day{fileType.title()}_{date_days(format='day')}_.htm"
+    elif Type == "txt":
         return f"{DATAPATH}/bid_{fileType}_{webName}.txt"
     elif Type in ["htm", "html"]:
         return f"{DATAPATH}/bid_{fileType}_{webName}{date_now_s(True)}.htm"
@@ -103,6 +118,9 @@ def get_file_name(fileType, webName, Type):
 def main():
     # TODO 有没有更好的写法    
     for fileType in TRANSFILE:
+        if fileType == "dayFile":
+            dayFile()
+            break
         for webName in WEB:
             fileName = get_file_name(fileType, webName, "txt")
             if not exists(fileName):
@@ -113,5 +131,30 @@ def main():
                 write_html(webName, fileType, file)
 
 
+def dayFile():
+    today = date_days(format="day")
+    for fileType in ["list", "match"]:
+        fileName = f"{DATAPATH}/bid_day{fileType.title()}_{today}.txt"
+        with open(fileName, "r", encoding="utf-8") as file:
+            write_html("dayFile", fileType, file)
+
+
+# 三种情况
+# 1. 绝对路径
+# 1.1 带参数
+# 1.2 不带参数
+# 2. 部分文件名,如日期,日期格式必须为 yyyy-mm-dd
+# TODO 把上面的写完
+def command(argv):
+    if len(argv) == 1:
+        pass
+    if argv[-4:] == ".txt":
+        html = get_file_name(argv)
+        write_html()
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        argv = sys.argv[1:]
+        command(argv)
+    else:    
+        main()

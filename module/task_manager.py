@@ -42,6 +42,8 @@ class TaskQueue:
     def __init__(self) -> None:
         for t in config.taskList:
             self.insert(t)
+        self.print()
+
 
     def insert(self, task) -> None:
         if not isinstance(task, TaskNode):
@@ -219,7 +221,7 @@ class TaskManager:
             self.sleep_now = False
             taskNode.nextRunTime = str2time(self.task_run(task))  # 运行单个任务
             queue.insert(taskNode)  # 将任务插回队列中 
-            queue.print()
+            # queue.print()
 
 
     def sleep(self, nextRunTime: datetime):

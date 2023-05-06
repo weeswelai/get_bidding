@@ -7,7 +7,13 @@ data
 log
 html_test
 html_error
-*test*
+dataTest
+test
+!test/前缀树.txt
+!test/lineAddLiTag.py
+!test/web_brows_test.py
+!test/task_test.py
+!test/string_test.py
 bid_dev.env
 bid_settings/bid_settings.json
 bid_settings/config.json
