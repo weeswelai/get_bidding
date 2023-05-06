@@ -124,54 +124,53 @@ class TaskManager:
         deep_set(config, "task.run_time", date_now_s())  # 写入运行时间
 
     # TODO 写得很*, 重写
-    def task_run(self):
+    def task_run(self, task: BidTask):
         """ 完成一个任务
         """
-        logger.hr(f"task_run {self.task.name}", 1)
-        delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
-        if self.task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
-            self.task.page_list.restart()
-        self.task.task_end = False
+        logger.hr(f"task_run {task.name}", 1)
+        delay_range = task.delay if task.delay else NEXT_OPEN_DELAY  # 移到task.py
+        if task.page_list.queue_is_empty():  # 若为空,重新写入PageQueue
+            task.page_list.restart()
+        task.task_end = False
 
-        if not self.task.txt.file_open:
-            self.task.txt.data_file_open()
+        if not task.txt.file_open:
+            task.txt.data_file_open()
 
-        logger.info(f"task PageQueue: {self.task.settings['PageQueue']}")
+        logger.info(f"task PageQueue: {task.settings['PageQueue']}")
         try:
             result = True
-            while self.task.init_state():  # task 按PageQueue顺序完成state
+            while task.init_state():  # task 按PageQueue顺序完成state
                 self.web_break()
-                result = self.url_task_run(delay_range)
+                result = self.url_task_run(task, delay_range)
         except WebTooManyVisits:
             result = False
-            deep_set(self.task.settings, f"{self.task.url_task}.error", True)
+            deep_set(task.settings, f"{task.url_task}.error", True)
 
         # 判断结果 计算下次运行时间, 返回 True 则 延迟 COMPLETE_DELAY , 错误则延迟10分钟或json设置里的时间        
         if result:
             delay = COMPLETE_DELAY
         else:
-            delay = self.task.error_delay if self.task.error_delay \
+            delay = task.error_delay if task.error_delay \
                 else ERROR_DELAY
             logger.warning(f"open_list_url_error, delay {delay}")
         nextRunTime = get_time_add(delay=delay)
         # 设置下次运行时间
-        deep_set(self.task.settings, "nextRunTime", nextRunTime)
-        self.task.nextRunTime = nextRunTime
+        deep_set(task.settings, "nextRunTime", nextRunTime)
         config.save()
-        self.task.txt.data_file_exit()
-        logger.info(f"task {self.task.name} " f"next run time: {nextRunTime}")
+        task.txt.data_file_exit()
+        logger.info(f"task {task.name} " f"next run time: {nextRunTime}")
         return nextRunTime
 
-    def url_task_run(self, delay_range):
+    def url_task_run(self, task: BidTask, delay_range):
         """完成一个state"""
-        logger.hr(f"{self.task.url_task}.url_task_run", 2)
+        logger.hr(f"{task.url_task}.url_task_run", 2)
         while 1:
             self.web_break()
             try:
-                result = self.task.process_next_list_web()
+                result = task.process_next_list_web()
                 self.web_break()
             except AssertionError:  # from task.BidTask._open_list_url
-                self.task.set_error_state()  # 设置state.error为True, 将当前state移动到PageWait
+                task.set_error_state()  # 设置state.error为True, 将当前state移动到PageWait
                 logger.error(f"{traceback.format_exc()}")
                 # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
                 return False
@@ -179,7 +178,7 @@ class TaskManager:
             if result:
                 sleep_random(delay_range, message=" you can use 'Ctrl  C' stop now")
             else:
-                logger.info(f"{self.task.name} {self.task.url_task} is complete")
+                logger.info(f"{task.name} {task.url_task} is complete")
                 return True
 
     def web_break(self):
@@ -205,10 +204,10 @@ class TaskManager:
             logger.info(f"json: task.list is {config.taskList}")
             raise WebBreak
         while 1:
-            # 判断 TimerQueue第一个任务是否可执行
+            # 判断第一个任务是否可执行
             if self.next_task_ready():
-                task: TaskNode = queue.pop()    # 第一个任务出队
-                self.task = BidTask(config[task.name], task.name)
+                taskNode: TaskNode = queue.pop()    # 第一个任务出队
+                task = BidTask(config[taskNode.name], taskNode.name)
             else:
                 # 阻塞sleep定时
                 config.save()
@@ -218,8 +217,8 @@ class TaskManager:
             # 任务执行
             self.web_break()
             self.sleep_now = False
-            task.nextRunTime = str2time(self.task_run())  # 运行单个任务
-            queue.insert(task)  # 将任务插回队列中 
+            taskNode.nextRunTime = str2time(self.task_run(task))  # 运行单个任务
+            queue.insert(taskNode)  # 将任务插回队列中 
             queue.print()
 
 
@@ -255,17 +254,12 @@ class TaskManager:
             deep_set(config, f"{task.name}.nextRunTime", str(nextRunTime))
             logger.info(f"set {task.name} nextRunTime {nextRunTime}")
             queue.insert(queue.pop())
-            # queue.print()
             return False
         else:
             if task.nextRunTime <= now:
                 return True
             else:
                 return False
-
-    def _set_delay_range(self):
-        delay_range = self.task.delay if self.task.delay else NEXT_OPEN_DELAY
-        return delay_range
 
 
 bidTaskManager = TaskManager()
@@ -274,6 +268,9 @@ queue = TaskQueue()
 if __name__ == "__main__":
     try:
         bidTaskManager.loop()
+    except KeyboardInterrupt:
+        pass
     except Exception:
+        logger.error(traceback.format_exc())
+    finally:
         bidTaskManager.exit()
-        config.save()

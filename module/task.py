@@ -335,8 +335,6 @@ class BidTaskInit:
         """
         self.settings = settings  # zzlh:{}
         self.name = name  # 当前任务名
-        self.nextRunTime = settings["nextRunTime"]  # 被外部调用
-
         self.txt = DataFileTxt(self.name)
         self.page_list = PageList(settings)
         self.error_delay = deep_get(self.settings, "urlConfig.errorDelay")
