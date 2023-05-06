@@ -206,15 +206,16 @@ def date_days(change_days=0, format=None):
     return (datetime.now() + timedelta(days=change_days)).strftime(format)
 
 
-def during_runtime(time):
-    yesterday22 = f"{date_days(-1, format='day')} 22:00:00"
-    today09 = f"{date_days(format='day')} 09:00:00"
-    today22 = f"{date_days(format='day')} 22:00:00"
-    tomorrow00 = f"{date_days(1, format='day')} 00:00:00"
-    if t1_slow_than_t2(time, yesterday22) and t1_slow_than_t2(today09, time):
-        return f"{time[:10]} 09:00:00"
-    elif t1_slow_than_t2(time, today22) and t1_slow_than_t2(tomorrow00, time):
-        return f"{date_days(1, format='day')} 09:00:00"
+def during_runtime(time: datetime) -> datetime or None:
+    oneDay = timedelta(days=1)
+    today09 = datetime.now().replace(hour=9 , minute=0, second=0, microsecond=0)
+    today22 = datetime.now().replace(hour=22 , minute=0, second=0, microsecond=0)
+    yesterday22 = today22 - oneDay
+    tomorrow00 = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + oneDay
+    if yesterday22 < time < today09:
+        return today09
+    elif today22 < time < tomorrow00:
+        return today09 + oneDay
     return None
 
 

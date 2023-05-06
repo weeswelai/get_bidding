@@ -1,10 +1,8 @@
 """
 
 """
-
-# import asyncio
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from module import config
 from module.log import logger
@@ -229,6 +227,8 @@ class TaskManager:
         """阻塞的定时器,阻塞间隔为5秒"""
         
         time_sleep = (nextRunTime - datetime.now()).total_seconds() + 1
+        if time_sleep <= 0:
+            return
         logger.info(f"sleep {time_sleep}")
         interval = 5
         while 1:
@@ -248,23 +248,19 @@ class TaskManager:
         task: TaskNode = queue.head
         logger.info(f"first task {task.name} nextRunTime: {task.nextRunTime}")
         now = datetime.now().replace(microsecond=0)
-        print(time2str(now))
         # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天09点 或当天9点
-        nextRunTime = during_runtime(time2str(now))
+        nextRunTime = during_runtime(now)
         if nextRunTime:
-            task.nextRunTime = str2time(nextRunTime)
-            deep_set(config, f"{task.name}.nextRunTime", nextRunTime)
+            task.nextRunTime = nextRunTime
+            deep_set(config, f"{task.name}.nextRunTime", str(nextRunTime))
             logger.info(f"set {task.name} nextRunTime {nextRunTime}")
             queue.insert(queue.pop())
             # queue.print()
-            print("False 1")
             return False
         else:
             if task.nextRunTime <= now:
-                print("True 1")
                 return True
             else:
-                print("False 2")
                 return False
 
     def _set_delay_range(self):
