@@ -14,7 +14,7 @@ from importlib import import_module
 from bs4 import Tag
 
 from module import config
-from module.judge_content import title_trie
+from module.judge_content import titleTrie
 from module.log import logger
 from module.utils import *
 from module.web_brows import *
@@ -556,7 +556,7 @@ class BidTask(BidTaskInit):
         Args:
             bid_prj (web_brows.BidBase): 保存 bid 信息的对象
         """
-        result: list = title_trie.search_all(bid_prj.name)
+        result: list = titleTrie.search_all(bid_prj.name)
         if result:
             result = f"[{','.join(result)}]; {bid_prj.message()}"
             logger.info(result)

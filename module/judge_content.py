@@ -186,42 +186,38 @@ class BidTitleTrie:
         Args:
             text:
         Returns:
-            word_match (list): 返回符合规则的关键词,当有第二关键词时 len > 2
+            wordMatch (list): 返回符合规则的关键词,当有第二关键词时 len > 2
         """
-        word_match = []
-        c_next = None
+        listMatch = []
+        wordMatch = ""
         c = self.child
-        first = second = False  # 第一关键词是否匹配, 匹配到第一关键词为True
-        slow = 0  # 快指针
+        slow = 0  # 慢指针
         for fast, wd in enumerate(text):
             wd = wd.upper()  # 小写转大写,仅影响英文字母
             if wd in c:  # 进入前缀树匹配
                 c = c[wd]
-                first = True
-                # 匹配到带"end"的字,树中有从slow到fast的词, 从第一关键词换到第二关键词匹配
                 if "end" in c:
-                    second = True
-                    word_match.append(text[slow: fast + 1])
-                    c_next = c  # 检索第二关键词
+                    wordMatch = text[slow: fast + 1]
+                    # logger.debug(f"wordMatch: {wordMatch}, slow: {slow}, fast: {fast}")
             else:
-                if second:
-                    c = c_next
-                elif first:
-                    c = self.child  # 若第一关键词未匹配则回到上次节点
+                if wordMatch:
+                    if wordMatch not in listMatch:
+                        listMatch.append(wordMatch)
+                    wordMatch = ""
+                c = self.child  # 若第一关键词未匹配则回到上次节点
                 slow = fast + 1
-        return word_match
+        return listMatch
 
 
 init_file = "./bid_settings/title_trie.json"
 
 try:
-    title_trie = BidTitleTrie(init_file)
+    titleTrie = BidTitleTrie(init_file)
 except FileNotFoundError as e:
     logger.warning(f"{e}")
-    title_trie = BidTitleTrie()
+    titleTrie = BidTitleTrie()
 
 if __name__ == "__main__":
-    title_trie.child = {}
-    title_trie.insert_from_file("./test/前缀树.txt")
-    title_trie.save_local(init_file)
-    # logger.info(title_trie.search_all("食堂led大宗食品面饼屏采购项目（二次）-招标公告"))
+    titleTrie.child = {}
+    titleTrie.insert_from_file("./test/前缀树.txt")
+    titleTrie.save_local(init_file)
