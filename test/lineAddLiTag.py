@@ -64,11 +64,11 @@ def labels_a(title, url):
     return f"<a href=\"{url}\">{title}</a>"
 
 
-def wirte_li(html, line: str, idx, fileType):
+def wirte_li(html, line: str, idx, fileType: str):
     
     line_list = line.rstrip().split("; ")
     labelsA = labels_a(line_list[TITLE], line_list[URL])
-    
+    fileType = fileType.lower()
     # TODO 有没有更好的写法
     if fileType == "match":  # match 一行会分为5个 [匹配关键词]; 标题; 日期; url; 类型
         html.write(f"<li>{str(idx)}. {line_list[0]}: {labelsA},"
@@ -84,6 +84,7 @@ def write_html(webName, fileType, txtFile):
         fileType(str): match or list
         txtFile(TextIOWrapper): TextIOWrapper
     """
+
     webFIle = get_file_name(fileType, webName, 'htm')
     with open(webFIle, "w", encoding="utf-8") as html:
         write_head(html, webName, fileType)
@@ -143,14 +144,16 @@ def dayFile():
 # 1. 绝对路径
 # 1.1 带参数
 # 1.2 不带参数
-# 2. 部分文件名,如日期,日期格式必须为 yyyy-mm-dd
+# 2. 部分文件名,如日期,日期格式为 mm-dd, 年份默认为今年
 # TODO 把上面的写完
 def command(argv):
     if len(argv) == 1:
+        for Type in ["List", "Match"]:
+            file = f"{DATAPATH}/bid_day{Type}_{date_days()[:4]}-{argv[0]}.txt"
+            with open(file, "r", encoding="utf-8") as f:
+                write_html("dayFile", Type, f)
+    else:
         pass
-    if argv[-4:] == ".txt":
-        html = get_file_name(argv)
-        write_html()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

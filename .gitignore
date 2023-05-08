@@ -8,7 +8,7 @@ log
 html_test
 html_error
 dataTest
-test
+test/*
 !test/前缀树.txt
 !test/lineAddLiTag.py
 !test/web_brows_test.py
