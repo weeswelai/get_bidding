@@ -190,6 +190,7 @@ class GetList:
                 self.res.save_response(url=self.list_url,
                                        save_date=True, extra="cut_Error")
         if error:
+            logger.error(error)
             sleep_random(self.config.delay)
             self.open(open_times, save_error)
         return html_cut
