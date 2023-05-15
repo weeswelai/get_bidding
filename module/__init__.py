@@ -24,13 +24,11 @@ if pyw_name not in IGNORE:
         name = ""
         def __init__(self) -> None:
             config: dict = read_json("./bid_settings/config.json")
-            
-            self.file = config["jsonFIle"]
+            c = config["test"] if config["test"]["switch"] else config["file"]
+            self.dataFolder = c["dataFolder"]
+            self.file = c["jsonFIle"]
             if not os.path.exists(self.file):
                 copyfile(SETTINGS_DEFAULT, self.file)
-
-            self.dataFolder = config["testFolder"] \
-                if deep_get(config, "test") else config["dataFolder"]
             d = read_json(self.file)
             for k, v in d.items():
                 self[k] = v
