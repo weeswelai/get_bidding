@@ -10,7 +10,7 @@ from module import config
 from module.log import logger
 from module.task import BidTask
 from module.utils import *
-from module.web_exception import WebTooManyVisits
+from module.exception import *
 
 RUN_TIME_START = "2022-01-01 00:00:00"  # 默认下次运行时间
 COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
@@ -148,7 +148,7 @@ class TaskManager:
             while task.init_state():  # task 按PageQueue顺序完成state
                 self.web_break()
                 result = self.url_task_run(task)
-        except WebTooManyVisits:
+        except (WebTooManyVisits, TooManyErrorOpen):
             result = False
             config.set_task(f"{task.urlTask}.error", True)
 

@@ -15,6 +15,7 @@ import requests
 import requests.utils as requtils
 
 from module import config
+from module.exception import *
 from module.log import logger
 from module.utils import *
 
@@ -89,16 +90,15 @@ class Response:
         if rule:
             if isinstance(rule, dict):
                 html_cut = re.search(rule["re_rule"], self.response,
-                                     rule["rule_option"]).group()
+                                     rule["rule_option"])
             else:
                 html_cut = self.response if rule == "" else \
-                           re.search(rule, self.response, re.S).group()
+                           re.search(rule, self.response, re.S)
         else:
-            html_cut = self.cut.search(self.response).group()
+            html_cut = self.cut.search(self.response)
         if html_cut is None:
-            pass
-            # raise
-        return html_cut
+            raise CutError
+        return html_cut.group()
 
     def save_response(self, rps="", url="", path="./html_error/",
                       save_date=False, extra=""):
@@ -170,29 +170,30 @@ class GetList:
         return url
 
     def open(self, url, open_times=0, save_error=0):
+        self.res.response = ""
         open_times += 1
         logger.info(f"open {url}\n{open_times} open")
         if open_times > _MAX_ERROR_OPEN:
-            # raise
-            pass
+            raise TooManyErrorOpen
         self.list_url = url
         error = ""
         try:
             self._open()
         except Exception:
             error = f"open error: {self.list_url}\n{traceback.format_exc()}"
-        try:
-            html_cut = self.res.cut_html()
-        except Exception:
-            error = f"cut error: {self.list_url}\n{traceback.format_exc()}"
-            if save_error < _MAX_ERROR_SAVE:
-                save_error += 1
-                self.res.save_response(url=self.list_url,
-                                       save_date=True, extra="cut_Error")
+        if not error:
+            try:
+                html_cut = self.res.cut_html()
+            except Exception:  # html AttributeError json 
+                error = f"cut error: {self.list_url}\n{traceback.format_exc()}"
+                if save_error < _MAX_ERROR_SAVE:
+                    save_error += 1
+                    self.res.save_response(url=self.list_url,
+                                        save_date=True, extra="cut_Error")
         if error:
             logger.error(error)
             sleep_random(self.config.delay)
-            self.open(open_times, save_error)
+            self.open(url, open_times, save_error)
         return html_cut
 
     def _open(self):
@@ -344,19 +345,23 @@ if __name__ == "__main__":
     # url_obj.save_response(save_date=True, path="./html_test/", extra="test")
     
     # GET
-    url_open = "https://httpbin.org/cookies"
-    test_headers = {
-        "User-Agent": "233",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "Referer": "http://www.weain.mil.cn/",
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Accept-Encoding": "gzip, deflate",
-        "Content-Type": "application/json",
-        "isEncrypt": "isNotEncrypt",
-        "X-Requested-With": "XMLHttpRequest",
-        "Cookie": "3333=5454; qsd0=1233"
-    }
-    url_obj = GetUrl()
-    url_obj.open(url_open, headers=test_headers, method="GET")
-    print(url_obj.decode_response())
-    # url_obj.save_response(save_date=True, path="./html_test/", extra="test")
+    # url_open = "https://httpbin.org/cookies"
+    # test_headers = {
+    #     "User-Agent": "233",
+    #     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    #     "Referer": "http://www.weain.mil.cn/",
+    #     "Accept": "application/json, text/javascript, */*; q=0.01",
+    #     "Accept-Encoding": "gzip, deflate",
+    #     "Content-Type": "application/json",
+    #     "isEncrypt": "isNotEncrypt",
+    #     "X-Requested-With": "XMLHttpRequest",
+    #     "Cookie": "3333=5454; qsd0=1233"
+    # }
+    # url_obj = GetUrl()
+    # url_obj.open(url_open, headers=test_headers, method="GET")
+    # print(url_obj.decode_response())
+    # # url_obj.save_response(save_date=True, path="./html_test/", extra="test")
+    config.name = "hkgy"
+    get_list = GetList()
+    get_list.res.get_response_from_file(f"html_error/ebid.eavic.com cms channel ywgg1 index.htm pageNo=1_2023_05_15-17_38_46_cut_Error.html")
+    print(get_list.res.cut_html())

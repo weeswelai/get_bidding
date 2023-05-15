@@ -17,7 +17,7 @@ from module.judge_content import titleTrie
 from module.log import logger
 from module.utils import *
 from module.web_brows import *
-from module.web_exception import WebTooManyVisits
+from module.exception import *
 
 DATA_PATH = config.dataFolder
 RE_OPEN_MAX = 4  # 异常时最大重新打开次数
