@@ -5,14 +5,12 @@
 import json
 import os
 import re
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from json import dumps, loads
 from random import uniform
 from time import sleep
 
 from bs4 import Tag
-
 
 __URL_FIND__ = {
     "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ],
@@ -219,7 +217,7 @@ def during_runtime(time: datetime) -> datetime or None:
     return None
 
 
-def get_time_add(time_base=None, delay="1h"):
+def get_time_add(time_base=None, delay="1h") -> str:
     """
     Args:
         min:
@@ -339,7 +337,7 @@ def str_list(output_list, level=1, add_idx=False):
     return output, len(output)
 
 
-def str_dict(output_dict: dict):
+def dict2str(output_dict: dict):
     data = "  "
     for key, value in output_dict.items():
         data = f"{data}{key}: {value}\n  "
@@ -424,6 +422,7 @@ def cookie_str_to_dict(cookie: str):
             key, value = c.strip().split("=", 1)
             cookie_dict[key] = value
     return cookie_dict
+
 
 def cookie_dict_to_str(set_cookie: dict):
     cookie = ()

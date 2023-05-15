@@ -1,6 +1,8 @@
 import os, sys
 from shutil import copyfile
 
+from module.utils import deep_set
+
 
 # 读取配置json
 SETTINGS_DEFAULT = "./bid_settings/bid_settings_default.json"
@@ -19,6 +21,7 @@ if pyw_name not in IGNORE:
     from module.utils import read_json, save_json, deep_get
 
     class Config(dict):
+        name = ""
         def __init__(self) -> None:
             config: dict = read_json("./bid_settings/config.json")
             
@@ -35,6 +38,24 @@ if pyw_name not in IGNORE:
 
         def save(self):
             save_json(self, self.file)
+
+        def read(self):
+            self = Config()
+
+        def set_task(self, key, data):
+            self._set(f"{self.name}.{key}", data)
+
+        def get_task(self, key=""):
+            if key:
+                return self._get(f"{self.name}.{key}")
+            return self[self.name]
+
+        def _set(self, key, data):
+            deep_set(self, key, data)
+
+        def _get(self, key):
+            return deep_get(self, key)
+
 
     config = Config()
     logger.info("config ready")
