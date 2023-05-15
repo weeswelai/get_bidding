@@ -10,7 +10,7 @@
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
 
-from module.get_url import ReqOpen
+from module import config
 from module.log import logger
 from module.utils import *
 
@@ -28,10 +28,10 @@ class BidTag:
     def __init__(self, settings=None):
         # settings: 整个task 的settings
         logger.hr("BidTag.__init__", 3)
-        if settings:
-            rule: dict = settings["rule"]["bid_tag"]
-            for li_r, value in rule.items():
-                self._init_list_rule(li_r, value)
+        settings = settings if settings else config.get_task()
+        rule: dict = settings["BidTag"]
+        for li_r, value in rule.items():
+            self._init_list_rule(li_r, value)
 
     # TODO 解析规则这部分有点*,记得重写一下
     def _init_list_rule(self, li_r, rule: str):
@@ -89,7 +89,7 @@ class BidTag:
 
 def _parse_bs_rule(tag: Tag,
                    tag_find="", tag_name="", find_all_idx=None,
-                   value_name="", value="") -> None or str:
+                   value_name="", value="", bb ="") -> None or str:
     """
     解析规则,找到tag或tagList(bs4.element.ResultSet),或符合规则的属性值或tag中的文本
     Args:
@@ -102,7 +102,6 @@ def _parse_bs_rule(tag: Tag,
     """
     if not tag_find:  # 无rule返回None
         return None
-
     # 检索tag
     if tag_find == "tagName_all":
         if value_name and value:  # 若有value检索要求,则find_all加上参数attrs
@@ -157,7 +156,7 @@ class BidBase:
     date_cut: re.Pattern = None
     type_cut: re.Pattern = None
     url_cut: re.Pattern = None
-    url_root: dict
+    url_root: str
     infoList: list = None
     rule_now: str
 
@@ -168,12 +167,12 @@ class BidBase:
             settings (dict): 需要一整个task的设置
         """
         logger.hr("Bid.__init__", 3)
-        if settings:
-            rule = settings["rule"]["bid"]
-            for r in rule:
-                setattr(self, r, init_re(rule[r]))
-                logger.debug(f"rule init {r}: {getattr(self, r)}")
-            self.url_root = deep_get(settings, "urlConfig.root")
+        settings = settings if settings else config.get_task()
+        rule = settings["BidBase"]["re"]
+        for k, v in rule.items():
+            setattr(self, k, init_re(v))
+            logger.debug(f"rule init {k}: {getattr(self, k)}")
+        self.url_root = settings["BidBase"]["urlRoot"]
 
     def receive(self, *args):
         """ 接收BidTag.get()返回的list
@@ -198,10 +197,10 @@ class BidBase:
             bid_root (str): 前缀索引
             bid_tail (str): 后缀
         """
-        if self.type in self.url_root:
-            self.url = f"{self.url_root[self.type]}{self.url}"
-        else:
-            self.url = f"{self.url_root['default']}{self.url}"
+        # if self.type in self.url_root:
+        #     self.url = f"{self.url_root[self.type]}{self.url}"
+        # else:
+        self.url = f"{self.url_root}{self.url}"
 
     def _name(self):
         pass
@@ -235,18 +234,20 @@ def _re_get_str(obj: str, rule: re.Pattern = None, cut_rule=None):
     return rule.search(obj).group()
 
 
-class ListWeb:
+class ListBrows:
     """
     项目列表页面对象
     """
-    cut_rule: re.Pattern = None  # init_re
     html_cut = ""  # cut_html 后保存
     bs: Tag or dict = None
-    tag_rule: str
     first_bid: list = None
 
+    def __init__(self, settings=None):
+        settings = settings if settings else config.get_task()
+        self.tag_list: str = settings["brows"]["tag_list"]
+
     def _list_web_init(self, settings: dict = None):
-        """ 实例化时会初始化cookie, cut_rule, next_rule
+        """ 实例化时会初始化cookie, next_rule
 
         Args:
             settings (dict): 需要settings中的rule
@@ -254,58 +255,28 @@ class ListWeb:
         logger.hr(f"{type(self).__name__}._list_web_init", 3)
         if settings:
             # init rule
-            self.cut_rule = init_re(deep_get(settings, "cut"))
-            self.tag_rule = deep_get(settings, "tag_list")
+            self.tag_list = deep_get(settings, "tag_list")
 
-    def cut_html(self, cut_rule: dict or str = None):
-        """ 裁剪得到的html源码, 保存到 self.html_cut
-        某些html含过多无用信息,使用bs解析会变得非常慢,
-        如zzlh的招标列表页面源码有一万多行的无用信息(目录页码),
-        需要删去部分无用信息
-        Html对象使用 search方式获得group的值
-
-        Args:
-            cut_rule (dict, str): 仅在测试中使用,裁剪的规则
-                当 cut_rule 为str 时使用re.S 额外参数: . 匹配换行符 \n
-                为dict时如下所示 \n
-                cut_rule = {
-                    "re_rule": "正则表达式",
-                    "rule_option": "re.compile额外参数, 默认为re.S, 
-                        re.S无法保存在json中,所以使用re.S在python中的 int值,值为 16"
-                }
-        Returns:
-            html_cut(str): 使用正则裁剪后的html源码,也有可能不裁剪
-        """
-        logger.info("web_brows.cut_html")
-        if not cut_rule:
-            html_cut = self.cut_rule.search(self.response).group()
-        elif isinstance(cut_rule, dict):
-            html_cut = re.search(cut_rule["re_rule"], self.response,
-                                    cut_rule["rule_option"]).group()
-        elif isinstance(cut_rule, str):
-            html_cut = self.response if cut_rule == "" else \
-                re.search(cut_rule, self.response, re.S).group()
-        return html_cut
-
-    def get_tag_list(self, page=None, tag_rule=None, parse="html.parser"):
+    def get_tag_list(self, page=None, tag_list=None, parse="html.parser", t=""):
         """
         输入 str 调用 bs生成self.bs 从self.bs 里根据tag_list提取list
         Args:
-            tag_rule:
+            tag_list:
             page:(str) html源码,解析获得self.bs,或从 self.url_response 或
             parse (str): 解析html的bs4模式 默认为 html.parser
+            t ()
         Returns:
             bid_list (list): 提取到的list
         """
         logger.info("web_brows.Html.get_tag_list")
-        if not tag_rule:  # 仅测试中使用
-            tag_rule = self.tag_rule
+        if not tag_list:  # 仅测试中使用
+            tag_list = self.tag_list
         if isinstance(page, str):
             self.html_cut = page
             logger.info(f"get tag list from \"{page.strip()[: 100]}\"")
 
         self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
-        return self.bs.find_all(tag_rule)
+        return self.bs.find_all(tag_list)
 
     def compare_last_first(self, infoList):
         """ 比较每页第一个项目信息是否与上一页第一个完全相等, 若相等返回True
@@ -316,17 +287,9 @@ class ListWeb:
         return False
 
 
-class DefaultWebBrows(ListWeb, ReqOpen):
-    """继承于 ListWeb和UrlOpen"""
-    def __init__(self, settings={}):
-        # 需要整个task 的 dict
-        if settings:
-            self._list_web_init(settings["rule"])
-
-
-class BidHtml(ReqOpen):
-    def __init__(self, settings):
-        pass
+# class BidHtml(ReqOpen):
+#     def __init__(self, settings):
+#         pass
 
 
 if __name__ == "__main__":

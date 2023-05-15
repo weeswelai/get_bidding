@@ -8,12 +8,11 @@
 import traceback
 from copy import deepcopy
 from datetime import datetime
-from io import TextIOWrapper
 from importlib import import_module
-
-from bs4 import Tag
+from io import TextIOWrapper
 
 from module import config
+from module.get_url import GetList
 from module.judge_content import titleTrie
 from module.log import logger
 from module.utils import *
@@ -26,12 +25,11 @@ SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
 
 
 class PageList:
-    def __init__(self, settings):
+    def __init__(self):
         """ 保存PageQueue, PageWait
-        Args:
-            settings (dict): 整个任务的settings
+
         """
-        self.settings = settings
+        settings = config.get_task()
         self.queue: list = deep_get(settings, "PageQueue")
         self.wait: list = deep_get(settings, "PageWait")
         # self.now = self.queue[0]
@@ -40,13 +38,12 @@ class PageList:
         """ 将json中 complete 添加到 queue中
         """
         logger.hr("BidTask.restart", 3)
-        for page in self.queue:
-            deep_set(self.settings, f"{page}.error", False)
         for page in self.wait:
             self.queue.append(page)
-            deep_set(self.settings, f"{page}.error", False)
-        deep_set(self.settings, "PageWait", [])
-        self.wait = deep_get(self.settings, "PageWait")
+        for page in self.queue:
+            config.set_task(f"{page}.error", False)
+        config.set_task("PageWait", [])
+        self.wait = config.get_task("PageWait")
         logger.info(f"PageQueue: {self.queue}")
 
     def queue_is_empty(self):
@@ -67,9 +64,9 @@ class Complete:
     start = True  # process_tag_list 中判断
     state = ""  # 默认为 ""
 
-    def __init__(self, settings, url_task="test") -> None:
+    def __init__(self, settings, urlTask="test") -> None:
         self.end_rule = settings["end_rule"]  # 翻页结束标志
-        self.url_task = url_task
+        self.urlTask = urlTask
         self.settings = settings
         self.init()
 
@@ -85,7 +82,7 @@ class Complete:
             logger.info(f"end_rule: {self.end_rule['date']} is beyond 6 days")
             self.end_rule["date"] = date_6
             deep_set(self.settings, "end_rule.date", date_6)
-        logger.info(f"json: {self.url_task}.complete = "
+        logger.info(f"json: {self.urlTask}.complete = "
                     f"\"{deep_get(self.settings, 'complete')}"
                     f"\"\nend_rule : {self.end_rule}")
 
@@ -95,11 +92,12 @@ class Complete:
         if date_len > 10:
             date_format = "%Y-%m-%d %H:%M:%S"
             end_date = self.end_rule["date"]
-        elif date_len <= 10:
+        else:
             date_format = "%Y-%m-%d"
             end_date = self.end_rule["date"][:10]
-        return datetime.strptime(date, date_format) < \
-                datetime.strptime(end_date, date_format)
+        return \
+            datetime.strptime(date, date_format) < \
+            datetime.strptime(end_date, date_format)
 
     def bid_is_end(self, bid_prj: BidBase):
         """ 判断当前项目是否符合结束条件
@@ -144,7 +142,6 @@ class Complete:
         self.newest = True
         logger.info(f"set newest: {bid_message}, "
                     f"set complete: {deep_get(self.settings, 'complete')}")
-        
 
     def set_interrupt_url(self, list_url):
         """设置interruptUrl
@@ -158,7 +155,7 @@ class Complete:
             deep_set(self.settings, "interruptUrl", list_url.copy())
         else:
             deep_set(self.settings, "interruptUrl", list_url)
-    
+
     def set_interrupt(self, bid):
         """ 在BidTask._process_tag_list中调用,若开始标志(self.start==True)
         则保存 bid 到 self.settings["interrupt"]
@@ -167,7 +164,7 @@ class Complete:
         complete状态self.start默认为True
         
         Args:
-            bid (web_brows.BidBase): 当前Bid对象
+            bid (brows.BidBase): 当前Bid对象
         """
         if self.start:
             deep_set(self.settings, "interrupt", _bid_to_dict(bid))
@@ -180,10 +177,10 @@ class Complete:
         if self.settings["url"]:
             url = self.settings["url"]
             if isinstance(url, dict):
-                return deepcopy(url) 
+                return deepcopy(url)
             return url
         else:
-            logger.error(f"{self.url_task}.url: is empty, "
+            logger.error(f"{self.urlTask}.url: is empty, "
                             "please check settings json file")
             exit()
 
@@ -210,14 +207,14 @@ class Complete:
 class InterruptState(Complete):
     state = "interrupt"
 
-    def __init__(self, settings, url_task="test"):
-        super().__init__(settings, url_task)
+    def __init__(self, settings, urlTask="test"):
+        super().__init__(settings, urlTask)
         self.interrupt = self.settings["interrupt"]
         self.newest = True
         self.start = False
 
         if not deep_get(self.settings, "interrupt.name"):
-            logger.error(f"{self.url_task}.interrupt.name is empty, "
+            logger.error(f"{self.urlTask}.interrupt.name is empty, "
                             "please check settings json file")
             exit()
 
@@ -257,17 +254,18 @@ class InterruptState(Complete):
         if self.settings["interruptUrl"]:
             return self.settings["interruptUrl"]
         else:
-            logger.error(f"{self.url_task}.interruptUrl: is empty, "
-                            "please check settings json file")
+            logger.error(f"{self.urlTask}.interruptUrl: is empty, "
+                         "please check settings json file")
             exit()
 
 
-def TaskState_init(settings, url_task) -> Complete or InterruptState:
+def TaskState_init(urlTask) -> Complete or InterruptState:
     """根据传入settings返回对应的class"""
+    settings = config.get_task(f"{urlTask}")
     if settings["complete"] == "interrupt":
-        return InterruptState(settings, url_task)
+        return InterruptState(settings, urlTask)
     else:
-        return Complete(settings, url_task)
+        return Complete(settings, urlTask)
 
 
 class DataFileTxt:
@@ -313,6 +311,7 @@ class DataFileTxt:
     def data_file_exit(self):
         if self.file_open:
             for v in self.file.values():
+                v: TextIOWrapper
                 v.close()
             self.file_open = False
         logger.info(f"{self.name}.file_open={self.file_open}")
@@ -326,78 +325,67 @@ class DataFileTxt:
     def _write(self, file, data):
         if data[-1] != "\n":
             data = f"{data}\n"
-        if file == "match":
-            self.file["match"].write(data)
-            self.file["dayMatch"].write(data)
-        elif file == "list":
-            self.file["list"].write(data)
-            self.file["dayList"].write(data)
+        for k, v in self.file.items():
+            if file.title() in k:
+                v: TextIOWrapper
+                v.write(data)
 
     def write_all(self, data):
         self.write_match(data)
         self.write_list(data)
 
 
+NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
+
+
 class BidTaskInit:
-    url_task: str  # "公开招标" "邀请招标"
+    list_url = ""
+    urlTask: str  # "公开招标" "邀请招标"
     State: Complete or InterruptState
     bid: BidBase
-    bid_tag: BidTag
-    web_brows: DefaultWebBrows
+    tag: BidTag
+    get_list: GetList
+    brows: ListBrows
     # bid_web: BidHtml
-    tag_list: list = None  # 源码解析后的 list
-    list_url: str = None
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     error_open = True
     file_open = False
-    
-    def __init__(self, settings, name="test", test=False) -> None:
+
+    def __init__(self, name="test") -> None:
         """ 初始化任务, 保存settings 和 name
         Args:
-            settings(dict): 
+            name(str): 
         """
-        self.settings = settings  # zzlh:{}
+        settings = config.get_task()
         self.name = name  # 当前任务名
-        self.txt = DataFileTxt(self.name)
-        self.page_list = PageList(settings)
-        self.error_delay = deep_get(self.settings, "urlConfig.errorDelay")
-        delay = deep_get(self.settings, "urlConfig.nextOpenDelay")
-        self.delay = [int(t) for t in delay.split(",")] if delay else None
-        self._init_brows(settings)
+        self.txt = DataFileTxt(name)
+        self.page_list = PageList()
+        self.error_delay = deep_get(settings, "OpenConfig.errorDelay")
+        delay = deep_get(settings, "OpenConfig.nextOpenDelay")
+        self.delay = [int(t) for t in delay.split(",")] \
+            if delay else NEXT_OPEN_DELAY
+        self.next_rule = init_re(settings["OpenConfig"]["next_pages"])
         logger.info(f"init task {self.name}, list brows:\n"
-                    f"url settings:\n{str_dict(settings['urlConfig'])}\n"
-                    f"rule:\n{str_dict(settings['rule'])}")
-
-    def _init_brows(self, settings):
-        """ 初始化网页对象, 只在初始化时调用一次
-        
-        Args:
-            settings (dict): json中 的具体任务
-        """
-        self.bid_tag = BidTag(settings)
-        self.web_brows, self.bid = web_brows_init(settings, self.name)
-        # self.bid_web = BidHtml(settings)
+                    f"url settings:\n{dict2str(settings['OpenConfig'])}\n")
 
     def init_state(self):
         """ 用_get_url_task 判断 task.PageQueue 中是否还有state
         有则用 TaskState.init() 初始化State, 如果State已初始化将会被新的覆盖
         无则返回 False
-        
+
         Returns:
             (bool): 初始化完成返回 True ,失败返回 False 
         """
         logger.hr(f"{self.name}.init_state", 3)
         # 若queue中还有state
         if not self.page_list.queue_is_empty():
-            self.url_task = self.page_list.queue[0]
-            logger.info(f"{self.name}._get_url_task = {self.url_task}")
-            self.State = TaskState_init(
-                self.settings[self.url_task], self.url_task)
+            self.urlTask = self.page_list.queue[0]
+            logger.info(f"{self.name}._get_url_task = {self.urlTask}")
+            self.State = TaskState_init(self.urlTask)
             self.State.print_state_at_start()
-            self.txt.write_all(f"{self.url_task}\n")
-            self.list_url = None
-
+            self.txt.write_all(f"{self.urlTask}\n")
+            self.list_url = ""
             return True
         logger.info(f"{self.name}.queue is []")
         return False
@@ -405,10 +393,27 @@ class BidTaskInit:
 
 class BidTask(BidTaskInit):
     task_end = False  # 由 pywebio设置
+    urlTask = ""
 
-    # def close(self):
+    def get_next_pages_url(self, list_url="", next_rule=None, **kwargs) -> str:
+        """
+        Args:
+            list_url (str): 项目列表网址
+            next_rule (str): 项目列表网址下一页规则,仅在测试时使用
+        Returns:
+            next_pages_url (str): 即将打开的url
+        """
+        next_rule = next_rule if next_rule else self.next_rule
+        if isinstance(next_rule, str):
+            next_rule = re.compile(next_rule)
+        if not list_url:
+            list_url = self.list_url
+        pages = str(int(next_rule.search(list_url).group()) + 1)
+        next_pages_url = next_rule.sub(pages, list_url)
+        logger.info(f"pages: {pages}")
+        return next_pages_url
 
-    def process_next_list_web(self):
+    def process_next_list_web(self) -> bool:
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
         """
         logger.info("BidTask.get_url_list")
@@ -417,16 +422,16 @@ class BidTask(BidTaskInit):
         # 下次要打开的项目列表url
         self._get_next_list_url()
 
-        # 打开项目列表页面, 获得 self.web_brows.html_list_match
-        self._open_list_url(self.list_url)
+        # 打开项目列表页面, 获得 self.brows.html_list_match
+        self.brows.html_cut = self.get_list.open(url=self.list_url)
 
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
-        self.tag_list = self.web_brows.get_tag_list()
-        if not self.tag_list:
-            self._complete_page_task()
-            logger.warning("tag list is []")
-            return False
-        self._process_tag_list()
+        tagList = self.brows.get_tag_list()
+        # if not tagList:
+        #     self._complete_page_task()
+        #     logger.warning("tag list is []")
+        #     return False
+        self._process_tag_list(tagList)
 
         if not self.match_num:
             logger.info("no match")
@@ -440,61 +445,22 @@ class BidTask(BidTaskInit):
         """
         if not self.list_url:
             list_url = self.State.return_start_url()
-            self.list_url = self.web_brows.url_extra(list_url)
+            self.list_url = self.get_list.url_extra(list_url)
         else:
-            self.list_url = self.web_brows.get_next_pages(self.list_url)
+            self.list_url = self.get_next_pages_url()
+        logger.info(f"next_list_url: {self.list_url}")
 
-    # TODO 写的很*,记得重写, 且需要改成重试次数过多(6次以上)后将任务延迟
-    def _open_list_url(self, url, reOpen=0, save_error=0):
-        """ 封装web_brows行为,打开浏览页面，获得裁剪后的页面源码
-        """
-        if self.task_end:  # webio将task_end置为True后中断
-            from bid_run import bidTaskManager
-            bidTaskManager.web_break()
-        logger.hr("BidTask._open_list_url", 3)
-        self.error_open = False
-        cookie = self.web_brows.set_cookie()
-        if cookie:
-            deep_set(self.settings, "headers.Cookie", cookie)
-        try:
-            self.web_brows.open(url=url)
-        except AssertionError:
-            # TODO 识别出错的网页
-            logger.error(f"{traceback.format_exc()}")
-            self.error_open = True
-        else:
-            try:  # 在打开网页后判断网页源码是否符合要求
-                self.web_brows.html_cut = self.web_brows.cut_html()
-            except Exception:
-                self.error_open = True
-                if save_error < SAVE_ERROR_MAX:
-                    self.web_brows.save_response(url=self.list_url,
-                        save_date=True, extra="cut_Error")
-                    save_error += 1
-                logger.info(f"cut html error")                                
-        if self.error_open:
-            if self.web_brows.too_many_open():
-                raise WebTooManyVisits
-            if reOpen < RE_OPEN_MAX:
-                reOpen += 1
-                sleep_random((2, 3))
-                logger.info(f"open \n{self.list_url}\n"
-                            f"again, reOpen: {reOpen + 1}")
-                self._open_list_url(url, reOpen, save_error)
-
-            assert reOpen < RE_OPEN_MAX, \
-                f"{self.list_url} open more than {RE_OPEN_MAX} time"
-
-    def _process_tag_list(self):
-        """ 遍历处理 self.tag_list
+    def _process_tag_list(self, tag_list: list):
+        """ 遍历处理 tag_list
         若能遍历到结尾,保存 interruptUrl 和 interrupt
         """
         logger.hr("BidTask.process_tag_list", 3)
-        for idx, tag in enumerate(self.tag_list):
+        idx = 0
+        for idx, tag in enumerate(tag_list):
             # bid对象接收bid_tag解析结果
             if not self._bid_receive_bid_tag(tag, idx):
                 continue
-            if not idx and self.web_brows.compare_last_first(self.bid.infoList):
+            if not idx and self.brows.compare_last_first(self.bid.infoList):
                 self.State.complete()
                 logger.info(f"open out of pages, pages now is {self.list_url}")
                 break
@@ -523,12 +489,12 @@ class BidTask(BidTaskInit):
         """
         err_flag = False
         try:
-            infoList = self.bid_tag.get(tag)
+            infoList = self.tag.get(tag)
             # logger.debug(str(infoList))  # 打印每次获得的项目信息
         except Exception:
             err_flag = True
             logger.error(f"tag get error: {tag},\nidx: {idx}"
-                         f"bid_tag rule: {self.bid_tag.rule_now}\n"
+                         f"tag rule: {self.tag.rule_now}\n"
                          f"{traceback.format_exc()}")
         if not err_flag:
             try:
@@ -543,8 +509,8 @@ class BidTask(BidTaskInit):
             self.bid_tag_error += 1
             if self.bid_tag_error > 5:
                 logger.error("too many bid.receive error")
-                self.web_brows.save_response(
-                    rps=self.web_brows.bs,
+                self.get_list.res.save_response(
+                    rps=self.brows.bs,
                     save_date=True, extra="receiveError")
                 raise KeyboardInterrupt
             return False
@@ -554,7 +520,7 @@ class BidTask(BidTaskInit):
         """ 处理 bid对象
 
         Args:
-            bid_prj (web_brows.BidBase): 保存 bid 信息的对象
+            bid_prj (brows.BidBase): 保存 bid 信息的对象
         """
         result: list = titleTrie.search_all(bid_prj.name)
         if result:
@@ -568,15 +534,15 @@ class BidTask(BidTaskInit):
         """
         # PageQueue, PageWait = self._state_queue_move()
         PageQueue, PageWait = self.page_list.queue_move()
-        logger.info(f"{self.url_task} complete, PageQueue: {PageQueue}\n"
+        logger.info(f"{self.urlTask} complete, PageQueue: {PageQueue}\n"
                     f"PageWait: {PageWait}")
         if PageQueue:
-            self.url_task = PageQueue[0]
+            self.urlTask = PageQueue[0]
 
     def set_error_state(self):
         """当网页打开次数过多时设置错误标志,并将当前state移到stateWait"""
-        deep_set(self.settings,
-                 f"{self.url_task}.error", f"{self.State.state}Error")
+        config.set_task(
+                 f"{self.urlTask}.error", f"{self.State.state}Error")
         # self._state_queue_move()
         self.page_list.queue_move()
 
@@ -600,53 +566,11 @@ def _bid_to_dict(bid_prj=None):
         return {key: "" for key in ("name", "date", "url")}
 
 
-def web_brows_init(settings, url_task):
-    """ 根据输入的 url_task 返回初始化好的 web_brows对象
-
-    Args:
-        settings (dict): 初始化要用到的settings, 为整个task的dict
-        url_task (str): name, json 里第一级的key, 一般为 zzlh, zhzb等
-    Returns:
-        web_brows.DefaultWebBrows 或其他继承 DefaultWebBrows 的对象
-        对于zgzf : 返回 Zgzf对象: class Zgzf(ListWeb, SocketOpen)
-    """
-
-    from os.path import exists
-    # # web_brows
-    # settings = settings[url_task]
-    web_module = f"./module/web/{url_task}.py"
-    if exists(web_module):
-        mod = import_module(f"module.web.{url_task}")
-        web_brows: DefaultWebBrows = mod.Brows(settings)
-        bid = mod.Bid(settings)
-        logger.info(f"load {web_module}")
-    else:
-        web_brows: DefaultWebBrows = DefaultWebBrows(settings)
-        bid = BidBase(settings)
-    
-    # get_url
-    headers = {}
-    method = settings["urlConfig"]["method"] \
-        if "method" in settings["urlConfig"] else "GET"
-    for key, value in settings["headers"].items():
-        if key == "User-Agent" and value:
-            headers["User-Agent"] = value[0]
-        elif key == "Cookie" and value:  # key == "Cookie" and value: True and [] = []
-            headers["Cookie"] = value
-            web_brows.cookie = cookie_str_to_dict(value)
-        elif key not in ("User-Agent", "Cookie"):
-            headers[key] = value
-    web_brows._get_url_init(headers, method)
-    web_brows.next_rule = init_re(deep_get(settings, "rule.next_pages"))
-    return web_brows, bid
-
-
-
 if __name__ == "__main__":
     json_file = "./bid_settings/bid_settings_test.json"
     json_set = read_json(json_file)
     bid_task_name = "qjc"
-    bid_task_test = BidTask(json_set[bid_task_name], bid_task_name)
+    bid_task_test = BidTask(json_set[bid_task_name])
 
     # test code
     try:
@@ -658,7 +582,7 @@ if __name__ == "__main__":
                 sleep_random(message=" you can use 'Ctrl  C' stop now")
                 # yield True
             else:
-                logger.info(f"{bid_task_test.name} {bid_task_test.url_task} is complete")
+                logger.info(f"{bid_task_test.name} {bid_task_test.urlTask} is complete")
                 break
     # use Ctrl + C exit
     except(KeyboardInterrupt, Exception) as error:
