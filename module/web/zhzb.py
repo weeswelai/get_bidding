@@ -3,7 +3,6 @@ import module.get_url as get_url
 import module.task as task
 import module.web_brows as web_brows
 from module.log import logger
-from module.utils import *
 
 
 class GetList(get_url.GetList):
@@ -39,6 +38,8 @@ class Task(task.BidTask):
         logger.info(f"zhzb.get_next_pages: {self.list_url}")
         return self.list_url
 
+    def get_pages(self):
+        return self.list_url["form"]["page"]
 
 if __name__ == "__main__":
     # test code

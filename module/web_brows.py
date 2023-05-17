@@ -245,6 +245,7 @@ class ListBrows:
     def __init__(self, settings=None):
         settings = settings if settings else config.get_task()
         self.tag_list: str = settings["brows"]["tag_list"]
+
     def get_tag_list(self, page=None, tag_list=None, parse="html.parser", t=""):
         """
         输入 str 调用 bs生成self.bs 从self.bs 里根据tag_list提取list
@@ -284,7 +285,7 @@ if __name__ == "__main__":
     # 这里只是测试对象的单个功能,要测试对一个页面的功能需要用 ./test/web_brows_test.py
     json_file = "./bid_settings/bid_settings.json"
     json_settings = read_json(json_file)
-    # html_file = r"./html_test/search.ccgp.gov.cn bxsearch searchtype=1&page_index=1&pinMu=0&bidType=1&kw=&start_time=2023%3A01%3A05&end_time=2022%3A12%3A30&timeType=3_2023_01_05-16_39_55_cut_Error.html"
+    # html_file = r""
     # url = ""
     task = "zgzf"
     # zgzf = web_brows_init(json_settings, task)

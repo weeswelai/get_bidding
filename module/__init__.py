@@ -22,6 +22,7 @@ if pyw_name not in IGNORE:
 
     class Config(dict):
         name = ""
+
         def __init__(self) -> None:
             config: dict = read_json("./bid_settings/config.json")
             c = config["test"] if config["test"]["switch"] else config["file"]

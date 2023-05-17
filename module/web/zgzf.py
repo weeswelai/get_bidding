@@ -13,13 +13,16 @@ from module.log import logger
 from module.utils import *
 from module.exception import *
 
+
 class GetList(get_url.GetList):
 
-    set_cookie_r = re.compile("(?<=\s).{0,10}?=deleted")
+    set_cookie_r = re.compile(r"(?<=\s).{0,10}?=deleted")
     html_cookie_r = re.compile(r"(?<=document.cookie = \").*?(?=;)")
+    url_r = re.compile(r"&start.*timeType=?\d")
+    time_type_r = re.compile(r"(?<=timeType=)\d")
 
     def url_extra(self, url):
-        result = re.search("&start.*timeType=?\d", url)
+        result = self.url_r.search(url)
         if result is None:
             # 加上今天日期和类型
             format = "%Y:%m:%d"
@@ -32,10 +35,9 @@ class GetList(get_url.GetList):
             url = f"{url[:idx]}&{urlencode(data)}{url[idx:]}"  # 转换为url中的ASCII码
         else:
             result = result.group()
-            time_type_re = re.compile("(?<=timeType=)\d")
             # 将时间改为指定日期
-            if time_type_re.search(result) != "6":
-                url = time_type_re.sub("6", url)
+            if self.time_type_r.search(result) != "6":
+                url = self.time_type_r.sub("6", url)
         return url
 
     def set_cookies(self):
@@ -67,7 +69,7 @@ class GetList(get_url.GetList):
             cookies[key] = value
         return cookies
 
-    def cookies_HOY_TR(self, HOY_TR:str, otr_index=0):
+    def cookies_HOY_TR(self, HOY_TR: str, otr_index=0):
         """
         根据sbu_hc.js得到的规则,该js尚未解析,仅根据规律修改HOY_TR
         在不打开F12调试时,修改的下标为0
@@ -145,6 +147,7 @@ class Task(task.BidTask):
             for k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
                 if k in self.get_list.config.cookies:
                     del(self.get_list.config.cookies[k])
+
 
 if __name__ == "__main__":
     zgzf = Task("zgzf")

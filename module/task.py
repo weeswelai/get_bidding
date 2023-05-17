@@ -1,14 +1,12 @@
 """
 任务类
 包含三个类:
-1. State : 表示Task在普通情况下, 上次运行无记录,或上次运行完成
+1. urlTask : 表示Task在普通情况下, 上次运行无记录,或上次运行完成
 2. InterruptState : 表示Task 上次运行时中断
 3. Task : 表示任务, 保存有该任务所必须的规则, 能爬取完一个具体的网站
 """
 import traceback
 from copy import deepcopy
-from datetime import datetime
-from importlib import import_module
 from io import TextIOWrapper
 
 from module import config
@@ -17,7 +15,6 @@ from module.judge_content import titleTrie
 from module.log import logger
 from module.utils import *
 from module.web_brows import *
-from module.exception import *
 
 DATA_PATH = config.dataFolder
 RE_OPEN_MAX = 4  # 异常时最大重新打开次数
@@ -32,7 +29,6 @@ class PageList:
         settings = config.get_task()
         self.queue: list = deep_get(settings, "PageQueue")
         self.wait: list = deep_get(settings, "PageWait")
-        # self.now = self.queue[0]
 
     def restart(self):
         """ 将json中 complete 添加到 queue中
@@ -64,9 +60,9 @@ class Complete:
     start = True  # process_tag_list 中判断
     state = ""  # 默认为 ""
 
-    def __init__(self, settings, urlTask="test") -> None:
+    def __init__(self, settings, name="test") -> None:
         self.end_rule = settings["end_rule"]  # 翻页结束标志
-        self.urlTask = urlTask
+        self.name = name
         self.settings = settings
         self.init()
 
@@ -82,7 +78,7 @@ class Complete:
             logger.info(f"end_rule: {self.end_rule['date']} is beyond 6 days")
             self.end_rule["date"] = date_6
             deep_set(self.settings, "end_rule.date", date_6)
-        logger.info(f"json: {self.urlTask}.complete = "
+        logger.info(f"json: {self.name}.complete = "
                     f"\"{deep_get(self.settings, 'complete')}"
                     f"\"\nend_rule : {self.end_rule}")
 
@@ -120,7 +116,7 @@ class Complete:
 
     def complete(self):
         """ 完成任务后, 将newest 设为 end_rule, 清除 newest 和 interrupt设置
-        将 BidTask.State.state 设为 "complete"
+        将 BidTask.urlTask.state 设为 "complete"
         """
         logger.info("bid is end")
         self.state = "complete"
@@ -180,8 +176,8 @@ class Complete:
                 return deepcopy(url)
             return url
         else:
-            logger.error(f"{self.urlTask}.url: is empty, "
-                            "please check settings json file")
+            logger.error(f"{self.name}.url: is empty, "
+                         "please check settings json file")
             exit()
 
     def print_state_at_start(self):
@@ -207,15 +203,15 @@ class Complete:
 class InterruptState(Complete):
     state = "interrupt"
 
-    def __init__(self, settings, urlTask="test"):
-        super().__init__(settings, urlTask)
+    def __init__(self, settings, name="test"):
+        super().__init__(settings, name)
         self.interrupt = self.settings["interrupt"]
         self.newest = True
         self.start = False
 
         if not deep_get(self.settings, "interrupt.name"):
-            logger.error(f"{self.urlTask}.interrupt.name is empty, "
-                            "please check settings json file")
+            logger.error(f"{self.name}.interrupt.name is empty, "
+                         "please check settings json file")
             exit()
 
     def bid_is_start(self, bid_prj: BidBase) -> True:
@@ -254,18 +250,18 @@ class InterruptState(Complete):
         if self.settings["interruptUrl"]:
             return self.settings["interruptUrl"]
         else:
-            logger.error(f"{self.urlTask}.interruptUrl: is empty, "
+            logger.error(f"{self.name}.interruptUrl: is empty, "
                          "please check settings json file")
             exit()
 
 
-def TaskState_init(urlTask) -> Complete or InterruptState:
-    """根据传入settings返回对应的class"""
-    settings = config.get_task(f"{urlTask}")
+def TaskState_init(url_task) -> Complete or InterruptState:
+    """根据config中对应的url_task完成情况返回对应的对象"""
+    settings = config.get_task(f"{url_task}")
     if settings["complete"] == "interrupt":
-        return InterruptState(settings, urlTask)
+        return InterruptState(settings, url_task)
     else:
-        return Complete(settings, urlTask)
+        return Complete(settings, url_task)
 
 
 class DataFileTxt:
@@ -340,8 +336,7 @@ NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
 
 class BidTaskInit:
     list_url = ""
-    urlTask: str  # "公开招标" "邀请招标"
-    State: Complete or InterruptState
+    urlTask: Complete or InterruptState
     bid: BidBase
     tag: BidTag
     get_list: GetList
@@ -349,8 +344,7 @@ class BidTaskInit:
     # bid_web: BidHtml
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
-    error_open = True
-    file_open = False
+    error_open = False
 
     def __init__(self, name="test") -> None:
         """ 初始化任务, 保存settings 和 name
@@ -380,11 +374,11 @@ class BidTaskInit:
         logger.hr(f"{self.name}.init_state", 3)
         # 若queue中还有state
         if not self.page_list.queue_is_empty():
-            self.urlTask = self.page_list.queue[0]
-            logger.info(f"{self.name}._get_url_task = {self.urlTask}")
-            self.State = TaskState_init(self.urlTask)
-            self.State.print_state_at_start()
-            self.txt.write_all(f"{self.urlTask}\n")
+            url_task = self.page_list.queue[0]
+            logger.info(f"{self.name}._get_url_task = {url_task}")
+            self.urlTask = TaskState_init(url_task)
+            self.urlTask.print_state_at_start()
+            self.txt.write_all(f"{self.urlTask.name}\n")
             self.list_url = ""
             return True
         logger.info(f"{self.name}.queue is []")
@@ -393,7 +387,6 @@ class BidTaskInit:
 
 class BidTask(BidTaskInit):
     task_end = False  # 由 pywebio设置
-    urlTask = ""
 
     def get_next_pages_url(self, list_url="", next_rule=None, **kwargs) -> str:
         """
@@ -410,7 +403,6 @@ class BidTask(BidTaskInit):
             list_url = self.list_url
         pages = str(int(next_rule.search(list_url).group()) + 1)
         next_pages_url = next_rule.sub(pages, list_url)
-        logger.info(f"pages: {pages}")
         self.get_list.config.update_referer(list_url)
         return next_pages_url
 
@@ -436,7 +428,7 @@ class BidTask(BidTaskInit):
 
         if not self.match_num:
             logger.info("no match")
-        if self.State.state == "complete":
+        if self.urlTask.state == "complete":
             self._complete_page_task()
             return False  # state结束
         return True  # state继续
@@ -445,11 +437,15 @@ class BidTask(BidTaskInit):
         """ 获得下次打开的 url 保存在self.list_url
         """
         if not self.list_url:
-            list_url = self.State.return_start_url()
+            list_url = self.urlTask.return_start_url()
             self.list_url = self.get_list.url_extra(list_url)
         else:
             self.list_url = self.get_next_pages_url()
-        logger.info(f"next_list_url: {self.list_url}")
+        page = self.get_pages()
+        logger.info(f"pages: {page}, next_list_url: {self.list_url}")
+
+    def get_pages(self):
+        return str(int(self.next_rule.search(self.list_url).group()))
 
     def _process_tag_list(self, tag_list: list):
         """ 遍历处理 tag_list
@@ -462,28 +458,28 @@ class BidTask(BidTaskInit):
             if not self._bid_receive_bid_tag(tag, idx):
                 continue
             if not idx and self.brows.compare_last_first(self.bid.infoList):
-                self.State.complete()
+                self.urlTask.complete()
                 logger.info(f"open out of pages, pages now is {self.list_url}")
                 break
-            if self.State.bid_is_end(self.bid):  # 判断是否符合结束条件
-                self.State.complete()  # set self.State.state = "complete"
+            if self.urlTask.bid_is_end(self.bid):  # 判断是否符合结束条件
+                self.urlTask.complete()  # set self.urlTask.state = "complete"
                 logger.info(f"bid end at {self.bid.infoList}")
-                logger.info(f"end_rule: {self.State.end_rule}")
+                logger.info(f"end_rule: {self.urlTask.end_rule}")
                 if idx == 0:
                     logger.info(f"idx = {idx}, tag now: {self.bid.infoList}")
                 break
-            if not self.State.newest:  # complete 状态只执行一次,interrupt状态该语句结果为False
-                self.State.save_newest_and_interrupt(self.bid)
-            if not self.State.start:  # interrupt状态时判断项目是否开始记录
-                self.State.bid_is_start(self.bid)
+            if not self.urlTask.newest:  # complete 状态只执行一次,interrupt状态该语句结果为False
+                self.urlTask.save_newest_and_interrupt(self.bid)
+            if not self.urlTask.start:  # interrupt状态时判断项目是否开始记录
+                self.urlTask.bid_is_start(self.bid)
                 continue
 
-            self.State.set_interrupt(self.bid)  # 设置每次最后一个为interrupt
+            self.urlTask.set_interrupt(self.bid)  # 设置每次最后一个为interrupt
             self.txt.write_list(f"{self.bid.message()}\n")  # 写入文件
             self._title_trie_search(self.bid)  # 使用title trie 查找关键词
         logger.info(f"tag stop at {idx + 1}, tag counting from 1")
-        self.State.set_interrupt_url(self.list_url)
-        self.State.print_interrupt()
+        self.urlTask.set_interrupt_url(self.list_url)
+        self.urlTask.print_interrupt()
 
     def _bid_receive_bid_tag(self, tag: Tag or dict, idx):
         """ 由BidTag.get 读取一个项目项目节点, BidBase 接收并对信息进行处理
@@ -533,17 +529,14 @@ class BidTask(BidTaskInit):
     def _complete_page_task(self):
         """ 将json中 queue 头元素出队,添加到complete中
         """
-        # PageQueue, PageWait = self._state_queue_move()
         PageQueue, PageWait = self.page_list.queue_move()
-        logger.info(f"{self.urlTask} complete, PageQueue: {PageQueue}\n"
+        logger.info(f"{self.urlTask.name} complete, PageQueue: {PageQueue}\n"
                     f"PageWait: {PageWait}")
-        if PageQueue:
-            self.urlTask = PageQueue[0]
 
     def set_error_state(self):
         """当网页打开次数过多时设置错误标志,并将当前state移到stateWait"""
         config.set_task(
-                 f"{self.urlTask}.error", f"{self.State.state}Error")
+                 f"{self.urlTask.name}.error", f"{self.urlTask.state}Error")
         # self._state_queue_move()
         self.page_list.queue_move()
 

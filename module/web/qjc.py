@@ -11,7 +11,7 @@ from module.utils import *
 
 class GetList(get_url.GetList):
 
-    redirect_cut = re.compile("(?<=\|dynamicurl\|).*?(?=\|wzwsmethod\|)")
+    redirect_cut = re.compile(r"(?<=\|dynamicurl\|).*?(?=\|wzwsmethod\|)")
 
 
 class BidBase(web_brows.BidBase):
@@ -42,7 +42,8 @@ class ListBrows(web_brows.ListBrows):
     def open_extra(self, **kwargs):
         url_redirect = self.redirect_cut.search(self.res.response)
         if url_redirect:
-            url = f"http://www.weain.mil.cn{url_redirect.group()}?wzwscspd=MC4wLjAuMA=="
+            url = f"http://www.weain.mil.cn{url_redirect.group()}" \
+                  f"?wzwscspd=MC4wLjAuMA=="
             self.open(url)
 
 
