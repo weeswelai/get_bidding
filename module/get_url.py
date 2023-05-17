@@ -24,10 +24,11 @@ HEADERS = {
     }
 MAX_ERROR_OPEN = 3
 MAX_ERROR_SAVE = 2
-PROXIES = {"http":"127.0.0.1:8888",
-            "https":"127.0.0.1:8888"}
+PROXIES = {"http": "127.0.0.1:8888",
+           "https": "127.0.0.1:8888"}
 VERIFY = False
 packet_capture = False  # 抓包开关
+
 
 class UrlConfig:
     method = "GET"  # 默认
@@ -80,6 +81,7 @@ class UrlConfig:
     def update_referer(self, referer:str):
         self.headers["Referer"] = referer
 
+
 class Response:
     response: str = None
 
@@ -109,7 +111,7 @@ class Response:
         logger.info("get_list.res.cut_html")
         if rule:
             if isinstance(rule, dict):
-                html_cut = re.search(rule["re_rule"], 
+                html_cut = re.search(rule["re_rule"],
                                      self.response,
                                      rule["rule_option"])
             else:
@@ -233,7 +235,7 @@ class GetList:
             if save_error < MAX_ERROR_SAVE:
                 save_error += 1
                 self.res.save_response(url=self.list_url,
-                                    save_date=True, extra="cut_Error")
+                                       save_date=True, extra="cut_Error")
             self.cut_judge()
         return html_cut, error, save_error
 
@@ -257,7 +259,7 @@ class GetList:
         self.config.update_cookies(self.s.cookies.get_dict())
         cookies_html: dict = self.get_cookies_from_html()
         if cookies_html:
-            self.config.update_cookies(cookies_html) 
+            self.config.update_cookies(cookies_html)
         self.s.cookies = requtils.cookiejar_from_dict(self.config.cookies)
         self.config.save_cookies()
 
@@ -267,6 +269,7 @@ class GetList:
 
 def add_test_kwargs(kwargs):
     pass
+
 
 class GetUrl:
     # config = UrlConfig()
@@ -300,7 +303,7 @@ class GetUrl:
         self._open_url()
         return self.decode_response()
 
-    def init_req(self, url="http://127.0.0.1", 
+    def init_req(self, url="http://127.0.0.1",
                  headers: dict = None, method=None, form=None):
         """封装请求头,默认模式为GET
         Args:
@@ -343,7 +346,7 @@ class GetUrl:
                 f"open {self.req.full_url} Failed HTTPError: {url_error}\n"
                 f"HTTP Status Code: {url_error.code}\n"
                 f"req: url: {self.req.full_url}\nheaders: {jsdump(self.req.headers)}\n"
-                f"method: {self.req.method}, data:{self.req.data}")         
+                f"method: {self.req.method}, data:{self.req.data}")
             assert False, "open url error"
         except socket.timeout:
             assert False, "socket.timeout: time out"
@@ -380,7 +383,6 @@ class GetUrl:
         return self.response
 
 
-
 if __name__ == "__main__":
     pass
     #  POST
@@ -401,7 +403,7 @@ if __name__ == "__main__":
     # url_obj._open_url()
     # print(url_obj.decode_response())
     # url_obj.save_response(save_date=True, path="./html_test/", extra="test")
-    
+
     # GET
     # url_open = "https://httpbin.org/cookies"
     # test_headers = {

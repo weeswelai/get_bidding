@@ -3,7 +3,6 @@ import module.get_url as get_url
 import module.task as task
 import module.web_brows as web_brows
 from module.log import logger
-from module.utils import *
 
 
 class GetList(get_url.GetList):

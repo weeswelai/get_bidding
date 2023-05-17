@@ -46,7 +46,6 @@ class TaskQueue:
             self.insert(t)
         self.print()
 
-
     def insert(self, task) -> None:
         if not isinstance(task, TaskNode):
             task = TaskNode(task)
@@ -112,6 +111,7 @@ class TaskQueue:
     def re_insert(self):
         self.insert(self.pop())
 
+
 class TaskManager:
     restart = False
     break_ = False
@@ -120,11 +120,9 @@ class TaskManager:
     sleep_now = False
 
     def __init__(self):
-        """ 读取json_file; 设置 settings, json_file , queue
-        Args:
-            json_file (str): 文件json
-            save (bool): True: 是否保存到json中
-            creat_new (bool): True: 保存到新的配置文件,默认为False
+        """
+        读取json_file; 设置 settings, json_file , queue
+
         """
         logger.hr("TaskManager.__init__", 3)
         self.queue = TaskQueue()

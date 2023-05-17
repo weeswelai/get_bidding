@@ -7,8 +7,6 @@
 """
 import traceback
 from copy import deepcopy
-from datetime import datetime
-from importlib import import_module
 from io import TextIOWrapper
 
 from module import config
@@ -17,7 +15,6 @@ from module.judge_content import titleTrie
 from module.log import logger
 from module.utils import *
 from module.web_brows import *
-from module.exception import *
 
 DATA_PATH = config.dataFolder
 RE_OPEN_MAX = 4  # 异常时最大重新打开次数
@@ -181,7 +178,7 @@ class Complete:
             return url
         else:
             logger.error(f"{self.urlTask}.url: is empty, "
-                            "please check settings json file")
+                         "please check settings json file")
             exit()
 
     def print_state_at_start(self):
@@ -215,7 +212,7 @@ class InterruptState(Complete):
 
         if not deep_get(self.settings, "interrupt.name"):
             logger.error(f"{self.urlTask}.interrupt.name is empty, "
-                            "please check settings json file")
+                         "please check settings json file")
             exit()
 
     def bid_is_start(self, bid_prj: BidBase) -> True:
