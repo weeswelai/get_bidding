@@ -144,25 +144,24 @@ class TaskManager:
 
         logger.info(f"task PageQueue: {config.get_task()['PageQueue']}")
         try:
-            result = True
             while task.init_state():  # task 按PageQueue顺序完成state
                 self.web_break()
                 result = self.url_task_run(task)
         except (WebTooManyVisits, TooManyErrorOpen):
-            result = False
+            task.error_open = True
             config.set_task(f"{task.urlTask}.error", True)
 
         # 判断结果 计算下次运行时间, 返回 True 则 延迟 COMPLETE_DELAY , 错误则延迟10分钟或json设置里的时间        
-        if result:
-            delay = COMPLETE_DELAY
-        else:
+        if task.error_open:
             delay = task.error_delay if task.error_delay \
                 else ERROR_DELAY
             logger.warning(f"open_list_url_error, delay {delay}")
+        else:
+            delay = COMPLETE_DELAY
         nextRunTime = get_time_add(delay=delay)
         deep_set(config, f"{task.name}.nextRunTime", nextRunTime)
         config.save()
-        task.txt.data_file_exit()
+        task.close()
         logger.info(f"task {task.name} " f"next run time: {nextRunTime}")
         return nextRunTime
 

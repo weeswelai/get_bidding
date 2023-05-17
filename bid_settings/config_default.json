@@ -1,8 +1,13 @@
 {
-    "jsonFIle": "./bid_settings/bid_settings.json",
-    "dataFolder": "./data",
-    "test": false,
-    "testFolder": "./dataTest",
+    "file":{
+        "dataFolder": "./data",
+        "jsonFIle": "./bid_settings/bid_settings.json"
+    },
+    "test": {
+        "switch": true,
+        "dataFolder": "./dataTest",
+        "jsonFIle": "./bid_settings/bid_settings_test.json"
+    },
     "creatNewJsonFile": false,
     "transFileDefault":["list", "match","dayFile"],
     "transFile": ["list", "match","dayFile"]

@@ -411,6 +411,7 @@ class BidTask(BidTaskInit):
         pages = str(int(next_rule.search(list_url).group()) + 1)
         next_pages_url = next_rule.sub(pages, list_url)
         logger.info(f"pages: {pages}")
+        self.get_list.config.update_referer(list_url)
         return next_pages_url
 
     def process_next_list_web(self) -> bool:
@@ -545,6 +546,10 @@ class BidTask(BidTaskInit):
                  f"{self.urlTask}.error", f"{self.State.state}Error")
         # self._state_queue_move()
         self.page_list.queue_move()
+
+    def close(self):
+        self.txt.data_file_exit()
+        self.get_list.s.close()
 
 
 def _bid_to_dict(bid_prj=None):

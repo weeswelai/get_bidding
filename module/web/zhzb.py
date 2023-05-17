@@ -28,7 +28,7 @@ class Task(task.BidTask):
     tag = BidTag()
     brows = ListBrows()
 
-    def get_next_pages(self, **kwargs):
+    def get_next_pages_url(self, **kwargs):
         """ 针对post方式发送表单的下一页获取
         """
         pages = self.list_url["form"]["page"]

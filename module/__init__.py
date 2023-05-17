@@ -24,13 +24,11 @@ if pyw_name not in IGNORE:
         name = ""
         def __init__(self) -> None:
             config: dict = read_json("./bid_settings/config.json")
-            
-            self.file = config["jsonFIle"]
+            c = config["test"] if config["test"]["switch"] else config["file"]
+            self.dataFolder = c["dataFolder"]
+            self.file = c["jsonFIle"]
             if not os.path.exists(self.file):
                 copyfile(SETTINGS_DEFAULT, self.file)
-
-            self.dataFolder = config["testFolder"] \
-                if deep_get(config, "test") else config["dataFolder"]
             d = read_json(self.file)
             for k, v in d.items():
                 self[k] = v
@@ -58,4 +56,8 @@ if pyw_name not in IGNORE:
 
 
     config = Config()
-    logger.info("config ready")
+    if os.path.dirname(sys.argv[0])[-3:] == "web":
+        if pyw_name == "example":
+            pyw_name = input("please input task name")
+        config.name = pyw_name
+    logger.info(f"config ready, name={config.name}")

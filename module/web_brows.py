@@ -245,18 +245,6 @@ class ListBrows:
     def __init__(self, settings=None):
         settings = settings if settings else config.get_task()
         self.tag_list: str = settings["brows"]["tag_list"]
-
-    def _list_web_init(self, settings: dict = None):
-        """ 实例化时会初始化cookie, next_rule
-
-        Args:
-            settings (dict): 需要settings中的rule
-        """
-        logger.hr(f"{type(self).__name__}._list_web_init", 3)
-        if settings:
-            # init rule
-            self.tag_list = deep_get(settings, "tag_list")
-
     def get_tag_list(self, page=None, tag_list=None, parse="html.parser", t=""):
         """
         输入 str 调用 bs生成self.bs 从self.bs 里根据tag_list提取list
