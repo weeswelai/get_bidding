@@ -165,7 +165,7 @@ class TaskManager:
 
     def url_task_run(self, task: BidTask):
         """完成一个state"""
-        logger.hr(f"{task.urlTask}.url_task_run", 2)
+        logger.hr(f"{task.urlTask.name}.url_task_run", 2)
         while 1:
             self.web_break()
             try:
@@ -179,7 +179,7 @@ class TaskManager:
             config.save()  # 处理完一页后save
             sleep_random(task.delay, message=" you can use 'Ctrl  C' stop now")
             if not result:
-                logger.info(f"{task.name} {task.urlTask} is complete")
+                logger.info(f"{task.name} {task.urlTask.name} is complete")
                 return True
 
     def web_break(self):

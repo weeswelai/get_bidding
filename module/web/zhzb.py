@@ -38,6 +38,8 @@ class Task(task.BidTask):
         logger.info(f"zhzb.get_next_pages: {self.list_url}")
         return self.list_url
 
+    def get_pages(self):
+        return self.list_url["form"]["page"]
 
 if __name__ == "__main__":
     # test code
