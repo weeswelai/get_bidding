@@ -27,7 +27,7 @@ MAX_ERROR_SAVE = 2
 PROXIES = {"http":"127.0.0.1:8888",
             "https":"127.0.0.1:8888"}
 VERIFY = False
-packet_capture = True  # 抓包开关
+packet_capture = False  # 抓包开关
 
 class UrlConfig:
     method = "GET"  # 默认
@@ -59,8 +59,6 @@ class UrlConfig:
             "timeout": self.time_out
         }
         if packet_capture:  # 是否抓包
-            PROXIES = {"http":"127.0.0.1:8888",
-            "https":"127.0.0.1:8888"}
             kwargs["proxies"] = PROXIES
             kwargs["verify"] = VERIFY
         return kwargs
