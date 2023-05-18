@@ -153,7 +153,7 @@ class Task(task.BidTask):
     def tag_filterate(self):
         if self.bid.type.split("|")[0] in \
             ("公开招标公告", "竞争性谈判公告", "邀请招标公告", "竞争性磋商公告"):
-            logger.debug(self.bid.name)
+            # logger.debug(self.bid.name)
             return True
 
 
