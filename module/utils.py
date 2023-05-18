@@ -9,38 +9,9 @@ from datetime import datetime, timedelta
 from json import dumps, loads
 from random import uniform
 from time import sleep
+from urllib.parse import unquote
 
 from bs4 import Tag
-
-__URL_FIND__ = {
-    "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ],
-    "qjc": [24, "http://www.weain.mil.cn/"],
-    "zgzf": [25, "http://search.ccgp.gov.cn"]
-}
-# ASCII 码转中文
-__URL_REPLACE__ = {
-    "jdcgw": {
-        "%25E7%2589%25A9%25E8%25B5%2584": "物资",
-        "%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587": "公开招标",
-        "%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587": "邀请招标",
-        "%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4": "竞争性谈判"
-    },
-    "qjc": {
-        "%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87": "公开招标",
-        "%E9%82%80%E8%AF%B7%E6%8B%9B%E6%A0%87": "邀请招标",
-        "%E7%AB%9E%E4%BA%89%E6%80%A7%E8%B0%88%E5%88%A4": "竞争性谈判"
-    },
-    "zgzf":{
-        "&dbselect=bidx": "",
-        "&bidSort=0": "",
-        "&displayZone=": "",
-        "&zoneId=": "",
-        "&pppStatus=0": "",
-        "&agentName=": "",
-        "&buyerName=": "",
-        "&projectId=": ""
-    }
-}
 
 
 def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
@@ -283,8 +254,6 @@ def t1_slow_than_t2(time1, time2) -> bool:
     return False
 
 
-# 
-
 def url_to_filename(url: str):
     """
     将url 转换为可创建的文件名,会删除 https http www , 将 / 替换为( , 将所有后缀替换为html
@@ -294,12 +263,18 @@ def url_to_filename(url: str):
         url (str): 转换后的网址,可作为文件名
     """
     # 将 / 替换成 空格 因为网址中不会有空格
-    if len(url) > 100:  # 部分网址有可能过长, windows文件名不能超过179个字符
-        for key, value in __URL_FIND__.items():
-            if url[:value[0]] == value[1]:
-                # url = url.replace(url[:value[0]], "")
-                for ascii, chn in __URL_REPLACE__[key].items():
-                    url = url.replace(ascii, chn)
+    url, url_params = url.split("?")
+    if url_params:
+        params_list =url_params.split("&")
+        for p in params_list:
+            k, v = p.split("=")
+            if v and "%" in v:
+                v = unquote(v, "utf-8") if "plap" in url else v
+                v = unquote(v, "utf-8")
+                url_params = url_params.replace(p, f"{k}={v}")
+            else:
+                url_params = url_params.replace(f"&{p}", "")
+    url = f"{url}?{url_params}"
     if url.find("//www") > 0:
         url = url[url.find(".") + 1:]
     elif url.find("//") > 0:

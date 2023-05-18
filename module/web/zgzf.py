@@ -136,17 +136,25 @@ class ListBrows(web_brows.ListBrows):
 
 
 class Task(task.BidTask):
-    get_list = GetList()
-    bid = BidBase()
-    tag = BidTag()
-    brows = ListBrows()
+    def __init__(self, name) -> None:
+        self.get_list = GetList()
+        self.bid = BidBase()
+        self.tag = BidTag()
+        self.brows = ListBrows()
+        super().__init__(name)
 
     def close(self):
+        for k, v in self.get_list.config.cookies.items:
+            if k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
+                logger.debug(f"cookie delete {k}:{v}")
+                del(self.get_list.config.cookies[k])
         super().close()
-        if self.error_open:
-            for k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
-                if k in self.get_list.config.cookies:
-                    del(self.get_list.config.cookies[k])
+
+    def tag_filterate(self):
+        if self.bid.type.split("|")[0] in \
+            ("公开招标公告", "竞争性谈判公告", "邀请招标公告", "竞争性磋商公告"):
+            # logger.debug(self.bid.name)
+            return True
 
 
 if __name__ == "__main__":

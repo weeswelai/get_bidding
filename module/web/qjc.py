@@ -74,10 +74,12 @@ class ListBrows(web_brows.ListBrows):
 
 
 class Task(task.BidTask):
-    get_list = GetList()
-    bid = BidBase()
-    tag = BidTag()
-    brows = ListBrows()
+    def __init__(self, name) -> None:
+        self.get_list = GetList()
+        self.bid = BidBase()
+        self.tag = BidTag()
+        self.brows = ListBrows()
+        super().__init__(name)
 
 
 if __name__ == "__main__":
