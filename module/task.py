@@ -268,14 +268,14 @@ class DataFileTxt:
     filePath = {
         "list": None,
         "match": None,
-        "dayMatch": None,
-        "dayList": None
+        "daymatch": None,
+        "daylist": None
     }
     file = {
         "list": None,
         "match": None,
-        "dayMatch": None,
-        "dayList": None
+        "daymatch": None,
+        "daylist": None
     }
 
     def __init__(self, name="test") -> None:
@@ -313,16 +313,18 @@ class DataFileTxt:
         logger.info(f"{self.name}.file_open={self.file_open}")
 
     def write_match(self, data):
-        self._write("match", data)
+        if self.file_open:
+            self._write("match", data)
 
     def write_list(self, data):
-        self._write("list", data)
+        if self.file_open:
+            self._write("list", data)
 
     def _write(self, file, data):
         if data[-1] != "\n":
             data = f"{data}\n"
         for k, v in self.file.items():
-            if file.title() in k:
+            if file in k:
                 v: TextIOWrapper
                 v.write(data)
 
@@ -447,6 +449,9 @@ class BidTask(BidTaskInit):
     def get_pages(self):
         return str(int(self.next_rule.search(self.list_url).group()))
 
+    def tag_filterate(self):
+        return True
+
     def _process_tag_list(self, tag_list: list):
         """ 遍历处理 tag_list
         若能遍历到结尾,保存 interruptUrl 和 interrupt
@@ -475,8 +480,9 @@ class BidTask(BidTaskInit):
                 continue
 
             self.urlTask.set_interrupt(self.bid)  # 设置每次最后一个为interrupt
-            self.txt.write_list(f"{self.bid.message()}\n")  # 写入文件
-            self._title_trie_search(self.bid)  # 使用title trie 查找关键词
+            if self.tag_filterate():
+                self.txt.write_list(f"{self.bid.message()}\n")  # 写入文件
+                self._title_trie_search(self.bid)  # 使用title trie 查找关键词
         logger.info(f"tag stop at {idx + 1}, tag counting from 1")
         self.urlTask.set_interrupt_url(self.list_url)
         self.urlTask.print_interrupt()

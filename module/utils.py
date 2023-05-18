@@ -9,9 +9,11 @@ from datetime import datetime, timedelta
 from json import dumps, loads
 from random import uniform
 from time import sleep
+from urllib.parse import unquote
 
 from bs4 import Tag
 
+<<<<<<< HEAD
 __URL_FIND__ = {
     "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ],
     "qjc": [24, "http://www.weain.mil.cn/"],
@@ -47,6 +49,8 @@ __URL_REPLACE__ = {
     }
 }
 
+=======
+>>>>>>> 13d1581164d5f3a2daf5aff518f8dec467ca911f
 
 def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
     """
@@ -288,8 +292,6 @@ def t1_slow_than_t2(time1, time2) -> bool:
     return False
 
 
-# 
-
 def url_to_filename(url: str):
     """
     将url 转换为可创建的文件名,会删除 https http www , 将 / 替换为( , 将所有后缀替换为html
@@ -299,12 +301,18 @@ def url_to_filename(url: str):
         url (str): 转换后的网址,可作为文件名
     """
     # 将 / 替换成 空格 因为网址中不会有空格
-    if len(url) > 100:  # 部分网址有可能过长, windows文件名不能超过179个字符
-        for key, value in __URL_FIND__.items():
-            if url[:value[0]] == value[1]:
-                # url = url.replace(url[:value[0]], "")
-                for ascii, chn in __URL_REPLACE__[key].items():
-                    url = url.replace(ascii, chn)
+    url, url_params = url.split("?")
+    if url_params:
+        params_list =url_params.split("&")
+        for p in params_list:
+            k, v = p.split("=")
+            if v and "%" in v:
+                v = unquote(v, "utf-8") if "plap" in url else v
+                v = unquote(v, "utf-8")
+                url_params = url_params.replace(p, f"{k}={v}")
+            else:
+                url_params = url_params.replace(f"&{p}", "")
+    url = f"{url}?{url_params}"
     if url.find("//www") > 0:
         url = url[url.find(".") + 1:]
     elif url.find("//") > 0:
