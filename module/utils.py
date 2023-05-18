@@ -263,10 +263,13 @@ def url_to_filename(url: str):
         url (str): 转换后的网址,可作为文件名
     """
     # 将 / 替换成 空格 因为网址中不会有空格
-    url, url_params = url.split("?")
+    
+    url, url_params = url.split("?") if "?" in url else (url, "")
     if url_params:
         params_list =url_params.split("&")
         for p in params_list:
+            if "=" not in p:
+                continue
             k, v = p.split("=")
             if v and "%" in v:
                 v = unquote(v, "utf-8") if "plap" in url else v
@@ -274,7 +277,7 @@ def url_to_filename(url: str):
                 url_params = url_params.replace(p, f"{k}={v}")
             else:
                 url_params = url_params.replace(f"&{p}", "")
-    url = f"{url}?{url_params}"
+        url = f"{url}?{url_params}"
     if url.find("//www") > 0:
         url = url[url.find(".") + 1:]
     elif url.find("//") > 0:
