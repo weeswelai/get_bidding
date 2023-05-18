@@ -300,8 +300,8 @@ class DataFileTxt:
             for k, v in self.filePath.items():
                 self.file[k] = open(v, "a", encoding="utf-8")
             # 写入运行时间
-            self.write_all(f"{self.name} start at {date_now_s()}\n")
             self.file_open = True
+            self.write_all(f"{self.name} start at {date_now_s()}\n")
         logger.info(f"{self.name}.file_open={self.file_open}")
 
     def data_file_exit(self):
@@ -422,6 +422,7 @@ class BidTask(BidTaskInit):
 
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
         tagList = self.brows.get_tag_list()
+        logger.info(f"len tagList = {len(tagList)}")
         # if not tagList:
         #     self._complete_page_task()
         #     logger.warning("tag list is []")
