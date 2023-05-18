@@ -111,7 +111,8 @@ def _parse_bs_rule(tag: Tag,
         else:
             tag = tag.find_all(tag_name)
         if find_all_idx:  # 若有find_all 的索引要求,则返回该索引对应的tag
-            tag = tag[int(find_all_idx)]
+            if find_all_idx != "all":
+                tag = tag[int(find_all_idx)]
     elif tag_find == "tagName_find":  # 使用tagName,find方式检索
         if tag_name:
             tag = bs_deep_get(tag, tag_name)  # 调用额外函数返回Tag
@@ -123,6 +124,8 @@ def _parse_bs_rule(tag: Tag,
             else:  # 若当前tag的class不符合则用find
                 return tag.find(class_=value).text.strip()  # tag内容文本
         elif value_name == "_Text":  # 没有属性只有text的标签
+            if find_all_idx == "all":
+                return f"{tag[0].text.strip()}|{tag[1].text.strip()}"
             return tag.text.strip()  # tag内容文本
         else:
             return tag.get(value_name).strip()  # tag属性值
