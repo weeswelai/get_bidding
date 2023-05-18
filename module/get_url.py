@@ -109,17 +109,17 @@ class Response:
             html_cut(str): 使用正则裁剪后的html源码,也有可能不裁剪
         """
         logger.info("get_list.res.cut_html")
-        if rule:
-            if isinstance(rule, dict):
-                html_cut = re.search(rule["re_rule"],
-                                     self.response,
-                                     rule["rule_option"])
-            else:
-                html_cut = self.response if rule == "" else \
-                           re.search(rule, self.response, re.S)
+        rule = rule if rule else self.cut
+        if isinstance(rule, dict):
+            html_cut = re.search(rule["re_rule"],
+                                 self.response,
+                                 rule["rule_option"])
+        elif isinstance(rule, str):
+            html_cut = re.search(rule, self.response, re.S) if rule else \
+                       self.response 
         else:
             html_cut = self.cut.search(self.response)
-        if html_cut is None:
+        if not html_cut:
             logger.debug(f"len response {len(self.response)}")
             logger.debug(f"cut rule {self.cut.pattern}")
             raise CutError
