@@ -144,9 +144,9 @@ class Task(task.BidTask):
         super().__init__(name)
 
     def close(self):
-        for k, v in self.get_list.config.cookies.items:
-            if k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
-                logger.debug(f"cookie delete {k}:{v}")
+        for k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
+            if k in self.get_list.config.cookies:
+                logger.debug(f"cookie delete {k}:{self.get_list.config.cookies[k]}")
                 del(self.get_list.config.cookies[k])
         super().close()
 
