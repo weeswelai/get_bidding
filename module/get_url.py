@@ -120,7 +120,8 @@ class Response:
         else:
             html_cut = self.cut.search(self.response)
         if html_cut is None:
-            # logger.debug(f"cut rule {self.cut.pattern}")
+            logger.debug(f"len response {len(self.response)}")
+            logger.debug(f"cut rule {self.cut.pattern}")
             raise CutError
         return html_cut.group()
 
