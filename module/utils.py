@@ -13,44 +13,6 @@ from urllib.parse import unquote
 
 from bs4 import Tag
 
-<<<<<<< HEAD
-__URL_FIND__ = {
-    "jdcgw": [47, "https://www.plap.cn/index/selectsumBynews.html?", ],
-    "qjc": [24, "http://www.weain.mil.cn/"],
-    "zgzf": [25, "http://search.ccgp.gov.cn"]
-}
-# ASCII 码转中文,删除网址中多余的字符
-__URL_REPLACE__ = {
-    "jdcgw": {
-        "%25E7%2589%25A9%25E8%25B5%2584": "物资",
-        "%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587": "公开招标",
-        "%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587": "邀请招标",
-        "%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4": "竞争性谈判",
-        "&title=": "",
-        "&productType=": "",
-        "&productTypeName=": "",
-        "&publishStartDate=": "",
-        "&publishEndDate=": ""
-    },
-    "qjc": {
-        "%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87": "公开招标",
-        "%E9%82%80%E8%AF%B7%E6%8B%9B%E6%A0%87": "邀请招标",
-        "%E7%AB%9E%E4%BA%89%E6%80%A7%E8%B0%88%E5%88%A4": "竞争性谈判"
-    },
-    "zgzf":{
-        "&dbselect=bidx": "",
-        "&bidSort=0": "",
-        "&displayZone=": "",
-        "&zoneId=": "",
-        "&pppStatus=0": "",
-        "&agentName=": "",
-        "&buyerName=": "",
-        "&projectId=": ""
-    }
-}
-
-=======
->>>>>>> 13d1581164d5f3a2daf5aff518f8dec467ca911f
 
 def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
     """
