@@ -132,7 +132,8 @@ class Complete:
             仅执行一次, interrupt状态下不执行
         """
         bid_message = _bid_to_dict(bid)
-        bid_message["date"] = date_now_s()
+        if len(bid_message["date"]) <= 10:
+            bid_message["date"] = bid_message["date"] + " 00:00:00"
         deep_set(self.settings, "newest", bid_message)
         deep_set(self.settings, "complete", "interrupt")  # 启动后状态设为interrupt
         self.newest = True
@@ -235,10 +236,6 @@ class InterruptState(Complete):
         logger.info(f"bid is start, start at {bid_prj.name}")
         self.start = True
         return True
-
-    def save_newest(self, *args):
-        # interrupt状态不执行
-        pass
 
     def save_newest_and_set_interrupt(self, *args):
         # interrupt状态不执行
