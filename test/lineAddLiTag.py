@@ -18,6 +18,8 @@ TYPE = -1
 # "jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"
 WEB = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"]
 
+date_time = ""
+
 with open(CONFIG, "r", encoding="utf-8") as f:
     config =  loads(f.read())
     TRANSFILE = config["transFile"]
@@ -34,7 +36,7 @@ for tf in TRANSFILE:
 def write_head(html, name: str, fileType):
     # html <head>标签, 显示标题
     html.write(f"""<head>
-    <title>{name}_{fileType}</title>
+    <title>{name}_{fileType}{date_time}</title>
 </head>\n""")
 
 
@@ -77,16 +79,17 @@ def wirte_li(html, line: str, idx, fileType: str):
         html.write(f"<li>{str(idx)}. {labelsA},"
                    f"{line_list[DATE]},{line_list[TYPE]}</li>\n")
 
-def write_html(webName, fileType, txtFile):
+def write_html(webName, fileType, txt:str):
     """
     Args:
         webName(str): qjc or dayFile
         fileType(str): match or list
-        txtFile(TextIOWrapper): TextIOWrapper
+        txt(str): txt file
     """
-
-    webFIle = get_file_name(fileType, webName, 'htm')
-    with open(webFIle, "w", encoding="utf-8") as html:
+    
+    webFIle = get_file_name(fileType, webName, 'htm', txt)
+    with open(webFIle, "w", encoding="utf-8") as html,\
+         open(txt, "r", encoding="utf-8") as txtFile:
         write_head(html, webName, fileType)
         write_body(html, "top")
         write_function(html)
@@ -101,19 +104,22 @@ def write_html(webName, fileType, txtFile):
         write_body(html, "bottom")
 
 
-def get_file_name(fileType, webName, Type="htm"):
+def get_file_name(fileType, webName, Type="htm", txt=""):
     """
     Argv:
         fileType(str): match or list
         webName(str): qjc or zzlh or dayFile
         Type(str): htm or txt, input html = htm
     """
+    global date_time
     if webName == "dayFile":
-        return f"{DATAPATH}/bid_day{fileType.title()}_{date_days(format='day')}_.htm"
+        date_time = txt[-14: -4] if txt else date_days(format='day')
+        return f"{DATAPATH}/bid_day{fileType.title()}_{date_time}.htm"
     elif Type == "txt":
         return f"{DATAPATH}/bid_{fileType}_{webName}.txt"
     elif Type in ["htm", "html"]:
-        return f"{DATAPATH}/bid_{fileType}_{webName}{date_now_s(True)}.htm"
+        date_time = date_days(format='day')
+        return f"{DATAPATH}/bid_{fileType}_{webName}_{date_time}.htm"
 
 
 def main():
@@ -127,17 +133,14 @@ def main():
             if not exists(fileName):
                 print(f"{fileName} is not exists")
                 return
-
-            with open(fileName, "r", encoding="utf-8") as file:
-                write_html(webName, fileType, file)
+            write_html(webName, fileType, fileName)
 
 
 def dayFile():
     today = date_days(format="day")
     for fileType in ["list", "match"]:
         fileName = f"{DATAPATH}/bid_day{fileType.title()}_{today}.txt"
-        with open(fileName, "r", encoding="utf-8") as file:
-            write_html("dayFile", fileType, file)
+        write_html("dayFile", fileType, fileName)
 
 
 # 三种情况
@@ -150,8 +153,7 @@ def command(argv):
     if len(argv) == 1:
         for Type in ["List", "Match"]:
             file = f"{DATAPATH}/bid_day{Type}_{date_days()[:4]}-{argv[0]}.txt"
-            with open(file, "r", encoding="utf-8") as f:
-                write_html("dayFile", Type, f)
+            write_html("dayFile", Type, file)
     else:
         pass
 
