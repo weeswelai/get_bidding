@@ -159,9 +159,12 @@
     "nextRunTime": "",
     "PageQueue": [],
     "PageWait": [
-      "公开招标",
-      "邀请招标",
-      "竞争性谈判"
+      "物资_公开招标",
+      "物资_邀请招标",
+      "物资_竞争性谈判",
+      "服务_公开招标",
+      "服务_邀请招标",
+      "服务_竞争性谈判"
     ],
     "OpenConfig": {
       "method": "GET",
@@ -202,7 +205,7 @@
         "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
       }
     },
-    "公开招标": {
+    "物资_公开招标": {
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
       "newest": {
         "name": "",
@@ -223,7 +226,7 @@
       "complete": "complete",
       "error": false
     },
-    "邀请招标": {
+    "物资_邀请招标": {
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
       "newest": {
         "name": "",
@@ -244,8 +247,71 @@
       "complete": "complete",
       "error": false
     },
-    "竞争性谈判": {
+    "物资_竞争性谈判": {
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate=",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "complete",
+      "error": false
+    },
+    "服务_公开招标": {
+      "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=13&twoid=34&title=&productType=&productTypeName=&tab=%25E6%259C%258D%25E5%258A%25A1&lastArticleTypeName=%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "complete",
+      "error": false
+    },
+    "服务_邀请招标": {
+      "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=13&twoid=34&title=&productType=&productTypeName=&tab=%25E6%259C%258D%25E5%258A%25A1&lastArticleTypeName=%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
+      "newest": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "interruptUrl": "",
+      "interrupt": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "end_rule": {
+        "name": "",
+        "date": "",
+        "url": ""
+      },
+      "complete": "complete",
+      "error": false
+    },
+    "服务_竞争性谈判": {
+      "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=13&twoid=34&title=&productType=&productTypeName=&tab=%25E6%259C%258D%25E5%258A%25A1&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate=",
       "newest": {
         "name": "",
         "date": "",
