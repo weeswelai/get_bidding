@@ -1,5 +1,9 @@
 """
-
+创建任务队列
+任务出队
+创建任务实例
+调用任务运行接口,得到运行结果,根据运行结果决定下次运行时间
+任务入队
 """
 import traceback
 from datetime import datetime
@@ -247,7 +251,7 @@ class TaskManager:
         task: TaskNode = self.queue.head
         logger.info(f"first task {task.name} nextRunTime: {task.nextRunTime}")
         now = datetime.now().replace(microsecond=0)
-        # 若不处于 当天08时到22时的区间内, 将时间延迟至第二天09点 或当天9点
+        # 若不处于 当天08:30到18:00的区间内, 将时间延迟至第二天或当天08点30
         nextRunTime = during_runtime(now)
         if nextRunTime:
             task.nextRunTime = nextRunTime
@@ -270,6 +274,19 @@ def task_init(task: TaskNode) -> BidTask:
     else:
         mod = import_module(f"module.web.example")
     return mod.Task(name)
+
+
+def during_runtime(time: datetime) -> datetime or None:
+    oneDay = timedelta(days=1)
+    today07_30 = datetime.now().replace(hour=7 , minute=30, second=0, microsecond=0)
+    today18 = datetime.now().replace(hour=18 , minute=0, second=0, microsecond=0)
+    yesterday18 = today18 - oneDay
+    tomorrow00 = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + oneDay
+    if yesterday18 < time < today07_30:
+        return today07_30
+    elif today18 < time < tomorrow00:
+        return today07_30 + oneDay
+    return None
 
 
 bidTaskManager = TaskManager()

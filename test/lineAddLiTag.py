@@ -2,7 +2,7 @@ import sys
 from json import loads
 from os.path import exists
 
-from module import CONFIG
+from module import CONFIG_FILE
 from module.utils import date_days, date_now_s
 
 DATAPATH = "./data"
@@ -20,16 +20,16 @@ WEB = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"]
 
 date_time = ""
 
-with open(CONFIG, "r", encoding="utf-8") as f:
+with open(CONFIG_FILE, "r", encoding="utf-8") as f:
     config =  loads(f.read())
     TRANSFILE = config["transFile"]
 
 if not TRANSFILE:
-    print(f"please check {CONFIG}")
+    print(f"please check {CONFIG_FILE}")
     exit()
 for tf in TRANSFILE:
     if tf not in ["list", "match", "dayFile"]:
-        print(f"please check {CONFIG}")
+        print(f"please check {CONFIG_FILE}")
         exit()
 
 

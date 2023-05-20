@@ -12,6 +12,8 @@ from queue import Queue
 from logging import addLevelName
 from logging.handlers import QueueHandler
 
+from module import TEST
+
 # 定义输出格式
 file_formatter = logging.Formatter(
     fmt='%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s',
@@ -25,11 +27,12 @@ web_formatter = logging.Formatter(
 logger = logging.getLogger("bid_log")
 logger.setLevel(level=logging.DEBUG)
 
-# Ensure running in Alas root folder
 os.chdir(os.path.join(os.path.dirname(__file__), '../'))
-_srcfile = os.path.normcase(addLevelName.__code__.co_filename)
 # Add file logger
 pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所在的文件,去掉.py和文件夹前缀
+
+if TEST:
+    pyw_name = pyw_name + "_test"
 
 # 设置 控制台handler
 console_hdlr = logging.StreamHandler()

@@ -1,4 +1,5 @@
 import os, sys
+from json import loads
 from shutil import copyfile
 
 from module.utils import deep_set
@@ -8,10 +9,14 @@ from module.utils import deep_set
 SETTINGS_DEFAULT = "./bid_settings/bid_settings_default.json"
 
 CONFIG_DEFAUTL = "./bid_settings/config_default.json"
-CONFIG = "./bid_settings/config.json"
+CONFIG_FILE = "./bid_settings/config.json"
 
-if not os.path.exists(CONFIG):
-    copyfile(CONFIG_DEFAUTL, CONFIG)
+if not os.path.exists(CONFIG_FILE):
+    copyfile(CONFIG_DEFAUTL, CONFIG_FILE)
+
+with open(CONFIG_FILE, "r", encoding="utf-8") as c_json:
+    CONFIG = loads(c_json.read())
+    TEST = True if CONFIG["test"]["switch"] else False
 
 pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所在的文件,去掉.py和文件夹前缀
 
@@ -24,8 +29,8 @@ if pyw_name not in IGNORE:
         name = ""
 
         def __init__(self) -> None:
-            config: dict = read_json("./bid_settings/config.json")
-            c = config["test"] if config["test"]["switch"] else config["file"]
+            logger.info(f"read {CONFIG_FILE}")
+            c = CONFIG["test"] if TEST else CONFIG["file"]
             self.dataFolder = c["dataFolder"]
             self.file = c["jsonFIle"]
             if not os.path.exists(self.file):
@@ -61,4 +66,5 @@ if pyw_name not in IGNORE:
         if pyw_name == "example":
             pyw_name = input("please input task name")
         config.name = pyw_name
+    from module.log import logger
     logger.info(f"config ready, name={config.name}")

@@ -208,9 +208,9 @@ class GetList:
         self.res.response = ""
         self.set_cookie_time()
         open_times += 1
-        logger.info(f"{open_times} open {url}")
         if open_times > MAX_ERROR_OPEN:
             raise TooManyErrorOpen
+        logger.info(f"{open_times} open {url}")
         self.list_url = url
         error = ""
         try:

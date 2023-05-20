@@ -69,31 +69,33 @@ class Complete:
     def init(self):
         """ 判断 end_rule 是否合法
         """
+        end_day = 1
         date_6 = date_days(change_days=-6)
         if not self.end_rule["date"]:
             self.end_rule["date"] = date_6
         if len(self.end_rule["date"]) <= 10:
             self.end_rule["date"] = self.end_rule["date"] + " 00:00:00"
         if time_difference(self.end_rule["date"], date_days(), "day") < -6:
+            end_day = 0
             logger.info(f"end_rule: {self.end_rule['date']} is beyond 6 days")
             self.end_rule["date"] = date_6
             deep_set(self.settings, "end_rule.date", date_6)
+        self.end_date = datetime.strptime(self.end_rule["date"], "%Y-%m-%d %H:%M:%S") - timedelta(days=end_day)
         logger.info(f"json: {self.name}.complete = "
                     f"\"{deep_get(self.settings, 'complete')}"
                     f"\"\nend_rule : {self.end_rule}")
 
-    def _date_is_end(self, date: str, date_len):
-        """ 判断传入的date是否符合 end_date要求
+    def _date_is_end(self, date: str):
+        """ 
+        判断爬到的项目日期是否比end_date减一天还晚
+        仅作为保证不会因为找不到相同项目而爬到死循环的措施
         """
-        if date_len > 10:
+        if len(date) > 10:
             date_format = "%Y-%m-%d %H:%M:%S"
-            end_date = self.end_rule["date"]
         else:
             date_format = "%Y-%m-%d"
-            end_date = self.end_rule["date"][:10]
-        return \
-            datetime.strptime(date, date_format) < \
-            datetime.strptime(end_date, date_format)
+        date = datetime.strptime(date, date_format)
+        return date < self.end_date
 
     def bid_is_end(self, bid_prj: BidBase):
         """ 判断当前项目是否符合结束条件
@@ -106,7 +108,7 @@ class Complete:
             return True
         # 超出时间限制时停止
         if self.end_rule["date"]:
-            if self._date_is_end(bid_prj.date, len(bid_prj.date)):
+            if self._date_is_end(bid_prj.date):
                 return True
         return False
 
