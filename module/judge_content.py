@@ -191,9 +191,13 @@ class BidTitleTrie:
         listMatch = []
         wordMatch = ""
         c = self.child
-        slow = 0  # 慢指针
-        for fast, wd in enumerate(text):
-            wd = wd.upper()  # 小写转大写,仅影响英文字母
+        fast = slow = 0  # 快慢指针
+        length = len(text) - 1
+        while 1:
+            if fast > length:
+                break
+            wd: str = text[fast].upper()
+            # logger.debug(f"fast: {fast}, wd:{wd}")
             if wd in c:  # 进入前缀树匹配
                 c = c[wd]
                 if "end" in c:
@@ -204,8 +208,13 @@ class BidTitleTrie:
                     if wordMatch not in listMatch:
                         listMatch.append(wordMatch)
                     wordMatch = ""
+                if c != self.child:
+                    c = self.child
+                    slow = fast
+                    continue
                 c = self.child  # 若第一关键词未匹配则回到上次节点
                 slow = fast + 1
+            fast += 1
         return listMatch
 
 
@@ -221,3 +230,6 @@ if __name__ == "__main__":
     titleTrie.child = {}
     titleTrie.insert_from_file("./test/前缀树.txt")
     titleTrie.save_local(init_file)
+    print(titleTrie.search_all("123测量图形456"))
+    print(titleTrie.search_all("123测测量图形456"))
+    print(titleTrie.search_all("123测量测图形456"))
