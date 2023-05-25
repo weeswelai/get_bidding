@@ -209,7 +209,8 @@ class BidBase:
         pass
 
     def _type(self):
-        pass
+        if self.type in ["", " ", None]:
+            self.type == "None"
 
     def _date(self):
         self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
