@@ -66,9 +66,14 @@ def labels_a(title, url):
     return f"<a href=\"{url}\">{title}</a>"
 
 
+def get_list(line: str) -> list:
+    line_list = line.replace("\n", "").replace("\r", "").split("; ")
+    return line_list
+
+
 def wirte_li(html, line: str, idx, fileType: str):
     
-    line_list = line.rstrip().split("; ")
+    line_list = get_list(line)
     labelsA = labels_a(line_list[TITLE], line_list[URL])
     fileType = fileType.lower()
     # TODO 有没有更好的写法

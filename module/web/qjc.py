@@ -13,6 +13,21 @@ class GetList(get_url.GetList):
 
     redirect_cut = re.compile(r"(?<=\|dynamicurl\|).*?(?=\|wzwsmethod\|)")
 
+    def url_extra(self, url):
+        """ 只在以complete状态开始的任务获取开始网址时调用一次
+            在qjc的网址后面
+        """
+        if url[-13:].isdigit():  # 若url末尾有时间
+            return url
+        return f"{url}&_t={str(time()).replace('.', '')[:13]}"
+
+    def open_extra(self, **kwargs):
+        url_redirect = self.redirect_cut.search(self.res.response)
+        if url_redirect:
+            url = f"http://www.weain.mil.cn{url_redirect.group()}" \
+                  f"?wzwscspd=MC4wLjAuMA=="
+            self.open(url)
+
 
 class BidBase(web_brows.BidBase):
     pass
@@ -30,21 +45,6 @@ class ListBrows(web_brows.ListBrows):
         logger.info("web_brows.Qjc.cut_html")
         self.html_cut = json.loads(self.response)
         return self.html_cut
-
-    def url_extra(self, url):
-        """ 只在以complete状态开始的任务获取开始网址时调用一次
-            在qjc的网址后面
-        """
-        if url[-13:].isdigit():  # 若url末尾有时间
-            return url
-        return f"{url}&_t={str(time()).replace('.', '')[:13]}"
-    
-    def open_extra(self, **kwargs):
-        url_redirect = self.redirect_cut.search(self.res.response)
-        if url_redirect:
-            url = f"http://www.weain.mil.cn{url_redirect.group()}" \
-                  f"?wzwscspd=MC4wLjAuMA=="
-            self.open(url)
 
 
 class BidBase(web_brows.BidBase):
