@@ -151,7 +151,7 @@ class TaskManager:
                 result = self.url_task_run(task)
         except (WebTooManyVisits, TooManyErrorOpen):
             task.error_open = True
-            config.set_task(f"{task.urlTask}.error", True)
+            config.set_task(f"{task.urlTask.name}.error", True)
 
         # 判断结果 计算下次运行时间, 返回 True 则 延迟 COMPLETE_DELAY , 错误则延迟10分钟或json设置里的时间        
         if task.error_open:
