@@ -331,6 +331,10 @@ class DataFileTxt:
         self.write_match(data)
         self.write_list(data)
 
+    def flush(self):
+        for fi in self.file.values():
+            fi: TextIOWrapper
+            fi.flush()            
 
 NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
 
@@ -427,6 +431,7 @@ class BidTask(BidTaskInit):
         #     logger.warning("tag list is []")
         #     return False
         self._process_tag_list(tagList)
+        self.txt.flush()  # 刷新缓冲区写入文件
 
         if not self.match_num:
             logger.info("no match")
