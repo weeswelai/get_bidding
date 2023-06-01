@@ -10,3 +10,12 @@ class TooManyErrorOpen(Exception):
 
 class CutError(Exception):
     pass
+
+
+class BidReceiveError(Exception):
+    pass
+
+
+# webio点击stop按钮时引发的异常
+class WebBreak(Exception):
+    pass

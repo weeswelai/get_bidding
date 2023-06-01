@@ -2,12 +2,16 @@ __pycache__
 __settings__
 .vscode
 .idea
-get_bid.code-workspace
+*.code-workspace
 data
 log
 html_test
 html_error
 dataTest
+bid_settings/*
+!bid_settings/bid_settings_default.json
+!bid_settings/config_default.json
+!bid_settings/title_trie.json
 test/*
 !test/前缀树.txt
 !test/lineAddLiTag.py

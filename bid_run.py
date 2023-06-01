@@ -11,8 +11,9 @@
 import traceback
 
 from module.log import logger
-from module.task_manager import bidTaskManager
+from module.task_manager import TaskManager
 
+bidTaskManager = TaskManager()
 
 def main():
     try:

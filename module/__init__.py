@@ -65,7 +65,7 @@ if pyw_name not in IGNORE:
     if os.path.dirname(sys.argv[0])[-3:] == "web":
         if pyw_name != "example" :
             config.name = pyw_name
-    if pyw_name not in ("bid_run", "bid_manager", "bid_web") and config.name == "":
+    if pyw_name not in ("bid_run", "task_manager", "bid_web") and config.name == "":
         config.name = input("please input task name: ")
     from module.log import logger
     logger.info(f"config ready, name={config.name}")
