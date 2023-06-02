@@ -12,7 +12,7 @@ from module.exception import *
 from module.get_url import GetList
 from module.judge_content import titleTrie
 from module.log import logger
-from module.task_manager import TaskNode, TaskQueue
+from module.task_manager import RUN_TIME_START, TaskNode, TaskQueue
 from module.utils import *
 from module.web_brows import *
 
@@ -22,7 +22,7 @@ SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
 COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
 ERROR_DELAY = 10  # 网页打开次数过多时延迟时间
 NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
-RUN_TIME_START = "2023-01-01 00:00:00"  # 默认下次运行时间
+
 
 class BidTaskState(TaskNode):
     """
@@ -39,16 +39,10 @@ class BidTaskState(TaskNode):
         self.nextRunTime = str2time(nextRunTime) if nextRunTime else \
                            str2time(RUN_TIME_START)
 
-    def restart(self):
-        self.nextRunTime = str2time(RUN_TIME_START)
+    def set_time(self, nextRunTime: datetime):
+        self.nextRunTime = nextRunTime
+        config.set_task(f"{self.name}.nextRunTime", str(nextRunTime))
 
-    def is_error(self):
-        if self.state == "error":
-            return True
-        return False
-
-    def error(self):
-        self.state = "error"
 
 class BidTaskQueue(TaskQueue):
 
@@ -57,9 +51,7 @@ class BidTaskQueue(TaskQueue):
             bid_task = BidTaskState(name)
             self.insert(bid_task)
 
-    def next_task(self, time=True) -> str:
-        if not time:
-            return self.pop()
+    def next_task(self) -> BidTaskState:
         if self.first_runtime() < datetime.now():
             return self.pop()
         return
@@ -141,7 +133,7 @@ class DataFileTxt:
 
 class Task:
     list_url = ""
-    bid_task: BidTask
+    bid_task: BidTaskState
     bid: BidBase
     tag: BidTag
     get_list: GetList
@@ -311,42 +303,44 @@ class Task:
     def _complete_page_task(self):
         pass
 
-    def set_error(self, name):
-        self.bid_task.set_task("state", "error")
-        config.save()
-
-    def run_bid_task(self, name):
-        self.bid_task = BidTask(name)
-        nextRunTime = ""
-        try:
-            while 1:
-                result = self.process_next_list_web()
-                if not result:
-                    logger.info(f"{self.name} {self.bid_task.name} is complete")
-                    if self.bid_task.interrupt:
-                        nextRunTime = RUN_TIME_START
-                    else:
-                        nextRunTime = get_time_add(self.bid_task.nextRunTime, COMPLETE_DELAY)
-                    break
-                sleep_random(self.delay, message=" you can use 'Ctrl  C' stop now")
-        except (WebTooManyVisits, TooManyErrorOpen):
-            # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
-            self.set_error(self.bid_task.name)
-            logger.error(f"{traceback.format_exc()}")
+    def _run_bid_task(self):
+        while 1:
+            result = self.process_next_list_web()
+            if not result:
+                break
+        logger.info(f"{self.name} {self.bid_task.name} is complete")
+        if self.bid_task.interrupt:
+            nextRunTime = RUN_TIME_START
+        else:
             nextRunTime = get_time_add(self.bid_task.nextRunTime, COMPLETE_DELAY)
+            sleep_random(self.delay, message=" you can use 'Ctrl  C' stop now")
         return nextRunTime
 
-    def run(self, time=True) -> datetime:
+    def run_bid_task(self, name):
+        bid_task = BidTask(name)
+        nextRunTime = ""
+        try:
+            nextRunTime = self._run_bid_task()
+        except (WebTooManyVisits, TooManyErrorOpen):
+            # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
+            bid_task.set_task("state", "error")
+            logger.error(f"{traceback.format_exc()}")
+            nextRunTime = self.bid_task.nextRunTime + timedelta(minutes=self.error_delay)
+        return nextRunTime
+
+    def run(self) -> datetime:
         if not self.txt.file_open:
             self.txt.data_file_open()
         while 1:
-            task: BidTaskState = self.bid_task_queue.next_task(time)
-            if not task:
+            self.bid_task = self.bid_task_queue.next_task()
+            if not self.bid_task:
                 break
 
-            logger.info(f"run bid task: {task.name}")
-            task.nextRunTime = self.run_bid_task(task.name)
-            self.bid_task_queue.insert(task)
+            logger.info(f"run bid task: {self.bid_task}")
+
+            nextRunTime = self.run_bid_task(self.bid_task.name)
+            self.bid_task.set_time(nextRunTime)
+            self.bid_task_queue.insert(self.bid_task)
         self.close()
         return self.bid_task_queue.first_runtime()
 

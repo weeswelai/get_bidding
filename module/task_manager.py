@@ -10,14 +10,14 @@ from datetime import datetime
 from importlib import import_module
 from os.path import exists
 
-import module.task as Task
+
 from module import config
 from module.log import logger
 from module.utils import *
 from module.exception import *
 
 
-
+RUN_TIME_START = "2023-01-01 00:00:00"  # 默认下次运行时间
 
 class TaskNode:
     # 仅保存下次运行时间和任务名
@@ -30,7 +30,7 @@ class TaskNode:
             self.name = task
             self.nextRunTime = deep_get(config, f"{task}.nextRunTime")
         if not self.nextRunTime:
-            self.nextRunTime = Task.RUN_TIME_START
+            self.nextRunTime = RUN_TIME_START
         self.nextRunTime = str2time(self.nextRunTime)
 
 
@@ -112,7 +112,6 @@ class TaskQueue:
 class TaskManager:
     restart = False
     break_ = False
-    task: Task
     sleep_now = False
 
     def __init__(self):
@@ -138,6 +137,7 @@ class TaskManager:
     def loop(self):
         """ 死循环, 等待、完成 task.list内的任务
         """
+        from module.task import Task
         logger.info("loop start")
         logger.info(f"task.list: {config['task']['list']}")
 
@@ -200,7 +200,7 @@ class TaskManager:
                 return False
 
 
-def task_init(task: TaskNode) -> Task:
+def task_init(task: TaskNode):
     config.name = task.name
     name = task.name
     if exists(f"./module/web/{name}.py"):

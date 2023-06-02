@@ -72,7 +72,6 @@ class BidTask:
         self.stop_bid =  StopBid(settings["stopBid"])
         self.set_task("stopBid.date", self.stop_bid.date_str)
         self.interrupt_url = settings["interruptUrl"]
-        self.nextRunTime = settings["nextRunTime"]
 
     def set_task(self, key, data):
         config.set_task(f"{self.name}.{key}", data)
