@@ -51,7 +51,7 @@ class TaskQueue:
         if not node:  # empty queue
             self.head = task
         else:
-            if task.nextRunTime <= node.nextRunTime:  # insert before first
+            if task.nextRunTime < node.nextRunTime:  # insert before first
                 self._insert_first(task)
             else:
                 self._insert(task)
@@ -63,7 +63,7 @@ class TaskQueue:
             if node.next is None:
                 node.next = task
                 break
-            if  task.nextRunTime <= node.next.nextRunTime:
+            if  task.nextRunTime < node.next.nextRunTime:
                 task.next = node.next
                 node.next = task
                 break
