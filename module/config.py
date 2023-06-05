@@ -22,20 +22,19 @@ pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所
 
 IGNORE = ["lineAddLiTag"]
 if pyw_name not in IGNORE:        
-    from module.log import logger
-    from module.utils import read_json, save_json, deep_get
+    from module.utils import save_json, deep_get
 
     class Config(dict):
         name = ""
 
         def __init__(self) -> None:
-            logger.info(f"read {CONFIG_FILE}")
             c = CONFIG["test"] if TEST else CONFIG["file"]
             self.dataFolder = c["dataFolder"]
             self.file = c["jsonFIle"]
             if not os.path.exists(self.file):
                 copyfile(SETTINGS_DEFAULT, self.file)
-            d = read_json(self.file)
+            with open(self.file, "r", encoding="utf-8") as f:
+                d = loads(f.read())
             for k, v in d.items():
                 self[k] = v
             self.taskList = self["task"]["list"]
@@ -43,7 +42,7 @@ if pyw_name not in IGNORE:
         def save(self):
             save_json(self, self.file)
 
-        def read(self):
+        def reload(self):
             self = Config()
 
         def set_task(self, key, data):
@@ -63,9 +62,5 @@ if pyw_name not in IGNORE:
 
     config = Config()
     if os.path.dirname(sys.argv[0])[-3:] == "web":
-        if pyw_name != "example" :
+        if pyw_name != "base":
             config.name = pyw_name
-    if pyw_name not in ("bid_run", "task_manager", "bid_web") and config.name == "":
-        config.name = input("please input task name: ")
-    from module.log import logger
-    logger.info(f"config ready, name={config.name}")

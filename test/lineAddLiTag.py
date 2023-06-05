@@ -2,7 +2,7 @@ import sys
 from json import loads
 from os.path import exists
 
-from module import CONFIG_FILE
+from module.config import CONFIG_FILE
 from module.utils import date_days, date_now_s
 
 DATAPATH = "./data"

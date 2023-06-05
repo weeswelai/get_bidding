@@ -4,14 +4,13 @@ from urllib.parse import urlencode
 
 from requests.utils import cookiejar_from_dict
 
-
 import module.get_url as get_url
 import module.task as task
 import module.web_brows as web_brows
-from module import config
+from module.config import config
+from module.exception import *
 from module.log import logger
 from module.utils import *
-from module.exception import *
 
 
 class GetList(get_url.GetList):
@@ -113,6 +112,7 @@ class GetList(get_url.GetList):
 
     def cut_judge(self):
         from bs4 import BeautifulSoup as btfs
+
         from module.web_brows import _parse_bs_rule
         if self.res.response:
             bs = btfs(self.res.response, "html.parser")

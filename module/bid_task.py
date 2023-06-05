@@ -1,8 +1,10 @@
 
 from datetime import datetime, timedelta
-from module import config
+
+from module.config import config
 from module.utils import date_days, time_difference
 from module.web_brows import *
+
 
 class StopBid:
     date: datetime
@@ -69,6 +71,9 @@ class BidTask:
     def __init__(self, name) -> None:
         self.name = name
         settings = config.get_task(name)
+        self.state = settings["state"]
+        if self.state == "complete":
+            self.state = "run"
         self.stop_bid =  StopBid(settings["stopBid"])
         self.set_task("stopBid.date", self.stop_bid.date_str)
         self.interrupt_url = settings["interruptUrl"]
@@ -104,15 +109,15 @@ class BidTask:
         return True
 
     def complete(self):
-        """ 完成任务后, 将newest 设为 end_rule, 清除 newest 和 interrupt设置
-        将 BidTask.urlTask.state 设为 "complete"
+        """ 完成任务后, newestBid 设为 stopBid, 清除 newestBid 和 interruptBid
+        将 BidTask.state 设为 "complete"
         """
         logger.info("bid is end")
         self.state = "complete"
-        newest = self.get_task("newestBid")
-        if newest["name"]:
-            self.set_task("stopBid", newest)
-        self.set_task("newest", _bid_to_dict())
+        newestBid = self.get_task("newestBid")
+        if newestBid["name"]:
+            self.set_task("stopBid", newestBid)
+        self.set_task("newestBid", _bid_to_dict())
         self.set_task("state", "complete")
 
     def save_newest_and_interrupt(self, bid: BidBase):
@@ -127,7 +132,7 @@ class BidTask:
         self.set_task("newestBid", bid_message)
         self.set_task("state", "interrupt")  # 启动后状态设为interrupt
         self.newest = True
-        logger.info(f"set newest: {bid_message}, set complete: interrupt")
+        logger.info(f"set newestBid: {bid_message}, set complete: interrupt")
 
     def set_interrupt_url(self, list_url):
         """设置interruptUrl
@@ -144,7 +149,7 @@ class BidTask:
 
     def set_interrupt(self, bid):
         """ 在BidTask._process_tag_list中调用,若开始标志(self.start==True)
-        则保存 bid 到 self.settings["interrupt"]
+        则保存 bid 到 task.interruptBid
 
         interrupt状态下在 self.start==True后保存
         complete状态self.start默认为True
@@ -153,7 +158,7 @@ class BidTask:
             bid (brows.BidBase): 当前Bid对象
         """
         if self.start:
-            self.set_task("interrupt", _bid_to_dict(bid))
+            self.set_task("interruptBid", _bid_to_dict(bid))
 
     def return_start_url(self) -> str or dict:
         """ 对于get方式返回str, post方式返回dict
@@ -177,17 +182,17 @@ class BidTask:
         """
         logger.info(f"state = {self.state}, newest = {self.newest}, "
                     f"start = {self.start}\n"
-                    f"json: newest = {self.get_task('newest')}")
+                    f"json: newestBid = {self.get_task('newestBid')}")
         if self.state == "interrupt":
             logger.info(f"interruptUrl = {self.get_task('interruptUrl')}\n"
-                        f"interrupt = {jsdump(self.get_task('interrupt'))}")
+                        f"interruptBid = {self.get_task('interruptBid')}")
 
     def print_interrupt(self):
         """打印interrupt信息,仅在self.start==True状态下打印"""
         if self.start:
             logger.info(
-                f"interrupt.name = '{self.get_task('interrupt.name')}', "
-                f"{self.get_task('interrupt.date')}")
+                f"interruptBid.name = '{self.get_task('interruptBid.name')}', "
+                f"{self.get_task('interruptBid.date')}")
         else:
             logger.info("not start")
   

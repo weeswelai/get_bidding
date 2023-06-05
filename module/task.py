@@ -6,8 +6,8 @@ import traceback
 from copy import deepcopy
 from io import TextIOWrapper
 
-from module import config
 from module.bid_task import BidTask
+from module.config import config
 from module.exception import *
 from module.get_url import GetList
 from module.judge_content import titleTrie
@@ -20,8 +20,9 @@ DATA_PATH = config.dataFolder
 RE_OPEN_MAX = 4  # 异常时最大重新打开次数
 SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
 COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
-ERROR_DELAY = 10  # 网页打开次数过多时延迟时间
+ERROR_DELAY = "10m"  # 网页打开次数过多时延迟时间
 NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
+RESTART_TIME = -180  # 重新运行
 
 
 class BidTaskState(TaskNode):
@@ -34,27 +35,33 @@ class BidTaskState(TaskNode):
     """
     def __init__(self, name) -> None:
         self.name = name
-        self.state = config.get_task(f"{name}.state")
         nextRunTime = config.get_task(f"{name}.nextRunTime")
         self.nextRunTime = str2time(nextRunTime) if nextRunTime else \
                            str2time(RUN_TIME_START)
 
     def set_time(self, nextRunTime: datetime):
         self.nextRunTime = nextRunTime
-        config.set_task(f"{self.name}.nextRunTime", str(nextRunTime))
+        config.set_task(f"{self.name}.nextRunTime", str(nextRunTime)[0: 19])
 
 
 class BidTaskQueue(TaskQueue):
+    task: BidTaskState = None
 
     def __init__(self, run_error=False):
         for name in config.get_task("TaskList"):
-            bid_task = BidTaskState(name)
-            self.insert(bid_task)
+            task_node = BidTaskState(name)
+            self.insert(task_node)
 
     def next_task(self) -> BidTaskState:
         if self.first_runtime() < datetime.now():
             return self.pop()
         return
+    
+    def restart(self):
+        t: BidTaskState = self.head
+        while t:
+            t.nextRunTime = str2time(RUN_TIME_START)
+            t = t.next
 
 
 class DataFileTxt:
@@ -114,6 +121,8 @@ class DataFileTxt:
             self._write("list", data)
 
     def _write(self, file, data):
+        if not self.file_open:
+            self.data_file_open()
         if data[-1] != "\n":
             data = f"{data}\n"
         for k, v in self.file.items():
@@ -126,14 +135,15 @@ class DataFileTxt:
         self.write_list(data)
 
     def flush(self):
-        for fi in self.file.values():
-            fi: TextIOWrapper
-            fi.flush()
+        if self.file_open:
+            for fi in self.file.values():
+                fi: TextIOWrapper
+                fi.flush()
 
 
 class Task:
     list_url = ""
-    bid_task: BidTaskState
+    bid_task: BidTask
     bid: BidBase
     tag: BidTag
     get_list: GetList
@@ -142,7 +152,7 @@ class Task:
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
 
-    def __init__(self, name="test") -> None:
+    def __init__(self, name="default") -> None:
         """ 初始化任务, 保存settings 和 name
         Args:
             name(str): 
@@ -157,6 +167,9 @@ class Task:
         delay = config.get_task("task.nextOpenDelay")
         self.delay = [int(t) for t in delay.split(",")] \
             if delay else NEXT_OPEN_DELAY
+
+        complete_delay = config.get_task("task.completeDelay")
+        self.complete_delay = complete_delay if complete_delay else COMPLETE_DELAY
 
         self.next_rule = init_re(settings["task"]["next_pages"])
         logger.info(f"init task {self.name}, list brows:\n"
@@ -306,76 +319,42 @@ class Task:
     def _run_bid_task(self):
         while 1:
             result = self.process_next_list_web()
+            sleep_random(self.delay, message=" you can use 'Ctrl  C' stop now")
             if not result:
                 break
         logger.info(f"{self.name} {self.bid_task.name} is complete")
-        if self.bid_task.interrupt:
-            nextRunTime = RUN_TIME_START
-        else:
-            nextRunTime = get_time_add(self.bid_task.nextRunTime, COMPLETE_DELAY)
-            sleep_random(self.delay, message=" you can use 'Ctrl  C' stop now")
-        return nextRunTime
 
-    def run_bid_task(self, name):
-        bid_task = BidTask(name)
-        nextRunTime = ""
+    def run_bid_task(self, name) -> datetime:
+        self.bid_task = BidTask(name)
         try:
-            nextRunTime = self._run_bid_task()
+            self._run_bid_task()
+            time_add = RESTART_TIME if self.bid_task.interrupt else self.complete_delay
         except (WebTooManyVisits, TooManyErrorOpen):
             # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
-            bid_task.set_task("state", "error")
+            self.bid_task.set_task("state", "error")
             logger.error(f"{traceback.format_exc()}")
-            nextRunTime = self.bid_task.nextRunTime + timedelta(minutes=self.error_delay)
-        return nextRunTime
+            time_add = self.error_delay
+        return datetime.now() + get_time_add(time_add)
 
-    def run(self) -> datetime:
+    def run(self, restart=False) -> datetime:
         if not self.txt.file_open:
             self.txt.data_file_open()
+        if restart:
+            self.bid_task_queue.restart()
         while 1:
-            self.bid_task = self.bid_task_queue.next_task()
-            if not self.bid_task:
+            self.bid_task_queue.print()
+            bid_task: BidTaskState = self.bid_task_queue.next_task()
+            if not bid_task:
+                logger.info("no bid task ready")
                 break
-
-            logger.info(f"run bid task: {self.bid_task}")
-
-            nextRunTime = self.run_bid_task(self.bid_task.name)
-            self.bid_task.set_time(nextRunTime)
-            self.bid_task_queue.insert(self.bid_task)
+            logger.info(f"run bid task: {bid_task}")
+            nextRunTime = self.run_bid_task(bid_task.name)
+            bid_task.set_time(nextRunTime)
+            config.save()
+            self.bid_task_queue.insert(bid_task)
         self.close()
         return self.bid_task_queue.first_runtime()
 
     def close(self):
         self.txt.data_file_exit()
         self.get_list.s.close()
-
-
-def _bid_to_dict(bid_prj=None):
-    if isinstance(bid_prj, list):
-        return {
-            "name": bid_prj[0],
-            "date": bid_prj[1],
-            "url": bid_prj[2]
-        }
-    elif isinstance(bid_prj, dict):
-        return bid_prj
-    elif isinstance(bid_prj, BidBase):
-        return {
-            "name": bid_prj.name,
-            "date": bid_prj.date,
-            "url": bid_prj.url
-        }
-    else:
-        return {key: "" for key in ("name", "date", "url")}
-
-
-# # TODO 写得很*, 重写
-# def task_run(self, task: Task):
-    
-
-#     config.set_task(f"{task.bid_task.name}.error", True)
-
-#     logger.warning(f"open_list_url_error, delay {delay}")
-#     nextRunTime = get_time_add(delay=delay)
-#     deep_set(config, f"{task.name}.nextRunTime", nextRunTime)
-#     config.save()
-#     task.close()

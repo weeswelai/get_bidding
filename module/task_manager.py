@@ -11,7 +11,7 @@ from importlib import import_module
 from os.path import exists
 
 
-from module import config
+from module.config import config
 from module.log import logger
 from module.utils import *
 from module.exception import *
@@ -206,7 +206,7 @@ def task_init(task: TaskNode):
     if exists(f"./module/web/{name}.py"):
         mod = import_module(f"module.web.{name}")
     else:
-        mod = import_module(f"module.web.example")
+        mod = import_module(f"module.web.base")
     return mod.Task(name)
 
 

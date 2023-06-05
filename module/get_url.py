@@ -14,7 +14,7 @@ from urllib.parse import urlencode, urlparse
 import requests
 import requests.utils as requtils
 
-from module import config
+from module.config import config
 from module.exception import *
 from module.log import logger
 from module.utils import *

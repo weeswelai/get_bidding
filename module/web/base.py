@@ -37,4 +37,10 @@ class Task(task.Task):
 
 if __name__ == "__main__":
     # test code
+    from module.config import config
+    config.name = "zzlh"
+    self = Task("zzlh")
+    self.run(restart=True)
+    # logger.info(self.run_bid_task("服务"))
+    config.save()
     pass

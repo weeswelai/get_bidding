@@ -10,7 +10,7 @@
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
 
-from module import config
+from module.config import config
 from module.log import logger
 from module.utils import *
 

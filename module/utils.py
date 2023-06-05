@@ -175,7 +175,7 @@ def date_days(change_days=0, format=None):
     return (datetime.now() + timedelta(days=change_days)).strftime(format)
 
 
-def get_time_add(time_base="", delay="1h") -> str:
+def get_time_add(delay="1h") -> timedelta:
     """
     Args:
         min:
@@ -183,8 +183,6 @@ def get_time_add(time_base="", delay="1h") -> str:
     Returns:
         time_base + time_add
     """
-    if isinstance(time_base, str):
-        time_base = datetime.strptime(time_base) if time_base else datetime.now()
     if isinstance(delay, int):
         time_add = timedelta(minutes=delay)
     if isinstance(delay, str):
@@ -195,7 +193,7 @@ def get_time_add(time_base="", delay="1h") -> str:
             time_add = timedelta(days=time_)
         elif unit == "m":
             time_add = timedelta(minutes=time_)
-    return (time_base + time_add).strftime('%Y-%m-%d %H:%M:%S')
+    return time_add
 
 
 def sleep_random(time_range: tuple = (2, 3), message: str = None):
