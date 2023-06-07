@@ -209,7 +209,7 @@ class BidTask:
         return False
  
     def bid_judge(self, bid: BidBase, idx: int):
-        if self.compare_last_first(idx, bid) or self.stop_bid.bid_is_end(bid):
+        if self.compare_last_first(idx, bid.infoList) or self.stop_bid.bid_is_end(bid):
             self.complete(bid)
             return True
         if not self.newest:  # complete 状态只执行一次, interrupt状态不执行
