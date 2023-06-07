@@ -135,7 +135,7 @@ class ListBrows(web_brows.ListBrows):
     pass
 
 
-class Task(task.BidTask):
+class Task(task.Task):
     def __init__(self, name) -> None:
         self.get_list = GetList()
         self.bid = BidBase()

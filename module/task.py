@@ -347,7 +347,7 @@ class Task:
             if not bid_task:
                 logger.info("no bid task ready")
                 break
-            logger.info(f"run bid task: {bid_task}")
+            logger.info(f"run bid task: {bid_task.name}")
             nextRunTime = self.run_bid_task(bid_task.name)
             bid_task.set_time(nextRunTime)
             config.save()

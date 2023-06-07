@@ -108,7 +108,7 @@ class BidTask:
         self.start = True
         return True
 
-    def complete(self):
+    def complete(self, bid: BidBase):
         """ 完成任务后, newestBid 设为 stopBid, 清除 newestBid 和 interruptBid
         将 BidTask.state 设为 "complete"
         """
@@ -119,6 +119,8 @@ class BidTask:
             self.set_task("stopBid", newestBid)
         self.set_task("newestBid", _bid_to_dict())
         self.set_task("state", "complete")
+        logger.info(f"bid end at {bid.infoList}")
+        logger.info(f"stopBid: {self.stop_bid}")
 
     def save_newest_and_interrupt(self, bid: BidBase):
         """ 保存最新的招标项目信息, 设置 compelete 为 interrupt
@@ -191,30 +193,24 @@ class BidTask:
         """打印interrupt信息,仅在self.start==True状态下打印"""
         if self.start:
             logger.info(
-                f"interruptBid.name = '{self.get_task('interruptBid.name')}', "
+                f"interruptBid = '{self.get_task('interruptBid.name')}', "
                 f"{self.get_task('interruptBid.date')}")
         else:
             logger.info("not start")
   
-    def compare_last_first(self, infoList):
+    def compare_last_first(self, idx, infoList):
         """ 比较每页第一个项目信息是否与上一页第一个完全相等, 若相等返回True
         """
         if infoList == self.first_bid:
+            logger.info(f"open out of pages, bid is end")
             return True
-        self.first_bid = infoList
+        if not idx:
+            self.first_bid = infoList
         return False
  
     def bid_judge(self, bid: BidBase, idx: int):
-        if not idx and self.compare_last_first(bid):
-            self.complete()
-            logger.info(f"open out of pages, bid is end")
-            return True
-        if self.stop_bid.bid_is_end(bid):
-            self.complete()
-            logger.info(f"bid end at {bid.infoList}")
-            logger.info(f"end_rule: {self.stop_bid}")
-            if idx == 0:
-                logger.info(f"idx = {idx}, tag now: {bid.infoList}")
+        if self.compare_last_first(idx, bid) or self.stop_bid.bid_is_end(bid):
+            self.complete(bid)
             return True
         if not self.newest:  # complete 状态只执行一次, interrupt状态不执行
             self.save_newest_and_interrupt(bid)

@@ -73,7 +73,7 @@ class ListBrows(web_brows.ListBrows):
         return deep_get(self.bs, tag_list)
 
 
-class Task(task.BidTask):
+class Task(task.Task):
     def __init__(self, name) -> None:
         self.get_list = GetList()
         self.bid = BidBase()
