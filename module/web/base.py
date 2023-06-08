@@ -26,7 +26,7 @@ class ListBrows(web_brows.ListBrows):
     pass
 
 
-class Task(task.BidTask):
+class Task(task.Task):
     def __init__(self, name) -> None:
         self.get_list = GetList()
         self.bid = BidBase()
@@ -37,4 +37,10 @@ class Task(task.BidTask):
 
 if __name__ == "__main__":
     # test code
+    from module.config import config
+    config.name = "zzlh"
+    self = Task("zzlh")
+    self.run(restart=True)
+    # logger.info(self.run_bid_task("服务"))
+    config.save()
     pass

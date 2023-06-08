@@ -15,32 +15,32 @@
       "hkgy",
       "jdcg",
       "zhzb",
-      "zgzf",
-      "cebpub"
+      "cebpub",
+      "zgzf"
     ],
-    "run_time": "",
-    "save_data": "./data/bid_list.txt",
-    "match_data": "./data/match_list.txt"
+    "run_time": ""
   },
   "zzlh": {
     "nextRunTime": "",
-    "PageQueue": [],
-    "PageWait": [
+    "TaskList": [
       "货物",
       "服务"
     ],
+    "task": {
+      "next_pages": "(?<=_)\\d{1,3}(?<=\\d)",
+      "errorDelay": "10m"
+    },
     "OpenConfig": {
       "method": "GET",
       "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+        "Referer": "http://www.365trade.com.cn/zbgg/index_15.jhtml?typeId=103"
       },
-      "cookies": "",
-      "next_pages": "(?<=_)\\d{1,3}(?<=\\d)",
+      "cookies": {},
       "cut_rule": {
         "re_rule": "(<ul class=\"searchList\">).*?(</ul>)",
         "rule_option": 16
-      },
-      "errorDelay": "10m"
+      }
     },
     "BidTag": {
       "name_r": "tagName_find:a.p.span|title:",
@@ -58,61 +58,63 @@
       }
     },
     "货物": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "服务": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=103",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     }
   },
   "hkgy": {
     "nextRunTime": "",
-    "PageQueue": [],
-    "PageWait": [
+    "TaskList": [
       "招标公告"
     ],
+    "task": {
+      "next_pages": "(?<=pageNo\\=)\\d{1,3}"
+    },
     "OpenConfig": {
       "method": "GET",
       "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+        "Referer": "https://ebid.eavic.com/cms/channel/ywgg1/index.htm?pageNo=1"
       },
-      "cookies": "",
-      "next_pages": "(?<=pageNo\\=)\\d{1,3}",
+      "cookies": {},
       "cut_rule": {
         "re_rule": "(<ul id=\"list1\">).*?(</ul>)",
         "rule_option": 16
@@ -134,31 +136,30 @@
       }
     },
     "招标公告": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://ebid.eavic.com/cms/channel/ywgg1/index.htm?pageNo=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     }
   },
   "jdcg": {
     "nextRunTime": "",
-    "PageQueue": [],
-    "PageWait": [
+    "TaskList": [
       "物资_公开招标",
       "物资_邀请招标",
       "物资_竞争性谈判",
@@ -166,6 +167,9 @@
       "服务_邀请招标",
       "服务_竞争性谈判"
     ],
+    "task": {
+      "next_pages": "(?<=\\?page\\=)\\d{1,3}"
+    },
     "OpenConfig": {
       "method": "GET",
       "headers": {
@@ -181,10 +185,10 @@
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
         "sec-ch-ua": "\"Google Chrome\";v=\"111\", \"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"111\"",
         "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\""
+        "sec-ch-ua-platform": "\"Windows\"",
+        "Referer": "https://www.plap.cn/index/selectsumBynews.html?page=9&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate="
       },
-      "cookies": "",
-      "next_pages": "(?<=\\?page\\=)\\d{1,3}",
+      "cookies": {},
       "cut_rule": {
         "re_rule": "(<ul class=\"categories li_square col-md-12 col-sm-12 col-xs-12 p0 list_new\">).*?(</ul>)",
         "rule_option": 16
@@ -206,135 +210,135 @@
       }
     },
     "物资_公开招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "物资_邀请招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "物资_竞争性谈判": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "服务_公开招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=13&twoid=34&title=&productType=&productTypeName=&tab=%25E6%259C%258D%25E5%258A%25A1&lastArticleTypeName=%25E5%2585%25AC%25E5%25BC%2580%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "服务_邀请招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=13&twoid=34&title=&productType=&productTypeName=&tab=%25E6%259C%258D%25E5%258A%25A1&lastArticleTypeName=%25E9%2582%2580%25E8%25AF%25B7%25E6%258B%259B%25E6%25A0%2587&publishStartDate=&publishEndDate=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "服务_竞争性谈判": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://www.plap.cn/index/selectsumBynews.html?page=1&id=13&twoid=34&title=&productType=&productTypeName=&tab=%25E6%259C%258D%25E5%258A%25A1&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     }
   },
   "qjc": {
     "nextRunTime": "",
-    "PageQueue": [
+    "TaskList": [
       "公告1_公开招标",
       "公告1_邀请招标",
       "公告1_竞争性谈判",
@@ -344,15 +348,16 @@
       "需求1",
       "需求2"
     ],
-    "PageWait": [],
+    "task": {
+      "next_pages": "(?<=pageNo\\=)\\d{1,3}"
+    },
     "OpenConfig": {
       "method": "GET",
       "headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-        "Referer": "http://www.weain.mil.cn/"
+        "Referer": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231318006472705&pageNo=3&purchaseType=%E7%AB%9E%E4%BA%89%E6%80%A7%E8%B0%88%E5%88%A4&_t=1686201801059"
       },
-      "cookies": "",
-      "next_pages": "(?<=pageNo\\=)\\d{1,3}",
+      "cookies": {},
       "cut_rule": {
         "re_rule": ".*",
         "rule_option": 16
@@ -374,188 +379,189 @@
       }
     },
     "公告1_公开招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231276155707394&pageNo=1&purchaseType=%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "公告1_邀请招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231276155707394&pageNo=1&purchaseType=%E9%82%80%E8%AF%B7%E6%8B%9B%E6%A0%87",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "公告1_竞争性谈判": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231276155707394&pageNo=1&purchaseType=%E7%AB%9E%E4%BA%89%E6%80%A7%E8%B0%88%E5%88%A4",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "公告2_公开招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231318006472705&pageNo=1&purchaseType=%E5%85%AC%E5%BC%80%E6%8B%9B%E6%A0%87",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "公告2_邀请招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231318006472705&pageNo=1&purchaseType=%E9%82%80%E8%AF%B7%E6%8B%9B%E6%A0%87",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "公告2_竞争性谈判": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231318006472705&pageNo=1&purchaseType=%E7%AB%9E%E4%BA%89%E6%80%A7%E8%B0%88%E5%88%A4",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "需求1": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cgxq/list?LMID=HZ287281676ce46401676cf0975c000e&pageNo=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "需求2": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://www.weain.mil.cn/api/front/list/cgxq/list?LMID=HZ287281676ce46401676cf59ca5001b&pageNo=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     }
   },
   "zhzb": {
     "nextRunTime": "",
-    "PageQueue": [],
-    "PageWait": [
+    "TaskList": [
       "招标公告"
     ],
-    "errorDelay": "3h",
+    "task": {
+      "next_pages": "",
+      "errorDelay": "3h"
+    },
     "OpenConfig": {
       "method": "POST",
       "headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       },
       "cookies": {},
-      "next_pages": "",
       "cut_rule": {
         "re_rule": "<li>.*?(?=,)",
         "rule_option": 16
@@ -578,6 +584,8 @@
       }
     },
     "招标公告": {
+      "state": "",
+      "nextRunTime": "",
       "url": {
         "url": "http://bid.aited.cn/front/ajax_getBidList.do",
         "form": {
@@ -586,41 +594,49 @@
           "page": 1
         }
       },
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "interruptUrl": "",
-      "interrupt": {
+      "interruptUrl":{
+        "url": "http://bid.aited.cn/front/ajax_getBidList.do",
+        "form": {
+          "classId": 151,
+          "key": -1,
+          "page": 1
+        }
+      },
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     }
   },
   "zgzf": {
     "nextRunTime": "",
-    "PageQueue": [
+    "TaskList": [
       "公开招标",
       "竞争性谈判",
       "邀请招标",
       "竞争性磋商"
     ],
-    "PageWait": [],
     "test": [
-      "公开招标",
       "竞争性谈判",
       "邀请招标",
       "竞争性磋商"
     ],
+    "task": {
+      "next_pages": "(?<=page_index=)\\d{1,3}",
+      "errorDelay": "5m",
+      "nextOpenDelay": "3,4"
+    },
     "OpenConfig": {
       "method": "GET",
       "headers": {
@@ -630,19 +646,13 @@
         "Connection": "keep-alive",
         "Accept-Encoding": "gzip",
         "Host": "search.ccgp.gov.cn",
-        "Referer": "http://search.ccgp.gov.cn"
+        "Referer": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=8&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=1&dbselect=bidx&kw=&start_time=2023%3A06%3A08&end_time=2023%3A06%3A02&timeType=2&displayZone=&zoneId=&pppStatus=0&agentName="
       },
-      "cookies": {
-        "Hm_lvt_9459d8c503dd3c37b526898ff5aacadd": "1684291341",
-        "Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd": "1684400569"
-      },
-      "next_pages": "(?<=page_index=)\\d{1,3}",
+      "cookies": {},
       "cut_rule": {
         "re_rule": "(<ul class=\"vT-srch-result-list-bid\">).*?(</ul>)",
         "rule_option": 16
-      },
-      "errorDelay": "5m",
-      "nextOpenDelay": "3,4"
+      }
     },
     "BidTag": {
       "name_r": "tagName_find:a|_Text:",
@@ -669,108 +679,110 @@
       "timeType=": "0:今日, 1:近3天, 2:近一周, 6:指定时间"
     },
     "公开招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=1&dbselect=bidx&kw=&displayZone=&zoneId=&pppStatus=0&agentName=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "",
-      "error": false
+      }
     },
     "竞争性谈判": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=3&dbselect=bidx&kw=&displayZone=&zoneId=&pppStatus=0&agentName=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "邀请招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=6&dbselect=bidx&kw=&displayZone=&zoneId=&pppStatus=0&agentName=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "竞争性磋商": {
+      "state": "",
+      "nextRunTime": "",
       "url": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=10&dbselect=bidx&kw=&displayZone=&zoneId=&pppStatus=0&agentName=",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     }
   },
   "cebpub": {
     "nextRunTime": "",
-    "PageQueue": [],
-    "PageWait": [
+    "TaskList": [
       "航空航天",
       "信息电子",
       "广电通信",
       "民航",
       "其他"
     ],
+    "task": {
+      "next_pages": "(?<=&page=)\\d{1,3}",
+      "errorDelay": "10m"
+    },
     "OpenConfig": {
       "method": "GET",
       "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+        "Referer": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-06-08&dates=300&word=&categoryId=88&industryName=G05&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1"
       },
       "cookies": {},
-      "errorDelay": "10m",
-      "next_pages": "(?<=&page=)\\d{1,3}",
       "cut_rule": {
         "re_rule": "(?<=</tr>).*(?=</table>)",
         "rule_option": 16
@@ -795,150 +807,150 @@
     "公开招标": {
       "说明": "该项目非常杂,且无用信息数量庞大,4天就有500页,不再启用",
       "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1996-06-21&dates=300&word=&categoryId=88&industryName=&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "interrupt",
-      "error": false
+      }
     },
     "航空航天": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G17&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "信息电子": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G20&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "广电通信": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G09&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "民航": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G05&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     },
     "其他": {
+      "state": "",
+      "nextRunTime": "",
       "url": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?dates=300&word=&categoryId=88&industryName=G99&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "complete",
-      "error": false
+      }
     }
   },
   "default": {
     "nextRunTime": "",
-    "PageQueue": [
-      "urlTask1"
+    "TaskList": [
+      "公开招标"
     ],
-    "PageWait": [],
+    "task": {
+      "next_pages": "",
+      "errorDelay": "10m",
+      "nextOpenDelay": "2,3"
+    },
     "OpenConfig": {
       "method": "GET or POST",
       "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+        "Connection": "keep-alive"
       },
       "cookies": {},
-      "next_pages": "",
       "cut_rule": {
         "re_rule": "",
         "rule_option": 16
-      },
-      "errorDelay": "10m",
-      "nextOpenDelay": "2,3"
+      }
     },
     "BidTag": {
       "name_r": "",
@@ -955,26 +967,26 @@
         "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
       }
     },
-    "urlTask1": {
+    "公开招标": {
+      "state": "",
+      "nextRunTime": "",
       "url": "",
-      "newest": {
+      "newestBid": {
         "name": "",
         "date": "",
         "url": ""
       },
       "interruptUrl": "",
-      "interrupt": {
+      "interruptBid": {
         "name": "",
         "date": "",
         "url": ""
       },
-      "end_rule": {
+      "stopBid": {
         "name": "",
         "date": "",
         "url": ""
-      },
-      "complete": "",
-      "error": false
+      }
     }
   }
 }

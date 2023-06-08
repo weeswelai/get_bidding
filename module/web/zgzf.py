@@ -4,14 +4,13 @@ from urllib.parse import urlencode
 
 from requests.utils import cookiejar_from_dict
 
-
 import module.get_url as get_url
 import module.task as task
 import module.web_brows as web_brows
-from module import config
+from module.config import config
+from module.exception import *
 from module.log import logger
 from module.utils import *
-from module.exception import *
 
 
 class GetList(get_url.GetList):
@@ -113,6 +112,7 @@ class GetList(get_url.GetList):
 
     def cut_judge(self):
         from bs4 import BeautifulSoup as btfs
+
         from module.web_brows import _parse_bs_rule
         if self.res.response:
             bs = btfs(self.res.response, "html.parser")
@@ -135,7 +135,7 @@ class ListBrows(web_brows.ListBrows):
     pass
 
 
-class Task(task.BidTask):
+class Task(task.Task):
     def __init__(self, name) -> None:
         self.get_list = GetList()
         self.bid = BidBase()
@@ -150,11 +150,11 @@ class Task(task.BidTask):
                 del(self.get_list.config.cookies[k])
         super().close()
 
-    def tag_filterate(self):
-        if self.bid.type.split("|")[0] in \
-            ("公开招标公告", "竞争性谈判公告", "邀请招标公告", "竞争性磋商公告"):
-            # logger.debug(self.bid.name)
-            return True
+    # def tag_filterate(self):
+    #     if self.bid.type.split("|")[0] in \
+    #         ("公开招标公告", "竞争性谈判公告", "邀请招标公告", "竞争性磋商公告"):
+    #         # logger.debug(self.bid.name)
+    #         return True
 
 
 if __name__ == "__main__":

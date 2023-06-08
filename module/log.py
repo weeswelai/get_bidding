@@ -12,7 +12,7 @@ from queue import Queue
 from logging import addLevelName
 from logging.handlers import QueueHandler
 
-from module import TEST
+from module.config import TEST, CONFIG_FILE
 
 # 定义输出格式
 file_formatter = logging.Formatter(
@@ -32,7 +32,7 @@ os.chdir(os.path.join(os.path.dirname(__file__), '../'))
 pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所在的文件,去掉.py和文件夹前缀
 
 if TEST:
-    pyw_name = pyw_name + "_test"
+    pyw_name += "_test"
 
 # 设置 控制台handler
 console_hdlr = logging.StreamHandler()
@@ -145,6 +145,7 @@ logger.hr = hr
 
 # from module.bid_log import logger 时输出日志"start",多个import只会执行一次
 logger.hr('start', level=0)
+logger.info(f"read {CONFIG_FILE}")
 
 if __name__ == "__main__":
     show() # 输出示例

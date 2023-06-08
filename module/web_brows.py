@@ -10,7 +10,7 @@
 from bs4 import BeautifulSoup as btfs
 from bs4 import Tag
 
-from module import config
+from module.config import config
 from module.log import logger
 from module.utils import *
 
@@ -186,7 +186,7 @@ class BidBase:
             self.rule_now = key
             rule = getattr(self, f"{key}_cut")
             setattr(self, key, _re_get_str(args[idx], rule))
-        
+
         self._url()  # TODO 是否应该根据type进行选择?
         self._date()
         self._name()
@@ -244,7 +244,6 @@ class ListBrows:
     """
     html_cut = ""  # cut_html 后保存
     bs: Tag or dict = None
-    first_bid: list = None
 
     def __init__(self, settings=None):
         settings = settings if settings else config.get_task()
@@ -270,14 +269,6 @@ class ListBrows:
 
         self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
         return self.bs.find_all(tag_list)
-
-    def compare_last_first(self, infoList):
-        """ 比较每页第一个项目信息是否与上一页第一个完全相等, 若相等返回True
-        """
-        if infoList == self.first_bid:
-            return True
-        self.first_bid = infoList
-        return False
 
 
 # class BidHtml(ReqOpen):
