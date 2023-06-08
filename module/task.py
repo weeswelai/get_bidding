@@ -219,7 +219,7 @@ class Task:
         if not self.match_num:
             logger.info("no match")
         if self.bid_task.state == "complete":
-            self._complete_page_task()
+            self._complete_bid_task()
             return False  # state结束
         return True  # state继续
 
@@ -313,8 +313,8 @@ class Task:
             self.txt.write_match(result)
             self.match_num += 1
 
-    def _complete_page_task(self):
-        pass
+    def _complete_bid_task(self):
+        self.bid_task.set_task("interruptBid.url", "")
 
     def _run_bid_task(self):
         while 1:
@@ -347,7 +347,7 @@ class Task:
             if not bid_task:
                 logger.info("no bid task ready")
                 break
-            logger.info(f"run bid task: {bid_task.name}")
+            logger.info(f"run bid task: {self.name}  {bid_task.name}")
             nextRunTime = self.run_bid_task(bid_task.name)
             bid_task.set_time(nextRunTime)
             config.save()

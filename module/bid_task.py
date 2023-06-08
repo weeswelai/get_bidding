@@ -16,7 +16,7 @@ class StopBid:
         self.date_init()
 
     def __str__(self) -> str:
-        return f"{self.name}, {self.date_str}, {self.url}"
+        return f"{self.name}, {str(self.date)}, {self.url}"
 
     def date_init(self):
         """ 判断 stopBid 是否合法
@@ -44,9 +44,8 @@ class StopBid:
                 and bid_prj.url == self.url:
             return True
         # 超出时间限制时停止
-        if self.date_str:
-            if self._date_is_end(bid_prj.date):
-                return True
+        if self._date_is_end(bid_prj.date):
+            return True
         return False
 
     def _date_is_end(self, date: str):
@@ -72,17 +71,33 @@ class BidTask:
         self.name = name
         settings = config.get_task(name)
         self.state = settings["state"]
-        if self.state == "complete":
-            self.state = "run"
         self.stop_bid =  StopBid(settings["stopBid"])
         self.set_task("stopBid.date", self.stop_bid.date_str)
         self.interrupt_url = settings["interruptUrl"]
+        self.interrupt_bid = settings["interruptBid"]
+        self.get_state()
+        logger.info(f"newestBid: {self.get_task('newestBid')}")
+        logger.info(f"stopBid: {self.stop_bid}")
 
     def set_task(self, key, data):
         config.set_task(f"{self.name}.{key}", data)
 
     def get_task(self, key=""):
         return config.get_task(f"{self.name}.{key}")
+
+    def get_state(self):
+        if self.state in ["complete", ""]:
+            self.state = "run"
+
+        elif self.state in ["error", "interrupt"]:
+            if self.interrupt_bid["name"] and self.interrupt_bid["date"] and \
+               self.interrupt_bid["url"]:
+                self.state = "interrupt"
+                self.start = False
+                self.interrupt = True
+        logger.info(f"newest: {self.newest}, "
+                    f"interrupt: {self.interrupt}, "
+                    f"start: {self.start}")
 
     def bid_is_start(self,bid_prj: BidBase):
         """判断条件为: name, date, url 三个信息必须全部符合, 符合返回True 并
@@ -98,9 +113,9 @@ class BidTask:
         """
         if self.start:
             return
-        for key in self.interrupt:  # name, date, url
-            if getattr(bid_prj, key) == self.interrupt[key] \
-                    and self.interrupt[key]:
+        for key in self.interrupt_bid:  # name, date, url
+            if getattr(bid_prj, key) == self.interrupt_bid[key] \
+                    and self.interrupt_bid[key]:
                 continue
             else:  # 有一个不符合条件直接返回False
                 return False  # 不满足则退出判断
@@ -215,6 +230,7 @@ class BidTask:
         if not self.newest:  # complete 状态只执行一次, interrupt状态不执行
             self.save_newest_and_interrupt(bid)
         return False
+
 
 def _bid_to_dict(bid_prj=None):
     if isinstance(bid_prj, list):

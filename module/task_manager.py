@@ -153,9 +153,8 @@ class TaskManager:
                 continue
 
             self.web_break()
-            # self.sleep_now = False
             taskNode.nextRunTime = task.run()
-            config.set_task("nexRunTime", time2str(taskNode.nextRunTime))
+            config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
             config.save()
             self.queue.insert(taskNode)
 
