@@ -315,6 +315,7 @@ class Task:
 
     def _complete_bid_task(self):
         self.bid_task.set_task("interruptBid.url", "")
+        self.list_url = ""
 
     def _run_bid_task(self):
         while 1:
