@@ -10,18 +10,16 @@ from datetime import datetime
 from importlib import import_module
 from os.path import exists
 
-
 from module.config import config
+from module.exception import *
 from module.log import logger
 from module.utils import *
-from module.exception import *
-
 
 RUN_TIME_START = "2023-01-01 00:00:00"  # 默认下次运行时间
 
 class TaskNode:
     # 仅保存下次运行时间和任务名
-    nextRunTime: datetime = None
+    nextRunTime: datetime
     name: str = "test"
     next = None
 
@@ -37,6 +35,7 @@ class TaskNode:
 class TaskQueue:
     head = None
     len = 0
+    restart = False
 
     def __init__(self) -> None:
         for t in config.taskList:
@@ -55,7 +54,6 @@ class TaskQueue:
                 self._insert_first(task)
             else:
                 self._insert(task)
-        self.len += 1
 
     def _insert(self, task:TaskNode):
         node = self.head
@@ -71,7 +69,7 @@ class TaskQueue:
                 node: TaskNode = node.next
 
     def is_empty(self):
-        if self.head is None and self.len == 0:
+        if self.head is None:
             logger.info("queue is empty")
             return True
         return False
@@ -84,6 +82,7 @@ class TaskQueue:
     def print(self):
         if self.is_empty():
             logger.info(f"queue is empty")
+            return
         q = self.head
         while 1:
             logger.info(f"{q.name}: {time2str(q.nextRunTime)}")
@@ -92,12 +91,10 @@ class TaskQueue:
                 break
 
     def pop(self):
-        if self.is_empty():
-            return None
+        assert not self.is_empty(), "queue is empty, cannot pop"
         q = self.head
         self.head = q.next
         q.next = None
-        self.len -= 1
         return q
 
     def first_runtime(self):
@@ -109,8 +106,7 @@ class TaskQueue:
         self.insert(self.pop())
 
 
-class TaskManager:
-    restart = False
+class TaskManager(TaskQueue):
     break_ = False
     sleep_now = False
 
@@ -120,8 +116,8 @@ class TaskManager:
 
         """
         logger.hr("TaskManager.__init__", 3)
-        self.queue = TaskQueue()
-        deep_set(config, "task.run_time", date_now_s())  # 写入运行时间
+        config.set_("task.run_time", date_now_s())  # 写入运行时间
+        super().__init__()
 
     def web_break(self):
         """判断 break_属性,若为True,抛出WebBreak异常"""
@@ -138,28 +134,31 @@ class TaskManager:
         """ 死循环, 等待、完成 task.list内的任务
         """
         from module.task import Task
-        logger.info("loop start")
+        if self.restart:
+            queue_restart(self)
+        logger.hr("loop start", 0)
         logger.info(f"task.list: {config['task']['list']}")
 
-        if self.queue.is_empty():
+        if self.is_empty():
             logger.info(f"json: task.list is {config.taskList}")
             raise WebBreak
         while 1:
             if self.next_task_ready():
-                taskNode: TaskNode = self.queue.pop()
+                taskNode: TaskNode = self.pop()
                 task: Task = task_init(taskNode)
             else:
-                self.sleep(self.queue.first_runtime())  # 阻塞sleep定时
+                self.sleep(self.first_runtime())  # 阻塞sleep定时
                 continue
 
             self.web_break()
             taskNode.nextRunTime = task.run()
             config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
             config.save()
-            self.queue.insert(taskNode)
+            self.insert(taskNode)
 
     def sleep(self, nextRunTime: datetime):
         """阻塞的定时器,阻塞间隔为5秒"""
+        logger.hr("task manager sleep")
         config.save()
         # self.sleep_now = True
         time_sleep = (nextRunTime - datetime.now()).total_seconds() + 1
@@ -181,7 +180,7 @@ class TaskManager:
     def next_task_ready(self) -> bool:
         """ 若第一个任务时间到了执行时间则返回True
         """
-        task: TaskNode = self.queue.head
+        task: TaskNode = self.head
         logger.info(f"first task {task.name} nextRunTime: {task.nextRunTime}")
         now = datetime.now().replace(microsecond=0)
         # 若不处于 当天08:30到18:00的区间内, 将时间延迟至第二天或当天08点30
@@ -190,7 +189,7 @@ class TaskManager:
             task.nextRunTime = nextRunTime
             deep_set(config, f"{task.name}.nextRunTime", str(nextRunTime))
             logger.info(f"set {task.name} nextRunTime {nextRunTime}")
-            self.queue.re_insert()
+            self.re_insert()
             return False
         else:
             if task.nextRunTime <= now:
@@ -206,6 +205,7 @@ def task_init(task: TaskNode):
         mod = import_module(f"module.web.{name}")
     else:
         mod = import_module(f"module.web.base")
+    logger.hr(f"task {name}", 1)
     return mod.Task(name)
 
 
@@ -220,6 +220,21 @@ def during_runtime(time: datetime) -> datetime or None:
     elif today18 < time < tomorrow00:
         return today07_30 + oneDay
     return None
+
+
+def queue_restart(queue: TaskQueue):
+    if not queue.restart:
+        return
+    queue.restart = False
+    t = queue.head
+    while t is not None:
+        t.nextRunTime = str2time(RUN_TIME_START)
+        config.set_(f"{t.name}.nextRunTime", RUN_TIME_START)
+        TaskList = config.get_(f"{t.name}.TaskList")
+        for bid_task in TaskList:
+            config.set_(f"{t.name}.{bid_task}.nextRunTime", RUN_TIME_START)
+        t = t.next
+    config.save()
 
 
 if __name__ == "__main__":
