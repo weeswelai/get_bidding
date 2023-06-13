@@ -3,7 +3,6 @@ task.config: nextRunTime(datetime), errorDelay(str), bidTask(list)
 bidTask.config: 货物:{}
 """
 import traceback
-from copy import deepcopy
 from io import TextIOWrapper
 
 from module.bid_task import BidTask
@@ -158,22 +157,15 @@ class Task:
             name(str): 
             run_error(bool):
         """
-        settings = config.get_task()
+        settings = config.get_task("task")
         self.name = name  # 当前任务名
-
-        error_delay = config.get_task("task.errorDelay")
-        self.error_delay = error_delay if error_delay else ERROR_DELAY
-
-        delay = config.get_task("task.nextOpenDelay")
-        self.delay = [int(t) for t in delay.split(",")] \
-            if delay else NEXT_OPEN_DELAY
-
-        complete_delay = config.get_task("task.completeDelay")
-        self.complete_delay = complete_delay if complete_delay else COMPLETE_DELAY
-
-        self.next_rule = init_re(settings["task"]["next_pages"])
-        logger.info(f"init task {self.name}, list brows:\n"
-                    f"url settings:\n{dict2str(settings['OpenConfig'])}\n")
+        logger.hr(f"init task {self.name}")
+        logger.info(f"task settings:{dict2str(settings)}")
+        self.next_rule = init_re(settings["next_pages"])
+        self.error_delay = settings["errorDelay"] if deep_get(settings, "errorDelay") else ERROR_DELAY
+        self.complete_delay = settings["completeDelay"] if deep_get(settings, "completeDelay") else COMPLETE_DELAY
+        delay = deep_get(settings, "nextOpenDelay")
+        self.delay = [int(t) for t in delay.split(",")] if delay else NEXT_OPEN_DELAY
         self.init()
 
     def init(self):
@@ -196,16 +188,16 @@ class Task:
         pages = str(int(next_rule.search(list_url).group()) + 1)
         next_pages_url = next_rule.sub(pages, list_url)
         self.get_list.config.update_referer(list_url)
+        logger.info("get next pages url")
         return next_pages_url
 
     def process_next_list_web(self) -> bool:
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
         """
-        logger.info("BidTask.get_url_list")
         self.match_num = 0  # 开始新网址置为0
 
         # 下次要打开的项目列表url
-        self._get_next_list_url()
+        self.get_next_list_url()
 
         # 打开项目列表页面, 获得 self.brows.html_list_match
         self.brows.html_cut = self.get_list.open(url=self.list_url)
@@ -213,7 +205,7 @@ class Task:
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
         tagList = self.brows.get_tag_list()
         logger.info(f"len tagList = {len(tagList)}")
-        self._process_tag_list(tagList)
+        self.process_tag_list(tagList)
         self.txt.flush()  # 刷新缓冲区写入文件
 
         if not self.match_num:
@@ -223,10 +215,11 @@ class Task:
             return False  # state结束
         return True  # state继续
 
-    def _get_next_list_url(self):
+    def get_next_list_url(self):
         """ 获得下次打开的 url 保存在self.list_url
         """
         if not self.list_url:
+            logger.hr("get start url")
             list_url = self.bid_task.return_start_url()
             self.list_url = self.get_list.url_extra(list_url)
         else:
@@ -240,7 +233,7 @@ class Task:
     def tag_filterate(self):
         return True
 
-    def _process_tag_list(self, tag_list: list):
+    def process_tag_list(self, tag_list: list):
         """ 遍历处理 tag_list
         若能遍历到结尾,保存 interruptUrl 和 interrupt
         """
@@ -315,6 +308,7 @@ class Task:
 
     def _complete_bid_task(self):
         self.bid_task.set_task("interruptBid.url", "")
+        self.list_url = ""
 
     def _run_bid_task(self):
         while 1:
@@ -337,6 +331,7 @@ class Task:
         return datetime.now() + get_time_add(time_add)
 
     def run(self, restart=False) -> datetime:
+        logger.hr(f"{self.name} run")
         if not self.txt.file_open:
             self.txt.data_file_open()
         if restart:
@@ -347,7 +342,7 @@ class Task:
             if not bid_task:
                 logger.info("no bid task ready")
                 break
-            logger.info(f"run bid task: {self.name}  {bid_task.name}")
+            logger.hr(f"bid task: {self.name} {bid_task.name}", 2)
             nextRunTime = self.run_bid_task(bid_task.name)
             bid_task.set_time(nextRunTime)
             config.save()

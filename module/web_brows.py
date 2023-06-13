@@ -32,6 +32,7 @@ class BidTag:
         rule: dict = settings["BidTag"]
         for li_r, value in rule.items():
             self._init_list_rule(li_r, value)
+        logger.info(dict2str(rule))
 
     # TODO 解析规则这部分有点*,记得重写一下
     def _init_list_rule(self, li_r, rule: str):
@@ -277,14 +278,5 @@ class ListBrows:
 
 
 if __name__ == "__main__":
-    # 这里只是测试对象的单个功能,要测试对一个页面的功能需要用 ./test/web_brows_test.py
-    json_file = "./bid_settings/bid_settings.json"
-    json_settings = read_json(json_file)
-    # html_file = r""
-    # url = ""
-    task = "zgzf"
-    # zgzf = web_brows_init(json_settings, task)
-    # zgzf.open("http://127.0.0.1:19999/get")
-    # zgzf.get_response_from_file(html_file)
-    # zgzf.set_cookie()
+
     pass
