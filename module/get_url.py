@@ -46,6 +46,7 @@ class UrlConfig:
         """
         settings = settings if settings else config.get_task()
         openConfig = settings["OpenConfig"]
+        logger.info(f"UrlConfig:{jsdump(openConfig)}")
         for k, v in openConfig.items():
             if k == "cookies":
                 if isinstance(v, str):
@@ -87,7 +88,7 @@ class Response:
 
     def __init__(self, rule):
         self.cut = init_re(rule)
-        logger.info(f"{config.name}: cut_rule: {rule}")
+        logger.info(f"cut_rule: {rule}")
 
     def cut_html(self, rule: dict or str = None):
         """ 裁剪得到的html源码, 保存到 self.html_cut
@@ -185,6 +186,7 @@ class GetList:
     r: requests.models.Response = None
 
     def __init__(self):
+        logger.hr("GetList init")
         self.config = UrlConfig()
         self.res = Response(self.config.cut_rule)
         self.s: requests.Session = requests.Session()
