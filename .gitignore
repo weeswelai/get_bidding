@@ -1,24 +1,24 @@
 __pycache__
 __settings__
-.vscode
 .idea
 *.code-workspace
+.vscode
+bid_dev.env
+# get_bidding
 data
 log
 html_test
 html_error
 dataTest
+# bid_settings
 bid_settings/*
 !bid_settings/bid_settings_default.json
 !bid_settings/config_default.json
 !bid_settings/title_trie.json
+# test
 test/*
 !test/前缀树.txt
 !test/lineAddLiTag.py
 !test/web_brows_test.py
 !test/task_test.py
 !test/string_test.py
-bid_dev.env
-bid_settings/bid_settings.json
-bid_settings/config.json
-bid_settings/*test*
