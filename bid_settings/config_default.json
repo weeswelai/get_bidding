@@ -4,7 +4,7 @@
         "jsonFIle": "./bid_settings/bid_settings.json"
     },
     "test": {
-        "switch": true,
+        "switch": false,
         "dataFolder": "./dataTest",
         "jsonFIle": "./bid_settings/bid_settings_test.json"
     },
