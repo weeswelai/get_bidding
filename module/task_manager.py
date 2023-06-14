@@ -148,6 +148,7 @@ class TaskManager(TaskQueue):
                 task: Task = task_init(taskNode)
             else:
                 self.sleep(self.first_runtime())  # 阻塞sleep定时
+                logger.set_file_logger()
                 continue
 
             self.web_break()

@@ -9,7 +9,7 @@ import os
 import sys
 
 from queue import Queue
-from logging import addLevelName
+from logging import addLevelName, FileHandler
 from logging.handlers import QueueHandler
 
 from module.config import TEST, CONFIG_FILE
@@ -112,12 +112,16 @@ def set_file_logger(name=pyw_name):
                                    encoding="utf-8")
 
     hdlr.setFormatter(file_formatter)
+    for hdlr_ in logger.handlers:
+        if isinstance(hdlr_, FileHandler):
+            hdlr_.close()
+            logger.handlers.remove(hdlr_)
     logger.addHandler(hdlr)
     logger.log_file = log_file
 
-queue_handler = QueueHandler(Queue())
-queue_handler.setFormatter(web_formatter)
 if pyw_name in ("log", "bid_web"):   
+    queue_handler = QueueHandler(Queue())
+    queue_handler.setFormatter(web_formatter)
     logger.addHandler(queue_handler)
 
 def show():
