@@ -34,7 +34,6 @@ class TaskNode:
 
 class TaskQueue:
     head = None
-    len = 0
     restart = False
 
     def __init__(self) -> None:
@@ -227,24 +226,19 @@ def queue_restart(queue: TaskQueue):
     if not queue.restart:
         return
     queue.restart = False
-    t = queue.head
-    while t is not None:
-        t.nextRunTime = str2time(RUN_TIME_START)
-        config.set_(f"{t.name}.nextRunTime", RUN_TIME_START)
-        TaskList = config.get_(f"{t.name}.TaskList")
+    queue.head = None
+    for t in config.taskList:
+        config.set_(f"{t}.nextRunTime", RUN_TIME_START)
+        TaskList = config.get_(f"{t}.TaskList")
         for bid_task in TaskList:
-            config.set_(f"{t.name}.{bid_task}.nextRunTime", RUN_TIME_START)
-        t = t.next
+            config.set_(f"{t}.{bid_task}.nextRunTime", RUN_TIME_START)
+        t = TaskNode(t)        
+        queue.insert(t)
+    queue.print()
     config.save()
 
 
 if __name__ == "__main__":
     bidTaskManager = TaskManager()
-    try:
-        bidTaskManager.loop()
-    except KeyboardInterrupt:
-        pass
-    except Exception:
-        logger.error(traceback.format_exc())
-    finally:
-        bidTaskManager.exit()
+    bidTaskManager.restart = True
+    queue_restart(bidTaskManager)
