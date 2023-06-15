@@ -162,8 +162,8 @@ class Task:
         logger.hr(f"init task {self.name}")
         logger.info(f"task settings:{dict2str(settings)}")
         self.next_rule = init_re(settings["next_pages"])
-        self.error_delay = settings["errorDelay"] if deep_get(settings, "errorDelay") else ERROR_DELAY
-        self.complete_delay = settings["completeDelay"] if deep_get(settings, "completeDelay") else COMPLETE_DELAY
+        self.error_delay = deep_get(settings, "errorDelay") or ERROR_DELAY
+        self.complete_delay = deep_get(settings, "completeDelay") or COMPLETE_DELAY
         delay = deep_get(settings, "nextOpenDelay")
         self.delay = [int(t) for t in delay.split(",")] if delay else NEXT_OPEN_DELAY
         self.init()
