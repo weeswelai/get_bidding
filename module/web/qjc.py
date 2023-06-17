@@ -33,22 +33,14 @@ class BidBase(web_brows.BidBase):
     pass
 
 
-class BidTag(web_brows.BidTag):
-    pass
+class TagRule(web_brows.TagRule):
 
+    def init_rule(self, rule: str = ""):
+        self.tag_fun = deep_get
+        self.tag_rule = rule
 
-class ListBrows(web_brows.ListBrows):
-
-    def cut_html(self, *args):
-        """ 用json.loads将字符串转换为dict
-        """
-        logger.info("web_brows.Qjc.cut_html")
-        self.html_cut = json.loads(self.response)
-        return self.html_cut
-
-
-class BidBase(web_brows.BidBase):
-    pass
+    def get(self, tag):
+        return self.tag_fun(tag, self.tag_rule)
 
 
 class BidTag(web_brows.BidTag):
@@ -57,12 +49,12 @@ class BidTag(web_brows.BidTag):
 
 class ListBrows(web_brows.ListBrows):
 
-    def get_tag_list(self, page=None, tag_list=None, *args):
+    def get_tag_list(self, page=None, ListTag=None, *args):
         """ 得到json中的列表
         """
-        logger.info("web_brows.Qjc.get_tag_list")
-        if not tag_list:
-            tag_list = self.tag_list
+        logger.info("Qjc.get_tag_list")
+        if not ListTag:
+            ListTag = self.ListTag
         page = page if page else self.html_cut
         if page:
             if isinstance(page, dict):
@@ -70,18 +62,26 @@ class ListBrows(web_brows.ListBrows):
             elif isinstance(page, str):
                 self.html_cut = loads(page)
         self.bs = self.html_cut
-        return deep_get(self.bs, tag_list)
+        self.tag_list = deep_get(self.bs, ListTag)
+        return self.tag_list
 
 
 class Task(task.Task):
     def __init__(self, name) -> None:
         self.get_list = GetList()
         self.bid = BidBase()
-        self.tag = BidTag()
+        self.tag = BidTag(tag_rule=TagRule)
         self.brows = ListBrows()
         super().__init__(name)
 
 
 if __name__ == "__main__":
     # test code
+    self = Task("qjc")
+    self.get_list.res.get_response_from_file("./html_test/qjc_test.html")
+    self.brows.html_cut = self.get_list.res.cut_html()
+    self.brows.get_tag_list()
+    for i, t in enumerate(self.brows.tag_list):
+        self._bid_receive_bid_tag(t, i)
+        logger.info(self.bid.message())
     pass

@@ -38,9 +38,13 @@ class Task(task.Task):
 if __name__ == "__main__":
     # test code
     from module.config import config
-    config.name = "zzlh"
-    self = Task("zzlh")
+    config.name = "hkgy"
+    self = Task("hkgy")
+    # self.get_list.res.get_response_from_file("./html_test/hkgy_test.html")
+    # self.brows.html_cut = self.get_list.res.cut_html()
+    # self.brows.get_tag_list()
+    # for i, t in enumerate(self.brows.tag_list):
+    #     self._bid_receive_bid_tag(t, i)
+    #     logger.info(self.bid.message())
     self.run(restart=True)
-    # logger.info(self.run_bid_task("服务"))
-    config.save()
     pass

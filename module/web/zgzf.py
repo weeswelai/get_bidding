@@ -123,7 +123,7 @@ class GetList(get_url.GetList):
 
 
 class BidBase(web_brows.BidBase):
-    def _date(self):
+    def date_get(self):
         self.date = self.date.replace(".", "-")
 
 
@@ -158,5 +158,11 @@ class Task(task.Task):
 
 
 if __name__ == "__main__":
-    zgzf = Task("zgzf")
+    self = Task("zgzf")
+    self.get_list.res.get_response_from_file("./html_test/zgzf_test.html")
+    self.brows.html_cut = self.get_list.res.cut_html()
+    self.brows.get_tag_list()
+    for i, t in enumerate(self.brows.tag_list):
+        self._bid_receive_bid_tag(t, i)
+        logger.info(self.bid.message())
     pass

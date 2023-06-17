@@ -15,51 +15,137 @@ from module.log import logger
 from module.utils import *
 
 
+PATH_RULE = 0
+INDEX_RULE = 1
+ATTR_RULE = 2
+
+
+def tag_deep_get(tag: Tag, rule, *argv) -> Tag or None:
+    """ rule: "tag1.tag2.tag3 > attr1"
+    from https://stackoverflow.com/questions/25833613/safe-method-to-get-value-of-nested-dictionary
+    Args:
+        s_tag (bs4.element.Tag): 要检索的tag
+        rule (str, list): 检索规则,用 "." 分开
+    Returns:
+        tag (bs4.element.Tag)
+    """
+    if isinstance(rule, str):
+        rule = rule.split(".")
+    assert type(rule) is list
+    if tag is None:
+        return None
+    if not rule:
+        return tag
+    return tag_deep_get(tag.find(rule[0]), rule[1:])
+
+
+def tag_find(tag: Tag, name, index=0, attr={}, *argv):
+    # rule: "tag1 > attr1"
+    if not name:
+        return tag
+    if isinstance(index, int):
+        return tag.find_all(name, limit=index+1, attrs=attr)[index]
+    else:
+        """ rule: "tag1,ALL,attr=value" """
+        return tag.find_all(name, attrs=attr)
+
+
+def get_tag_list_content(tag_list, attr_name=None):
+    """ rule: "tag1,ALL,attr=value" """
+    text = ""
+    for t in tag_list:
+        text += f"{get_tag_content(t, attr_name)}"
+    return text
+
+
+def get_tag_content(tag: Tag, attr_name=None):
+    """ rule: "tag1 > attr=value" """
+    if not attr_name:
+        """ rule: "tag1 >" """
+        text = str(tag.text).strip()
+        return text
+    attr = str(tag.get(attr_name)).strip()
+    return attr
+
+
+def return_none(*args):
+    return "None"
+
+
+class TagRule:
+    tag_rule = None
+    attr_rule = None
+    def __init__(self, name, rule) -> None:
+        self.tag_fun = tag_find
+        self.attr_fun = get_tag_content
+        self.name = name
+        self.rule = rule
+        self.init_rule(rule)
+        logger.info(f"tag: {self.tag_rule} {self.tag_fun.__name__} ,"
+            f"attr: {self.attr_rule} {self.attr_fun.__name__}")
+
+    def init_rule(self, rule):
+        """
+        Args:
+            rule (str): 
+        """
+        # 预处理分割rule
+        logger.info(f"{self.name}: {rule}")
+
+        if not rule:
+            self.get = return_none
+            return
+
+        if ">" in rule:
+            _rule, attr_rule = rule.split(">")
+            self.attr_rule = attr_rule.strip()
+        else:
+            _rule = rule
+
+        if "." in _rule:
+            self.tag_fun = tag_deep_get
+            self.tag_rule[PATH_RULE] = _rule
+            return
+        self.set_tag_rule(*_rule.split(","))
+
+    def set_tag_rule(self, tag_name, index=0, attr=""):
+        self.tag_rule = ["", 0, {}]
+        if tag_name:
+            self.tag_rule[PATH_RULE] = tag_name.strip()
+        if isinstance(index, str):
+            if index.isdigit():
+                self.tag_rule[INDEX_RULE] = int(index)
+            else:
+                index = index.strip() 
+                assert index.upper() == "ALL", "index not ALL or int"
+                self.tag_rule[INDEX_RULE] = index
+                self.attr_fun = get_tag_list_content
+        if attr:
+            r = attr.split("=")
+            self.tag_rule[ATTR_RULE] = {r[0] : r[1]}
+
+    def get(self, tag):
+        target: Tag = self.tag_fun(tag, *self.tag_rule)
+        return self.attr_fun(target, self.attr_rule)
+
+
 # 仅对li_tag中的元素(可能为Tag或dict)进行处理
 class BidTag:
     infoList: list = None
-    type_r: tuple
-    url_r: tuple
-    date_r: tuple
-    name_r: tuple
+    type_r: TagRule
+    url_r: TagRule
+    date_r: TagRule
+    name_r: TagRule
     tag: Tag
-    rule_now: tuple = None
+    rule_now = None
 
-    def __init__(self, settings=None):
-        # settings: 整个task 的settings
+    def __init__(self, rules: dict=None, tag_rule: TagRule=TagRule):
         logger.hr("BidTag.__init__", 3)
-        settings = settings if settings else config.get_task()
-        rule: dict = settings["BidTag"]
-        for li_r, value in rule.items():
-            self._init_list_rule(li_r, value)
-        logger.info(dict2str(rule))
+        rules = rules or config.get_task("BidTag")
+        for r, value in rules.items():
+            setattr(self, r, tag_rule(r, value))
 
-    # TODO 解析规则这部分有点*,记得重写一下
-    def _init_list_rule(self, li_r, rule: str):
-        """ 将rule以 | 和 : 分隔, 最终得到一个元组,详细说明参考web_brows_test.py
-            解析rule, 设置属性值
-        Args:
-            li_r (str): rule.bid_tag的key, 一般为name_r, date_r, url_r等
-            rule (str): rule.bid_tag key对应的value, 
-        """
-        # 预处理分割rule
-        tag_find = tag_name = find_all_idx = value_name = value = None
-        if rule is None or rule == "":
-            return setattr(self, li_r, (None,))
-        if rule.count("|") == 2:  # 2个|认为有 find_all_idx, 用于find_all的索引
-            tag_gets_r, value_gets_r, find_all_idx = rule.split("|")
-        elif rule.count("|") == 1:  # 必须有1个 |
-            tag_gets_r, value_gets_r = rule.split("|")
-        elif rule.count("|") == 0:
-            return setattr(self, li_r, (rule,))
-        if tag_gets_r:
-            tag_find, tag_name = tag_gets_r.split(":")
-        if value_gets_r:
-            value_name, value = value_gets_r.split(":")
-        setattr(
-            self, li_r, (tag_find, tag_name, find_all_idx, value_name, value))
-
-    def get(self, bid_tag: Tag or dict) -> list:
+    def get_info(self, bid_tag: Tag or dict) -> list:
         """ 用规则获得一个tag或dict中对应的数据
          return [name, date, url, b_type]
         Args:
@@ -67,86 +153,12 @@ class BidTag:
         """
         self.tag = bid_tag
         self.infoList = []
-        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "name_r")))
-        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "date_r")))
-        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "url_r")))
-        self.infoList.append(self.parse_rule(bid_tag, *getattr(self, "type_r")))
-        # for key in ("name_r", "date_r", "url_r", "type_r"):
+        for key in ("name_r", "date_r", "url_r", "type_r"):
+            self.rule_now = key
+            r: TagRule = getattr(self, key)
+            data = r.get(self.tag)
+            self.infoList.append(data)
         return self.infoList
-
-    # TODO 写的太*了，记得重写,包括下面的_parse_bs_rule
-    def parse_rule(self, tag: Tag or dict, *args) -> Tag or None or str:
-        """ 判断tag类型, 接收规则并解析
-        
-        """
-        self.rule_now = args
-        if isinstance(tag, Tag):
-            return _parse_bs_rule(tag, *args)
-
-        elif isinstance(tag, dict) or isinstance(tag, list):
-            return _parse_json_rule(tag, *args)
-        return None
-
-
-def _parse_bs_rule(tag: Tag,
-                   tag_find="", tag_name="", find_all_idx=None,
-                   value_name="", value="", bb ="") -> None or str:
-    """
-    解析规则,找到tag或tagList(bs4.element.ResultSet),或符合规则的属性值或tag中的文本
-    Args:
-        tag (bs4.element.Tag): 要检索的tag
-    Returns:
-        tag or text or None, 可能有三种返回
-        None: not rule 为 True时返回None
-        tag (bs4.element.Tag, bs4.element.ResultSet): find或find_all的检索结果
-        text (str): tag的内容文本, 或tag中符合规则的属性的值
-    """
-    if not tag_find:  # 无rule返回None
-        return None
-    # 检索tag
-    if tag_find == "tagName_all":
-        if value_name and value:  # 若有value检索要求,则find_all加上参数attrs
-            tag = tag.find_all(tag_name, attrs={value_name: value})
-        # 无value要求,直接用find_all搜索
-        # 使用find_all(tag_name, attrs={"":""}) 会返回None,所以这里额外调用语句
-        else:
-            tag = tag.find_all(tag_name)
-        if find_all_idx:  # 若有find_all 的索引要求,则返回该索引对应的tag
-            if find_all_idx != "all":
-                tag = tag[int(find_all_idx)]
-    elif tag_find == "tagName_find":  # 使用tagName,find方式检索
-        if tag_name:
-            tag = bs_deep_get(tag, tag_name)  # 调用额外函数返回Tag
-    # 检索属性值
-    if value_name:  # value_name有值 则检索属性值
-        if value_name == "class":
-            if "".join(tag.get("class")) == value.replace(" ", ""):
-                return tag.text.strip()  # class=value 的 text值
-            else:  # 若当前tag的class不符合则用find
-                return tag.find(class_=value).text.strip()  # tag内容文本
-        elif value_name == "_Text":  # 没有属性只有text的标签
-            if find_all_idx == "all":
-                return f"{tag[0].text.strip()}|{tag[1].text.strip()}"
-            return tag.text.strip()  # tag内容文本
-        else:
-            return tag.get(value_name).strip()  # tag属性值
-    else:  # 若不检索属性值则直接返回tag
-        return tag
-
-
-def _parse_json_rule(tag: list or dict,
-                     key_find=None, list_idx=None, *kwargs):
-    """ 根据规则获得dict 或 list中的值
-
-    Args:
-        tag (dict or list):
-    Returns:
-        str or None
-    """
-    if isinstance(tag, dict):
-        return deep_get(tag, list_idx)
-    elif isinstance(tag, list):
-        return tag[list_idx]
 
 
 class BidBase:
@@ -188,13 +200,13 @@ class BidBase:
             rule = getattr(self, f"{key}_cut")
             setattr(self, key, _re_get_str(args[idx], rule))
 
-        self._url()  # TODO 是否应该根据type进行选择?
-        self._date()
-        self._name()
-        self._date()
+        self.url_get()  # TODO 是否应该根据type进行选择?
+        self.date_get()
+        self.name_get()
+        self.type_get()
         self.infoList = [self.name, self.date, self.url, self.type]
 
-    def _url(self):
+    def url_get(self):
         """ 用 前缀加上后缀得到网址
         输入bid_root对 json中的 name.url_open.url_root 进行查表
         Args:
@@ -206,14 +218,14 @@ class BidBase:
         # else:
         self.url = f"{self.url_root}{self.url}"
 
-    def _name(self):
+    def name_get(self):
         pass
 
-    def _type(self):
+    def type_get(self):
         if self.type in ["", " ", None]:
             self.type == "None"
 
-    def _date(self):
+    def date_get(self):
         self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
 
     def message(self) -> str:
@@ -245,16 +257,18 @@ class ListBrows:
     """
     html_cut = ""  # cut_html 后保存
     bs: Tag or dict = None
+    ListTag = None
+    tag_list = None
 
     def __init__(self, settings=None):
         settings = settings if settings else config.get_task()
-        self.tag_list: str = settings["brows"]["tag_list"]
+        self.ListTag: str = settings["brows"]["ListTag"]
 
-    def get_tag_list(self, page=None, tag_list=None, parse="html.parser", t=""):
+    def get_tag_list(self, page=None, ListTag=None, parse="html.parser", t=""):
         """
-        输入 str 调用 bs生成self.bs 从self.bs 里根据tag_list提取list
+        输入 str 调用 bs生成self.bs 从self.bs 里根据bs_tag提取list
         Args:
-            tag_list:
+            ListTag:
             page:(str) html源码,解析获得self.bs,或从 self.url_response 或
             parse (str): 解析html的bs4模式 默认为 html.parser
             t ()
@@ -262,14 +276,15 @@ class ListBrows:
             bid_list (list): 提取到的list
         """
         logger.info("web_brows.Html.get_tag_list")
-        if not tag_list:  # 仅测试中使用
-            tag_list = self.tag_list
+        if not ListTag:  # 仅测试中使用
+            ListTag = self.ListTag
         if isinstance(page, str):
             self.html_cut = page
             logger.info(f"get tag list from \"{page.strip()[: 100]}\"")
-
+        # TODO 捕获错误判断
         self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
-        return self.bs.find_all(tag_list)
+        self.tag_list = self.bs.find_all(ListTag)
+        return self.tag_list
 
 
 # class BidHtml(ReqOpen):
@@ -279,4 +294,14 @@ class ListBrows:
 
 if __name__ == "__main__":
 
+    config.name = "zgzf"
+    tag = BidTag()
+    bid = BidBase()
+    list_brows = ListBrows()
+    with open("./html_test/zgzf_test.html", "r", encoding="utf-8") as f:
+        tag_li = list_brows.get_tag_list(f.read())
+
+    for t in tag_li:
+        bid.receive(*tag.get_info(t))
+        print(bid.infoList)
     pass
