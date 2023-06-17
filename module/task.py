@@ -265,11 +265,11 @@ class Task:
         """
         err_flag = False
         try:
-            infoList = self.tag.get(tag)
+            infoList = self.tag.get_info(tag)
             # logger.debug(str(infoList))  # 打印每次获得的项目信息
         except Exception:
             err_flag = True
-            logger.error(f"tag get error: {tag},\nidx: {idx}"
+            logger.error(f"tag get error: {tag},\nidx: {idx}, "
                          f"tag rule: {self.tag.rule_now}\n"
                          f"{traceback.format_exc()}")
         if not err_flag:
@@ -285,10 +285,7 @@ class Task:
             self.bid_tag_error += 1
             if self.bid_tag_error > 5:
                 logger.error("too many bid.receive error")
-                self.get_list.res.save_response(
-                    rps=self.brows.bs,
-                    url=self.list_url,
-                    save_date=True, extra="receiveError")
+                self.get_list.res.save_response(rps=self.brows.bs, url=self.list_url, save_date=True, extra="receiveError")
                 raise BidReceiveError
             return False
         return True
@@ -353,3 +350,10 @@ class Task:
     def close(self):
         self.txt.data_file_exit()
         self.get_list.s.close()
+
+
+if __name__ == "__main__":
+    config.name = "zgzf"
+    from module.web.zgzf import Task
+    self = Task(config.name)
+    self.run()

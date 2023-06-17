@@ -14,24 +14,6 @@ from urllib.parse import unquote
 from bs4 import Tag
 
 
-def bs_deep_get(s_tag: Tag, rule) -> Tag or None:
-    """
-    Args:
-        s_tag (bs4.element.Tag): 要检索的tag
-        rule (str, list): 检索规则,用 "." 分开
-    Returns:
-        tag (bs4.element.Tag)
-    """
-    if isinstance(rule, str):
-        rule = rule.split(".")
-    assert type(rule) is tuple or list
-    if s_tag is None:
-        return None
-    if not rule:
-        return s_tag
-    return bs_deep_get(s_tag.find(rule[0]), rule[1:])
-
-
 # json or file
 
 def deep_set(d: dict, keys: list or str, value):

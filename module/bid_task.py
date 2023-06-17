@@ -16,7 +16,9 @@ class StopBid:
         self.date_init()
 
     def __str__(self) -> str:
-        return f"{self.name}, {str(self.date)}, {self.url}"
+        return (f"\"name\": \"{self.name}\",\n"
+                f"\"date\": \"{str(self.date)}\",\n"
+                f"\"url\": \"{self.url}\"")
 
     def date_init(self):
         """ 判断 stopBid 是否合法

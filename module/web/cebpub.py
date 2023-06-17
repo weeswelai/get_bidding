@@ -39,5 +39,12 @@ class Task(task.Task):
 
 
 if __name__ == "__main__":
-    # test code
+    self = Task("cebpub")
+    self.get_list.res.get_response_from_file("./html_test/cebpub_test.html")
+    self.brows.html_cut = self.get_list.res.cut_html()
+    self.brows.get_tag_list()
+    for i, t in enumerate(self.brows.tag_list):
+        self._bid_receive_bid_tag(t, i)
+        logger.info(self.bid.message())
+    # self.run()
     pass
