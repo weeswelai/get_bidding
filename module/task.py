@@ -316,6 +316,7 @@ class Task:
         logger.info(f"{self.name} {self.bid_task.name} is complete")
 
     def run_bid_task(self, name) -> datetime:
+        self.list_url = None
         self.bid_task = BidTask(name)
         try:
             self._run_bid_task()
