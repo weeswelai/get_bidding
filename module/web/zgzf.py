@@ -113,12 +113,12 @@ class GetList(get_url.GetList):
     def cut_judge(self):
         from bs4 import BeautifulSoup as btfs
 
-        from module.web_brows import _parse_bs_rule
         if self.res.response:
             bs = btfs(self.res.response, "html.parser")
-            result = _parse_bs_rule(bs, "tag_find", "div.p", None, "_Text")
-            if result.find("您的访问过于频繁,请稍后再试") > 0 or \
-                result.find("您的访问行为异常,请稍后再试") > 0:
+            tag = web_brows.tag_find(bs, "p", 0)
+            text = tag.text
+            if text.find("您的访问过于频繁,请稍后再试") > 0 or \
+                text.find("您的访问行为异常,请稍后再试") > 0:
                 raise WebTooManyVisits
 
 
@@ -159,10 +159,11 @@ class Task(task.Task):
 
 if __name__ == "__main__":
     self = Task("zgzf")
-    self.get_list.res.get_response_from_file("./html_test/zgzf_test.html")
-    self.brows.html_cut = self.get_list.res.cut_html()
-    self.brows.get_tag_list()
-    for i, t in enumerate(self.brows.tag_list):
-        self._bid_receive_bid_tag(t, i)
-        logger.info(self.bid.message())
+    # self.get_list.res.get_response_from_file("./html_test/zgzf_test.html")
+    # self.brows.html_cut = self.get_list.res.cut_html()
+    # self.brows.get_tag_list()
+    # for i, t in enumerate(self.brows.tag_list):
+    #     self._bid_receive_bid_tag(t, i)
+    #     logger.info(self.bid.message())
+    self.run("竞争性磋商")
     pass
