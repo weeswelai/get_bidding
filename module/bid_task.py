@@ -1,4 +1,5 @@
 
+from copy import deepcopy
 from datetime import datetime, timedelta
 
 from module.config import config
@@ -193,7 +194,9 @@ class BidTask:
         if not url:
             logger.error(f"{self.name}.{url_type} is empty, "
                          "please check settings json file")
-            # raise 
+            # raise
+        if isinstance(url, dict):
+            return deepcopy(url)
         return url
 
     def print_state_at_start(self):
