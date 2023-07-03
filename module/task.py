@@ -36,7 +36,7 @@ class BidTaskState(TaskNode):
         self.name = name
         nextRunTime = config.get_task(f"{name}.nextRunTime")
         self.nextRunTime = str2time(nextRunTime) if nextRunTime else \
-                           str2time(RUN_TIME_START)
+            str2time(RUN_TIME_START)
 
     def set_time(self, nextRunTime: datetime):
         self.nextRunTime = nextRunTime
@@ -81,7 +81,7 @@ class DataFileTxt:
         self.file_open = False
         self.name = name
         self._file_init(name)
-        creat_folder(self.filePath["list"])
+        create_folder(self.filePath["list"])
         log = ""
         for k, v in self.filePath.items():
             log += f"{k}: {v}\n{' '*26}"
@@ -150,12 +150,13 @@ class Task:
     # bid_web: BidHtml
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
+    txt: DataFileTxt
+    bid_task_queue: BidTaskQueue
 
     def __init__(self, name="default") -> None:
         """ 初始化任务, 保存settings 和 name
         Args:
-            name(str): 
-            run_error(bool):
+            name(str):
         """
         settings = config.get_task("task")
         self.name = name  # 当前任务名

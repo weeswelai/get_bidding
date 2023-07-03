@@ -80,7 +80,7 @@ def save_json(data, json_file, indent=2):
         json_file (str): 保存的json文件路径
     """
     from module.log import logger
-    creat_folder(json_file)
+    create_folder(json_file)
 
     with open(json_file, "w", encoding="utf-8") as json_file_w:
         write_data = dumps(data, indent=indent, ensure_ascii=False,
@@ -95,7 +95,7 @@ def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False) -> str:
                       sort_keys=sort_keys)
 
 
-def creat_folder(file):
+def create_folder(file):
     folder = os.path.dirname(file)
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -104,7 +104,7 @@ def creat_folder(file):
 def save_file(file, data, mode="w", bytes=False):
     """ 保存文件
     """
-    creat_folder(file)
+    create_folder(file)
     if bytes:
         with open(file, "wb") as f:
             f.write(data)
@@ -160,15 +160,14 @@ def date_days(change_days=0, format=None):
 def get_time_add(delay="1h") -> timedelta:
     """
     Args:
-        min:
-        time_base:
+        delay(str, int)
     Returns:
         time_base + time_add
     """
     if isinstance(delay, int):
         time_add = timedelta(minutes=delay)
     if isinstance(delay, str):
-        time_ , unit = int(delay[:-1]), delay[-1]
+        time_, unit = int(delay[:-1]), delay[-1]
         if unit == "h":
             time_add = timedelta(hours=time_)
         elif unit == "d":

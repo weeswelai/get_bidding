@@ -69,17 +69,17 @@ class UrlConfig:
         config.set_task("OpenConfig.cookies", self.cookies)
         config.save()
 
-    def update_cookies(self, cookies:dict):
+    def update_cookies(self, cookies: dict):
         for k, v in cookies.items():
             self._update_cookies(k, v)
 
-    def _update_cookies(self, k, v:str):
+    def _update_cookies(self, k, v: str):
         if v == "deleted":
             del(self.cookies[k])
         else:
             self.cookies[k] = v
 
-    def update_referer(self, referer:str):
+    def update_referer(self, referer: str):
         self.headers["Referer"] = referer
 
 

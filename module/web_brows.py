@@ -75,6 +75,7 @@ def return_none(*args):
 class TagRule:
     tag_rule = None
     attr_rule = None
+
     def __init__(self, name, rule) -> None:
         self.tag_fun = tag_find
         self.attr_fun = get_tag_content
@@ -139,7 +140,7 @@ class BidTag:
     tag: Tag
     rule_now = None
 
-    def __init__(self, rules: dict=None, tag_rule: TagRule=TagRule):
+    def __init__(self, rules: dict = None, tag_rule: TagRule = TagRule):
         logger.hr("BidTag.__init__", 3)
         rules = rules or config.get_task("BidTag")
         for r, value in rules.items():

@@ -94,7 +94,7 @@ class BidTitleTrie:
         logger.info(f"title trie init from file: {file_read}")
 
     def save_local(self, file_save="./bid_settings/title_trie.json"):
-        creat_folder(file_save)
+        create_folder(file_save)
         if file_save.split()[-1] == "b":
             with open(file_save, "wb") as f_w:
                 pickle.dump(self.child, f_w)
