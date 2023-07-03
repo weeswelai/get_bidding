@@ -1,4 +1,3 @@
-
 from copy import deepcopy
 from datetime import datetime, timedelta
 
@@ -10,7 +9,7 @@ from module.web_brows import *
 class StopBid:
     date: datetime
 
-    def __init__(self, bid: dict=None) -> None:
+    def __init__(self, bid: dict = None) -> None:
         self.name = bid["name"]
         self.date_str = bid["date"]
         self.url = bid["url"]
@@ -74,7 +73,7 @@ class BidTask:
         self.name = name
         settings = config.get_task(name)
         self.state = settings["state"]
-        self.stop_bid =  StopBid(settings["stopBid"])
+        self.stop_bid = StopBid(settings["stopBid"])
         self.set_task("stopBid.date", self.stop_bid.date_str)
         self.interrupt_url = settings["interruptUrl"]
         self.interrupt_bid = settings["interruptBid"]
@@ -94,7 +93,7 @@ class BidTask:
 
         elif self.state in ["error", "interrupt"]:
             if self.interrupt_bid["name"] and self.interrupt_bid["date"] and \
-               self.interrupt_bid["url"]:
+                    self.interrupt_bid["url"]:
                 self.state = "interrupt"
                 self.start = False
                 self.interrupt = True
@@ -102,7 +101,7 @@ class BidTask:
                     f"interrupt: {self.interrupt}, "
                     f"start: {self.start}")
 
-    def bid_is_start(self,bid_prj: BidBase):
+    def bid_is_start(self, bid_prj: BidBase):
         """判断条件为: name, date, url 三个信息必须全部符合, 符合返回True 并
         将 self.state 置为 True, 若有一个不符合则返回 False .
         仅在 interrupt状态下执行
@@ -217,7 +216,7 @@ class BidTask:
                 f"{self.get_task('interruptBid.date')}")
         else:
             logger.info("not start")
-  
+
     def compare_last_first(self, idx, infoList):
         """ 比较每页第一个项目信息是否与上一页第一个完全相等, 若相等返回True
         """
@@ -226,8 +225,9 @@ class BidTask:
             return True
         if not idx:
             self.first_bid = infoList
+            logger.info(f"first bid: {infoList}")
         return False
- 
+
     def bid_judge(self, bid: BidBase, idx: int):
         if self.compare_last_first(idx, bid.infoList) or self.stop_bid.bid_is_end(bid):
             self.complete(bid)

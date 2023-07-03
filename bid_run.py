@@ -9,10 +9,11 @@ from module.task_manager import TaskManager
 
 bidTaskManager = TaskManager()
 
-def main(argv: list):
-    argv = argv[1:] if len(argv) > 1 else argv
+
+def main(argv_: list):
+    argv_ = argv_[1:] if len(argv_) > 1 else argv_
     try:
-        if argv[0] == "-r":
+        if argv_[0] == "-r":
             logger.hr("task restart", 3)
             bidTaskManager.restart = True
         bidTaskManager.loop()
