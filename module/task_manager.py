@@ -5,7 +5,6 @@
 调用任务运行接口,得到运行结果,根据运行结果决定下次运行时间
 任务入队
 """
-import traceback
 from datetime import datetime
 from importlib import import_module
 from os.path import exists
@@ -14,8 +13,11 @@ from module.config import config
 from module.exception import *
 from module.log import logger
 from module.utils import *
+from module.lineAddLiTag import Writer
 
 RUN_TIME_START = "2023-01-01 00:00:00"  # 默认下次运行时间
+data_writer = Writer()
+
 
 class TaskNode:
     # 仅保存下次运行时间和任务名
@@ -145,6 +147,7 @@ class TaskManager(TaskQueue):
             if self.next_task_ready():
                 taskNode: TaskNode = self.pop()
                 task: Task = task_init(taskNode)
+                data_writer.output()
             else:
                 self.sleep(self.first_runtime())  # 阻塞sleep定时
                 logger.set_file_logger()
