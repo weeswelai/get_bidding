@@ -111,7 +111,10 @@ class BidTitleTrie:
 
         with open(trie_file, "r", encoding="utf-8") as f_r:
             for line in f_r:
-                self.insert_from_str(line.strip())
+                line = line.strip()
+                if line.startswith("#") or not line:
+                    continue
+                self.insert_from_str(line)
         logger.info(f"init from file: {trie_file}")
 
     def _insert(self, word: str, root=True, child_p=-1) -> int:

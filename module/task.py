@@ -240,6 +240,10 @@ class Task:
         """
         logger.hr("BidTask.process_tag_list", 3)
         idx = 0
+        if not tag_list:
+            logger.info("tag list is []")
+            self.bid_task.state = "complete"
+            return
         for idx, tag in enumerate(tag_list):
             # bid对象接收bid_tag解析结果
             if not self._bid_receive_bid_tag(tag, idx):
