@@ -147,7 +147,6 @@ class TaskManager(TaskQueue):
             if self.next_task_ready():
                 taskNode: TaskNode = self.pop()
                 task: Task = task_init(taskNode)
-                data_writer.output()
             else:
                 self.sleep(self.first_runtime())  # 阻塞sleep定时
                 logger.set_file_logger()
@@ -158,6 +157,7 @@ class TaskManager(TaskQueue):
             config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
             config.save()
             self.insert(taskNode)
+            data_writer.output()
 
     def sleep(self, nextRunTime: datetime):
         """阻塞的定时器,阻塞间隔为5秒"""
