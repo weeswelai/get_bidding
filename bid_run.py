@@ -13,9 +13,10 @@ bidTaskManager = TaskManager()
 def main(argv_: list):
     argv_ = argv_[1:] if len(argv_) > 1 else argv_
     try:
-        if argv_[0] == "-r":
-            logger.hr("task restart", 3)
-            bidTaskManager.restart = True
+        for command in argv_:
+            if command == "-r":
+                logger.hr("task restart", 3)
+                bidTaskManager.restart = True
         bidTaskManager.loop()
     except KeyboardInterrupt:
         pass
