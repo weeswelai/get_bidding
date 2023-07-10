@@ -242,7 +242,7 @@ class Task:
         idx = 0
         if not tag_list:
             logger.info("tag list is []")
-            self.bid_task.state = "complete"
+            self.bid_task.complete()
             return
         for idx, tag in enumerate(tag_list):
             # bid对象接收bid_tag解析结果

@@ -125,7 +125,7 @@ class BidTask:
         self.start = True
         return True
 
-    def complete(self, bid: BidBase):
+    def complete(self, bid: BidBase = None):
         """ 完成任务后, newestBid 设为 stopBid, 清除 newestBid 和 interruptBid
         将 BidTask.state 设为 "complete"
         """
@@ -136,7 +136,8 @@ class BidTask:
             self.set_task("stopBid", newestBid)
         self.set_task("newestBid", _bid_to_dict())
         self.set_task("state", "complete")
-        logger.info(f"bid end at {bid.infoList}")
+        if bid:
+            logger.info(f"bid end at {bid.infoList}")
         logger.info(f"stopBid: {self.stop_bid}")
 
     def save_newest_and_interrupt(self, bid: BidBase):
