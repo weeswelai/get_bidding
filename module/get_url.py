@@ -2,14 +2,8 @@
 url打开模块
 打开网页, 保存html源码
 """
-import gzip
-import http.cookiejar
-import socket
 import traceback
-import urllib.error as urlerr
-import urllib.request as urlreq
-from http.client import HTTPResponse
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode
 
 import requests
 import requests.utils as requtils
@@ -24,11 +18,11 @@ HEADERS = {
     }
 MAX_ERROR_OPEN = 3
 MAX_ERROR_SAVE = 2
-PROXIES = {"http": "127.0.0.1:8888",
-           "https": "127.0.0.1:8888"}
+PACKET_CAPTURE_PROXIES = {"http": "127.0.0.1:8888", "https": "127.0.0.1:8888"}
+NO_SYSTEM_PROXIES = {"http": None, "https": None}
 VERIFY = False
 packet_capture = False  # 抓包开关
-
+system_proxies = False  # 是否系统代理
 
 class UrlConfig:
     method = "GET"  # 默认
@@ -61,8 +55,12 @@ class UrlConfig:
             "timeout": self.time_out
         }
         if packet_capture:  # 是否抓包
-            kwargs["proxies"] = PROXIES
+            kwargs["proxies"] = PACKET_CAPTURE_PROXIES
             kwargs["verify"] = VERIFY
+        if not system_proxies:  # 是否使用系统代理
+            kwargs['proxies'] = NO_SYSTEM_PROXIES
+            if "verify" in kwargs:
+                del(kwargs["verify"])
         return kwargs
 
     def save_cookies(self):
