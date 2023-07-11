@@ -229,6 +229,29 @@ except FileNotFoundError as e:
     logger.warning(f"{e}")
     titleTrie = BidTitleTrie()
 
+
+def update_match(data_list_file: str =None):
+    from module.config import config
+    if data_list_file.endswith(".txt"):
+        f_in = f"{config.dataFolder}/{data_list_file}"
+    else:
+        from module.utils import date_days
+        f_in = f"{config.dataFolder}/bid_daylist_{date_days(format='day')}.txt"
+    f_out = f_in.replace("daylist", "daymatch")
+    with open(f_in, "r", encoding="utf-8") as fi,\
+         open(f_out, "w", encoding="utf-8") as fo:
+        for line in fi:
+            if " start at " in line:
+                fo.write(line)
+                continue
+            line = line.split(";")
+            result = titleTrie.search_all(line[0])
+            if result:
+                line.insert(0, f"[{','.join(result)}]")
+                line = f"{'; '.join(line)}"
+                fo.write(line)
+
+
 if __name__ == "__main__":
     titleTrie.child = {}
     titleTrie.insert_from_file("./test/前缀树.txt")
@@ -236,3 +259,4 @@ if __name__ == "__main__":
     print(titleTrie.search_all("123测量图形456"))
     print(titleTrie.search_all("123测测量图形456"))
     print(titleTrie.search_all("123测量测图形456"))
+    # update_match("07-11")
