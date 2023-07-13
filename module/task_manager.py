@@ -16,8 +16,6 @@ from module.utils import *
 from module.lineAddLiTag import Writer
 
 RUN_TIME_START = "2023-01-01 00:00:00"  # 默认下次运行时间
-data_writer = Writer()
-
 
 class TaskNode:
     # 仅保存下次运行时间和任务名
@@ -157,7 +155,8 @@ class TaskManager(TaskQueue):
             config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
             config.save()
             self.insert(taskNode)
-            data_writer.output()
+            writer = Writer()
+            writer.output()
 
     def sleep(self, nextRunTime: datetime):
         """阻塞的定时器,阻塞间隔为5秒"""
