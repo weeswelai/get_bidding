@@ -230,7 +230,7 @@ except FileNotFoundError as e:
     titleTrie = BidTitleTrie()
 
 
-def update_match(data_list_file: str =None):
+def update_match(data_list_file: str = ""):
     from module.config import config
     if data_list_file.endswith(".txt"):
         f_in = f"{config.dataFolder}/{data_list_file}"
@@ -247,6 +247,7 @@ def update_match(data_list_file: str =None):
             line = line.split(";")
             result = titleTrie.search_all(line[0])
             if result:
+                logger.info(f"{result} {line[0]} {line[1]}")
                 line.insert(0, f"[{','.join(result)}]")
                 line = f"{'; '.join(line)}"
                 fo.write(line)
@@ -259,4 +260,4 @@ if __name__ == "__main__":
     print(titleTrie.search_all("123测量图形456"))
     print(titleTrie.search_all("123测测量图形456"))
     print(titleTrie.search_all("123测量测图形456"))
-    # update_match("07-11")
+    # update_match()
