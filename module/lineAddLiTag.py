@@ -119,7 +119,6 @@ class Command:
             else:
                 self.error(command)
 
-
     def error(self, command):
         print(f"command input error: {command}")
         exit()
@@ -268,9 +267,11 @@ def get_output_class(class_name):
 
 
 class Writer:
-    def __init__(self, command: Command = None) -> None:
+    def __init__(self, command: Command = None, argv=None):
         if not command:
-            command = Command()
+            if not argv:
+                argv = ["-h", "-i", "m", "l"]
+            command = Command(argv)
         self.command = command
 
         self.file_in = {}
