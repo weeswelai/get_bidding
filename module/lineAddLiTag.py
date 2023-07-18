@@ -77,7 +77,7 @@ class Command:
             elif command == "-h":
                 self.htm = True
             elif command == "-i":
-                self.command_in()
+                self.command_file_in()
             else:
                 self.error(command)
         if self.excel is None and self.htm is None:
@@ -101,7 +101,7 @@ class Command:
                 command = f"{self.day[:4]}-{command}"
             self.day = command
 
-    def command_in(self):
+    def command_file_in(self):
         if not self.argv or self.argv[0].startswith("-"):
             self.List = self.Match = True
             return
@@ -222,7 +222,7 @@ class Excel:
 
     def head(self, *args, **kwargs):
         title = ["序号", "标题", "日期", "URL"]
-        width = [6, 95, 12, 10]  # 列宽
+        width = [6, 95, 20, 10]  # 列宽
         if self.type == "match":
             title.insert(1, "匹配词")
             width.insert(1, 20)
@@ -270,7 +270,7 @@ class Writer:
     def __init__(self, command: Command = None, argv=None):
         if not command:
             if not argv:
-                argv = ["-h", "-i", "m", "l"]
+                argv = ["-h", "-i", "mn", "l"]
             command = Command(argv)
         self.command = command
 
