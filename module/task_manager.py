@@ -118,11 +118,11 @@ class TaskManager(TaskQueue):
         config.set_("task.run_time", date_now_s())  # 写入运行时间
         super().__init__()
 
-    def web_break(self):
-        """判断 break_属性,若为True,抛出WebBreak异常"""
-        if self.break_:
-            logger.info("web break")
-            raise WebBreak
+    # def web_break(self):
+    #     """判断 break_属性,若为True,抛出WebBreak异常"""
+    #     if self.break_:
+    #         logger.info("web break")
+    #         raise WebBreak
 
     def exit(self):
         """关闭任务中占用的文件,保存settings"""
@@ -150,7 +150,7 @@ class TaskManager(TaskQueue):
                 logger.set_file_logger()
                 continue
 
-            self.web_break()
+            # self.web_break()
             taskNode.nextRunTime = task.run()
             config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
             config.save()
@@ -169,7 +169,7 @@ class TaskManager(TaskQueue):
         logger.info(f"sleep {time_sleep}")
         interval = 5
         while 1:
-            self.web_break()
+            # self.web_break()
             if time_sleep > 5:
                 sleep(interval)
                 time_sleep -= interval
