@@ -270,7 +270,7 @@ class Writer:
     def __init__(self, command: Command = None, argv=None):
         if not command:
             if not argv:
-                argv = ["-h", "-i", "mn", "l"]
+                argv = ["-h", "-i", "m", "l"]
             command = Command(argv)
         self.command = command
 

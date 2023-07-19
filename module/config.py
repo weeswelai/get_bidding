@@ -26,18 +26,31 @@ if pyw_name not in IGNORE:
 
     class Config(dict):
         name = ""
+        creatNewJsonFile = False
+        command = []
 
         def __init__(self) -> None:
-            c = CONFIG["test"] if TEST else CONFIG["file"]
-            self.dataFolder = c["dataFolder"]
-            self.file = c["jsonFIle"]
+            test = CONFIG["test"] if TEST else CONFIG["file"]
+            self.dataFolder = test["dataFolder"]
+            self.file: str = test["jsonFIle"]
             if not os.path.exists(self.file):
                 copyfile(SETTINGS_DEFAULT, self.file)
             with open(self.file, "r", encoding="utf-8") as f:
-                d = loads(f.read())
-            for k, v in d.items():
+                settings = loads(f.read())
+            for k, v in settings.items():
                 self[k] = v
             self.taskList = self["task"]["list"]
+            for k, v in CONFIG["config"].items():
+                setattr(self, k, v)
+            if self.creatNewJsonFile:
+                self.set_new_json()
+
+        def set_new_json(self):
+            from module.utils import date_now_s
+            from os.path import splitext
+            date = date_now_s(file_new=True)
+            self.file = f"{splitext(self.file)[0]}{date}.json"
+
 
         def save(self):
             save_json(self, self.file)

@@ -8,7 +8,8 @@
         "dataFolder": "./dataTest",
         "jsonFIle": "./bid_settings/bid_settings_test.json"
     },
-    "creatNewJsonFile": false,
-    "transFileDefault":["list", "match","dayFile"],
-    "transFile": ["list", "match","dayFile"]
+    "config":{
+        "creatNewJsonFile": false,
+        "command": ["-h", "-i", "m", "l"]
+    }
 }

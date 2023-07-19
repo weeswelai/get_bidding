@@ -155,7 +155,7 @@ class TaskManager(TaskQueue):
             config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
             config.save()
             self.insert(taskNode)
-            writer = Writer()
+            writer = Writer(argv=config.command)
             writer.output()
 
     def sleep(self, nextRunTime: datetime):
