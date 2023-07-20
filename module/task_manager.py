@@ -116,6 +116,7 @@ class TaskManager(TaskQueue):
         """
         logger.hr("TaskManager.__init__", 3)
         config.set_("task.run_time", date_now_s())  # 写入运行时间
+        import_web_module()
         super().__init__()
 
     # def web_break(self):
@@ -238,6 +239,13 @@ def queue_restart(queue: TaskQueue):
         queue.insert(t)
     queue.print()
     config.save()
+
+
+def import_web_module():
+    from os import listdir
+    for module in listdir("./module/web"):
+        if module.endswith(".py"):
+            import_module(f"module.web.{module[:-3]}")
 
 
 if __name__ == "__main__":
