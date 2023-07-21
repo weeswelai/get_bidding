@@ -224,6 +224,8 @@ def during_runtime(time: datetime) -> datetime or None:
     today18 = datetime.now().replace(hour=18 , minute=0, second=0, microsecond=0)
     yesterday18 = today18 - oneDay
     tomorrow00 = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + oneDay
+    if config.run_at_today18:
+        today18 = time
     if yesterday18 < time < today07_30:
         return today07_30
     elif today18 < time < tomorrow00:

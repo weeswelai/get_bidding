@@ -28,6 +28,7 @@ if pyw_name not in IGNORE:
         name = ""
         creatNewJsonFile = False
         command = []
+        run_at_today18 = False
 
         def __init__(self) -> None:
             test = CONFIG["test"] if TEST else CONFIG["file"]
