@@ -152,6 +152,7 @@ class Task:
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     txt: DataFileTxt
     bid_task_queue: BidTaskQueue
+    error = False
 
     def __init__(self, name="default") -> None:
         """ 初始化任务, 保存settings 和 name
@@ -355,7 +356,9 @@ class Task:
             config.save()
             self.bid_task_queue.insert(bid_task)
         self.close()
-        return self.bid_task_queue.first_runtime()
+        if not self.error:
+            reset_task(config, self.name, set_time=True, time=time2str(self.bid_task_queue.head.nextRunTime))
+        return self.bid_task_queue.first_runtime(), self.error
 
     def close(self):
         self.txt.data_file_exit()

@@ -24,6 +24,7 @@ class TaskNode:
     next = None
 
     def __init__(self, task: str=None) -> None:
+        self.error = False
         if task:
             self.name = task
             self.nextRunTime = deep_get(config, f"{task}.nextRunTime")
@@ -152,8 +153,13 @@ class TaskManager(TaskQueue):
                 continue
 
             # self.web_break()
-            taskNode.nextRunTime = task.run()
-            config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
+            taskNode.nextRunTime, taskNode.error = task.run()
+            taskNode.nextRunTime, reset_time = compare_nextRunTime(self, taskNode)
+            if reset_time:
+                reset_task(config, taskNode.name, set_time=True, time=time2str(taskNode.nextRunTime))
+            else:
+                config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
+
             config.save()
             self.insert(taskNode)
             writer = Writer(argv=config.command)
@@ -246,6 +252,22 @@ def import_web_module():
     for module in listdir("./module/web"):
         if module.endswith(".py"):
             import_module(f"module.web.{module[:-3]}")
+
+
+def compare_nextRunTime(queue: TaskQueue, task_insert: TaskNode):
+    reset_time = True
+    if task_insert.error:
+        reset_time = False
+        return task_insert.nextRunTime, reset_time
+    task = queue.head
+    while task:
+        if (task_insert.nextRunTime - task.nextRunTime).seconds <= 3600:  # 1小时内
+            if task.error:
+                task = task.next
+                continue
+            return task.nextRunTime, reset_time
+        task = task.next
+    return task_insert.nextRunTime, reset_time
 
 
 if __name__ == "__main__":
