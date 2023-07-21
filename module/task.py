@@ -323,6 +323,7 @@ class Task:
     def run_bid_task(self, name) -> datetime:
         self.list_url = None
         self.bid_task = BidTask(name)
+        state = config.get_task(f"{name}.state")
         try:
             self._run_bid_task()
             time_add = RESTART_TIME if self.bid_task.interrupt else self.complete_delay
@@ -331,6 +332,9 @@ class Task:
             self.bid_task.set_task("state", "error")
             logger.error(f"{traceback.format_exc()}")
             time_add = self.error_delay
+            self.error = True
+        if state in ("error", "interrupt") and self.bid_task.state == "complete":
+            return str2time(RUN_TIME_START)
         return datetime.now() + get_time_add(time_add)
 
     def run(self, restart=False) -> datetime:
