@@ -261,3 +261,6 @@ if __name__ == "__main__":
     print(titleTrie.search_all("123测测量图形456"))
     print(titleTrie.search_all("123测量测图形456"))
     # update_match()
+    # from module.lineAddLiTag import Writer
+    # from module.config import config
+    # Writer(argv=config.command).output()
