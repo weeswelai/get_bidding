@@ -316,50 +316,62 @@ def init_re(re_rule, flag=16):
         return None
 
 
-def reset_state(settings, key, json_file=""):
-    """ 重置一个 state  如 zzlh的'货物'"""
-    if isinstance(settings, str) and not json_file:
-        json_file = settings
-        settings = read_json(settings)
-    url = deep_get(settings, f"{key}.url")
-    deep_set(settings, key, settings["default"]["state1"].copy())
-    deep_set(settings, f"{key}.url", url)
-    if json_file:
-        save_json(settings, json_file)
+# reset
+"""
+1. 读取json,重置可选任务的时间或bid_task, 时间和 bid_task 分别可选
+2. 重置一个任务的时间或bid_task, 时间和 bid_task 分别可选
+3. 重置一个bid_task的时间或将其状态清空
+"""
+
+def _set_time(d: dict, name: str = None, time=""):
+    task = d[name] if name else d
+    task["nextRunTime"] = time
 
 
-def reset_task(settings: dict, task_name: str, json_file=""):
-    """ 重置一个任务的nextRunTime, newest interrupt end_rule"""
-    if isinstance(settings, str) and not json_file:
-        json_file = settings
-        settings = read_json(settings)
-    PageQueue = settings[task_name]["PageQueue"]
-    PageWait = settings[task_name]["PageWait"]
-    for _ in range(len(PageWait)):
-        PageQueue.append(PageWait.pop(0))
-
-    settings[task_name]["nextRunTime"] = ""
-    for state in settings[task_name]["PageQueue"]:
-        reset_state(settings, f"{task_name}.{state}")
-    if json_file:
-        save_json(json_file)
+def _clear_bid_task(d, keys=None):
+    """ 重置一个 bid_task  如 zzlh的 货物 """
+    if not keys:
+        keys = ("newestBid", "interruptUrl", "interruptBid", "stopBid")
+    for key in keys:
+        if isinstance(d[key], str):
+            d[key] = ""
+            continue
+        for k in d[key]:
+            d[key][k] = ""
+    d["state"] = ""
+    _set_time(d)
 
 
-def reset_time(settings: dict, task_name: str):
-    settings[task_name]["nextRunTime"] = ""
+def reset_task(task_d: dict, name="", clear_bid=False, set_time=False, time=""):
+    """ 重置一个任务的 nextRunTime 和 bid_task """
+    task = task_d[name] if name else task_d
+    if set_time:
+        _set_time(task, time=time)
+    for bid_task in  task["TaskList"]:
+        if set_time:
+            _set_time(task[bid_task], time=time)
+        if clear_bid:
+            _clear_bid_task(task[bid_task])
 
 
-def reset_json_file(json_file, time=False):
+def clear_json_file(json_file, task="", clear_bid=False, set_time=False, time=""):
     """ 重置一个json文件task.list里所有任务"""
-    settings = read_json(json_file)
-    for task_name in settings["task"]["list"]:
-        if time:
-            reset_time(settings, task_name)
-        else:
-            reset_task(settings, task_name)
-    save_json(settings, json_file)
+    read_file = False
+    if isinstance(json_file, dict):
+        json_d = json_file    
+    else:
+        read_file = True
+        json_d = read_json(json_file)
+    if task:
+        reset_task(json_d, task, clear_bid, set_time, time)
+    else:
+        for name in json_d["task"]["list"]:
+            reset_task(json_d, name, clear_bid, set_time, time)
+    if read_file:
+        save_json(json_d, json_file)
 
 
+# cookies
 def cookie_str_to_dict(cookie: str):
     cookie_dict = {}
     for c in cookie.split(";"):
@@ -379,5 +391,6 @@ def cookie_dict_to_str(set_cookie: dict):
 if __name__ == "__main__":
     # 本模块测试
     # test code
-    reset_json_file("./bid_settings/bid_settings.json", time=True)
+    # clear_json_file("./bid_settings/bid_settings_default.json", clear_bid=True, set_time=True)
+    clear_json_file("./bid_settings/bid_settings.json", set_time=True, time="2023-07-21 13:30:34")
     pass
