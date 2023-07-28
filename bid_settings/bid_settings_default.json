@@ -1,8 +1,8 @@
 {
   "task": {
     "list": [
-      "qjc",
       "zzlh",
+      "qjc",
       "hkgy",
       "jdcg",
       "zhzb",
@@ -10,8 +10,8 @@
       "zgzf"
     ],
     "test": [
-      "qjc",
       "zzlh",
+      "qjc",
       "hkgy",
       "jdcg",
       "zhzb",
@@ -34,7 +34,7 @@
       "method": "GET",
       "headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-        "Referer": "http://www.365trade.com.cn/zbgg/index_15.jhtml?typeId=103"
+        "Referer": "http://www.365trade.com.cn/zbgg/index.jhtml?typeId=102"
       },
       "cookies": {},
       "cut_rule": {
@@ -43,13 +43,13 @@
       }
     },
     "BidTag": {
-      "name_r": "tagName_find:a.p.span|title:",
-      "date_r": "tagName_find:i|class:fl dis_block release_date ",
-      "url_r": "tagName_find:a|href:",
-      "type_r": "tagName_find:a.p.em|_Text:"
+      "name_r": "span > title",
+      "date_r": "i",
+      "url_r": "a > href",
+      "type_r": "em"
     },
     "brows": {
-      "tag_list": "li"
+      "ListTag": "li"
     },
     "BidBase": {
       "urlRoot": "http://www.365trade.com.cn",
@@ -60,7 +60,7 @@
     "货物": {
       "state": "",
       "nextRunTime": "",
-      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=102",
+      "url": "http://www.365trade.com.cn/zbgg/index.jhtml?typeId=102",
       "newestBid": {
         "name": "",
         "date": "",
@@ -81,7 +81,7 @@
     "服务": {
       "state": "",
       "nextRunTime": "",
-      "url": "http://www.365trade.com.cn/zbgg/index_1.jhtml?typeId=103",
+      "url": "http://www.365trade.com.cn/zbgg/index.jhtml?typeId=103",
       "newestBid": {
         "name": "",
         "date": "",
@@ -121,13 +121,13 @@
       }
     },
     "BidTag": {
-      "name_r": "tagName_find:|title:",
-      "date_r": "tagName_find:em|_Text:",
-      "url_r": "tagName_find:|href:",
+      "name_r": " > title",
+      "date_r": "em",
+      "url_r": " > href",
       "type_r": ""
     },
     "brows": {
-      "tag_list": "a"
+      "ListTag": "a"
     },
     "BidBase": {
       "urlRoot": "https://ebid.eavic.com",
@@ -186,7 +186,7 @@
         "sec-ch-ua": "\"Google Chrome\";v=\"111\", \"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"111\"",
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": "\"Windows\"",
-        "Referer": "https://www.plap.cn/index/selectsumBynews.html?page=9&id=3&twoid=24&title=&productType=&productTypeName=&tab=%25E7%2589%25A9%25E8%25B5%2584&lastArticleTypeName=%25E7%25AB%259E%25E4%25BA%2589%25E6%2580%25A7%25E8%25B0%2588%25E5%2588%25A4&publishStartDate=&publishEndDate="
+        "Referer": ""
       },
       "cookies": {},
       "cut_rule": {
@@ -195,13 +195,13 @@
       }
     },
     "BidTag": {
-      "name_r": "tagName_find:a|title:",
-      "date_r": "tagName_all:span|class:col-md-3 col-sm-3 col-xs-6 tc p0|0",
-      "url_r": "tagName_find:a|href:",
-      "type_r": "tagName_all:span|class:col-md-2 col-sm-3 col-xs-6|0"
+      "name_r": "a > title",
+      "date_r": "span,0,class=col-md-3 col-sm-3 col-xs-6 tc p0",
+      "url_r": "a > href",
+      "type_r": "span,0,class=col-md-2 col-sm-3 col-xs-6"
     },
     "brows": {
-      "tag_list": "li"
+      "ListTag": "li"
     },
     "BidBase": {
       "urlRoot": "https://www.plap.cn",
@@ -355,7 +355,7 @@
       "method": "GET",
       "headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-        "Referer": "http://www.weain.mil.cn/api/front/list/cggg/list?LMID=1149231318006472705&pageNo=3&purchaseType=%E7%AB%9E%E4%BA%89%E6%80%A7%E8%B0%88%E5%88%A4&_t=1686201801059"
+        "Referer": ""
       },
       "cookies": {},
       "cut_rule": {
@@ -364,13 +364,13 @@
       }
     },
     "BidTag": {
-      "name_r": ":nonSecretTitle|",
-      "date_r": ":publishTime|",
-      "url_r": ":pcUrl|",
-      "type_r": ":purchaseType|"
+      "name_r": "nonSecretTitle",
+      "date_r": "publishTime",
+      "url_r": "pcUrl",
+      "type_r": "purchaseType"
     },
     "brows": {
-      "tag_list": "list.contentList"
+      "ListTag": "list.contentList"
     },
     "BidBase": {
       "urlRoot": "http://www.weain.mil.cn",
@@ -568,13 +568,13 @@
       }
     },
     "BidTag": {
-      "name_r": "tagName_find:a|_Text:",
-      "date_r": "tagName_find:div.span|_Text:",
-      "url_r": "tagName_find:a|href:",
+      "name_r": "a > title",
+      "date_r": "span",
+      "url_r": "a > href",
       "type_r": ""
     },
     "brows": {
-      "tag_list": "li"
+      "ListTag": "li"
     },
     "BidBase": {
       "urlRoot": "http://bid.aited.cn",
@@ -599,13 +599,9 @@
         "date": "",
         "url": ""
       },
-      "interruptUrl":{
-        "url": "http://bid.aited.cn/front/ajax_getBidList.do",
-        "form": {
-          "classId": 151,
-          "key": -1,
-          "page": 1
-        }
+      "interruptUrl": {
+        "url": "",
+        "form": ""
       },
       "interruptBid": {
         "name": "",
@@ -646,22 +642,25 @@
         "Connection": "keep-alive",
         "Accept-Encoding": "gzip",
         "Host": "search.ccgp.gov.cn",
-        "Referer": "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=8&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=1&dbselect=bidx&kw=&start_time=2023%3A06%3A08&end_time=2023%3A06%3A02&timeType=2&displayZone=&zoneId=&pppStatus=0&agentName="
+        "Referer": "http://search.ccgp.gov.cn"
       },
-      "cookies": {},
+      "cookies": {
+        "Hm_lvt_9459d8c503dd3c37b526898ff5aacadd": "1684291341",
+        "Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd": "1689897203"
+      },
       "cut_rule": {
         "re_rule": "(<ul class=\"vT-srch-result-list-bid\">).*?(</ul>)",
         "rule_option": 16
       }
     },
     "BidTag": {
-      "name_r": "tagName_find:a|_Text:",
-      "date_r": "tagName_find:span|_Text:",
-      "url_r": "tagName_find:a|href:",
-      "type_r": "tagName_all:strong|_Text:|all"
+      "name_r": "a",
+      "date_r": "span",
+      "url_r": "a > href",
+      "type_r": "strong,ALL"
     },
     "brows": {
-      "tag_list": "li"
+      "ListTag": "li"
     },
     "BidBase": {
       "urlRoot": "",
@@ -780,7 +779,7 @@
       "method": "GET",
       "headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-        "Referer": "https://bulletin.cebpubservice.com/xxfbcmses/search/bulletin.html?searchDate=1998-06-08&dates=300&word=&categoryId=88&industryName=G05&area=&status=&publishMedia=&sourceInfo=&showStatus=&page=1"
+        "Referer": "https://bulletin.cebpubservice.com"
       },
       "cookies": {},
       "cut_rule": {
@@ -789,13 +788,13 @@
       }
     },
     "BidTag": {
-      "name_r": "tagName_find:a|title:",
-      "date_r": "tagName_find:td|id:",
-      "url_r": "tagName_find:a|href:",
-      "type_r": "tagName_find:span|title:"
+      "name_r": "a > title",
+      "date_r": "td > id",
+      "url_r": "a > href",
+      "type_r": "span > title"
     },
     "brows": {
-      "tag_list": "tr"
+      "ListTag": "tr"
     },
     "BidBase": {
       "urlRoot": "",
@@ -959,7 +958,7 @@
       "type_r": ""
     },
     "brows": {
-      "tag_list": "li"
+      "ListTag": "li"
     },
     "BidBase": {
       "urlRoot": "",
