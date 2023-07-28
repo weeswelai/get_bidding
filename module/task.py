@@ -230,7 +230,7 @@ class Task:
         logger.info(f"pages: {page}, next_list_url: {self.list_url}")
 
     def get_pages(self):
-        return str(int(self.next_rule.search(self.list_url).group()))
+        return self.next_rule.search(self.list_url).group()
 
     def tag_filterate(self):
         return True
