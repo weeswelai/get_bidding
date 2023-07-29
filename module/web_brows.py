@@ -199,15 +199,14 @@ class BidBase:
         for idx, key in enumerate(("name", "date", "url", "type")):
             self.rule_now = key
             rule = getattr(self, f"{key}_cut")
-            setattr(self, key, _re_get_str(args[idx], rule))
+            fun = getattr(self, f"{key}_get")
+            data = _re_get_str(args[idx], rule)
+            data_set = fun(data)
+            self._set(key, data_set)
 
-        self.url_get()  # TODO 是否应该根据type进行选择?
-        self.date_get()
-        self.name_get()
-        self.type_get()
         self.infoList = [self.name, self.date, self.url, self.type]
 
-    def url_get(self):
+    def url_get(self, url):
         """ 用 前缀加上后缀得到网址
         输入bid_root对 json中的 name.url_open.url_root 进行查表
         Args:
@@ -217,17 +216,23 @@ class BidBase:
         # if self.type in self.url_root:
         #     self.url = f"{self.url_root[self.type]}{self.url}"
         # else:
-        self.url = f"{self.url_root}{self.url}"
+        return f"{self.url_root}{url}"
 
-    def name_get(self):
-        pass
+    def name_get(self, name):
+        return name
 
-    def type_get(self):
-        if self.type in ["", " ", None]:
-            self.type == "None"
+    def type_get(self, type):
+        if type in ["", " ", None]:
+            return "None"
+        return type
 
-    def date_get(self):
-        self.date = self.date.replace("年", "-").replace("月", "-").replace("日", "")
+    def date_get(self, date):
+        return date.replace("年", "-").replace("月", "-").replace("日", "")
+
+    def _set(self, key, data:str):
+        if "\n" in data:
+            data = data.replace("\n", "")
+        setattr(self, key, data)
 
     def message(self) -> str:
         # infoList 的最后一位可能是 None

@@ -122,6 +122,8 @@ class DataFileTxt:
     def _write(self, file, data):
         if not self.file_open:
             self.data_file_open()
+        if "\n" in data:
+            data = data.replace("\n", "")
         if data[-1] != "\n":
             data = f"{data}\n"
         for k, v in self.file.items():
@@ -284,7 +286,7 @@ class Task:
                 # logger.debug(self.bid.infoList)
             except Exception:
                 err_flag = True
-                logger.error(f"bid receive failed, idx: {idx}, rule: {self.bid.rule_now}"
+                logger.error(f"bid receive failed, idx: {idx}, rule: {self.bid.rule_now}, "
                              f"{traceback.format_exc()}")
         if err_flag:
             logger.error(f"error idx: {idx}")
