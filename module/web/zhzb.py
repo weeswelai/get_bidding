@@ -11,8 +11,8 @@ class GetList(get_url.GetList):
 
 class BidBase(web_brows.BidBase):
     
-    def name_get(self):
-        self.name = self.name.replace("\\\"", "")
+    def name_get(self, name:str):
+        return name.replace("\\\"", "")
 
 
 class BidTag(web_brows.BidTag):
