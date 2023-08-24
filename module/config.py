@@ -9,8 +9,10 @@ SETTINGS_DEFAULT = "./bid_settings/bid_settings_default.json"
 CONFIG_DEFAULT = "./bid_settings/config_default.json"
 CONFIG_FILE = "./bid_settings/config.json"
 
+pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所在的文件,去掉.py和文件夹前缀
+
 # ensure in bid_run.py directory
-if os.getcwd() != sys.path[0]:
+if os.getcwd() != sys.path[0] and pyw_name in ("bid_run"):
     os.chdir(os.path.dirname(sys.argv[0]))
     # print(os.getcwd())
 
@@ -21,7 +23,6 @@ with open(CONFIG_FILE, "r", encoding="utf-8") as c_json:
     CONFIG = loads(c_json.read())
     TEST = True if CONFIG["test"]["switch"] else False
 
-pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所在的文件,去掉.py和文件夹前缀
 
 IGNORE = ("lineAddLiTag")
 if pyw_name not in IGNORE:
@@ -55,7 +56,6 @@ if pyw_name not in IGNORE:
             from os.path import splitext
             date = date_now_s(file_new=True)
             self.file = f"{splitext(self.file)[0]}{date}.json"
-
 
         def save(self):
             save_json(self, self.file)
