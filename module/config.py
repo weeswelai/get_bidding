@@ -6,9 +6,13 @@ from module.utils import deep_set
 
 # 读取配置json
 SETTINGS_DEFAULT = "./bid_settings/bid_settings_default.json"
-
 CONFIG_DEFAULT = "./bid_settings/config_default.json"
 CONFIG_FILE = "./bid_settings/config.json"
+
+# ensure in bid_run.py directory
+if os.getcwd() != sys.path[0]:
+    os.chdir(os.path.dirname(sys.argv[0]))
+    # print(os.getcwd())
 
 if not os.path.exists(CONFIG_FILE):
     copyfile(CONFIG_DEFAULT, CONFIG_FILE)
@@ -19,7 +23,7 @@ with open(CONFIG_FILE, "r", encoding="utf-8") as c_json:
 
 pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所在的文件,去掉.py和文件夹前缀
 
-IGNORE = ["lineAddLiTag"]
+IGNORE = ("lineAddLiTag")
 if pyw_name not in IGNORE:
     from module.utils import save_json, deep_get
 
