@@ -51,7 +51,7 @@
     "brows": {
       "ListTag": "li"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "http://www.365trade.com.cn",
       "re": {
         "date_cut": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
@@ -129,7 +129,7 @@
     "brows": {
       "ListTag": "a"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "https://ebid.eavic.com",
       "re": {
         "date_cut": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
@@ -203,7 +203,7 @@
     "brows": {
       "ListTag": "li"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "https://www.plap.cn",
       "re": {
         "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
@@ -372,7 +372,7 @@
     "brows": {
       "ListTag": "list.contentList"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "http://www.weain.mil.cn",
       "re": {
         "date_cut": null
@@ -576,7 +576,7 @@
     "brows": {
       "ListTag": "li"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "http://bid.aited.cn",
       "re": {
         "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)",
@@ -662,7 +662,7 @@
     "brows": {
       "ListTag": "li"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "",
       "re": {
         "date_cut": "\\d{4}\\.\\d{1,2}\\.\\d{1,2}(日|) \\d{2}:\\d{2}:\\d{2}"
@@ -796,7 +796,7 @@
     "brows": {
       "ListTag": "tr"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "",
       "re": {
         "url_cut": "(?<=').*?(?=')",
@@ -960,7 +960,7 @@
     "brows": {
       "ListTag": "li"
     },
-    "BidBase": {
+    "Bid": {
       "urlRoot": "",
       "re": {
         "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"

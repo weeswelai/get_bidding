@@ -145,7 +145,7 @@ class DataFileTxt:
 class Task:
     list_url = ""
     bid_task: BidTask
-    bid: BidBase
+    bid: Bid
     tag: BidTag
     get_list: GetList
     brows: ListBrows
@@ -269,7 +269,7 @@ class Task:
         self.bid_task.print_interrupt()
 
     def _bid_receive_bid_tag(self, tag: Tag or dict, idx):
-        """ 由BidTag.get 读取一个项目项目节点, BidBase 接收并对信息进行处理
+        """ 由BidTag.get 读取一个项目项目节点, Bid 接收并对信息进行处理
         """
         err_flag = False
         try:
@@ -298,11 +298,11 @@ class Task:
             return False
         return True
 
-    def _title_trie_search(self, bid_prj: BidBase):
+    def _title_trie_search(self, bid_prj: Bid):
         """ 处理 bid对象
 
         Args:
-            bid_prj (brows.BidBase): 保存 bid 信息的对象
+            bid_prj (brows.Bid): 保存 bid 信息的对象
         """
         result: list = titleTrie.search_all(bid_prj.name)
         if result:

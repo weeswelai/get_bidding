@@ -36,10 +36,10 @@ class StopBid:
         self.date = datetime.strptime(self.date_str, "%Y-%m-%d %H:%M:%S") - \
                     timedelta(days=end_day)
 
-    def bid_is_end(self, bid_prj: BidBase):
+    def bid_is_end(self, bid_prj: Bid):
         """ 判断当前项目是否符合结束条件
         Args:
-            bid_prj (<class> BidBase): 当前Bid对象, 保存项目信息
+            bid_prj (<class> Bid): 当前Bid对象, 保存项目信息
         """
         # 名称和Url都相同时停止
         if bid_prj.name == self.name \
@@ -101,7 +101,7 @@ class BidTask:
                     f"interrupt: {self.interrupt}, "
                     f"start: {self.start}")
 
-    def bid_is_start(self, bid_prj: BidBase):
+    def bid_is_start(self, bid_prj: Bid):
         """判断条件为: name, date, url 三个信息必须全部符合, 符合返回True 并
         将 self.state 置为 True, 若有一个不符合则返回 False .
         仅在 interrupt状态下执行
@@ -125,7 +125,7 @@ class BidTask:
         self.start = True
         return True
 
-    def complete(self, bid: BidBase = None):
+    def complete(self, bid: Bid = None):
         """ 完成任务后, newestBid 设为 stopBid, 清除 newestBid 和 interruptBid
         将 BidTask.state 设为 "complete"
         """
@@ -140,7 +140,7 @@ class BidTask:
             logger.info(f"bid end at {bid.infoList}")
         logger.info(f"stopBid: {self.stop_bid}")
 
-    def save_newest_and_interrupt(self, bid: BidBase):
+    def save_newest_and_interrupt(self, bid: Bid):
         """ 保存最新的招标项目信息, 设置 compelete 为 interrupt
             仅执行一次, interrupt状态下不执行
         """
@@ -175,7 +175,7 @@ class BidTask:
         complete状态self.start默认为True
 
         Args:
-            bid (brows.BidBase): 当前Bid对象
+            bid (brows.Bid): 当前Bid对象
         """
         if self.start:
             self.set_task("interruptBid", _bid_to_dict(bid))
@@ -229,7 +229,7 @@ class BidTask:
             logger.info(f"first bid: {infoList}")
         return False
 
-    def bid_judge(self, bid: BidBase, idx: int):
+    def bid_judge(self, bid: Bid, idx: int):
         if self.compare_last_first(idx, bid.infoList) or self.stop_bid.bid_is_end(bid):
             self.complete(bid)
             return True
@@ -247,7 +247,7 @@ def _bid_to_dict(bid_prj=None):
         }
     elif isinstance(bid_prj, dict):
         return bid_prj
-    elif isinstance(bid_prj, BidBase):
+    elif isinstance(bid_prj, Bid):
         return {
             "name": bid_prj.name,
             "date": bid_prj.date,

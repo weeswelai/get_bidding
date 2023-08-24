@@ -122,7 +122,7 @@ class GetList(get_url.GetList):
                 raise WebTooManyVisits
 
 
-class BidBase(web_brows.BidBase):
+class Bid(web_brows.Bid):
     def date_get(self, date):
         return date.replace(".", "-")
 
@@ -138,7 +138,7 @@ class ListBrows(web_brows.ListBrows):
 class Task(task.Task):
     def __init__(self, name) -> None:
         self.get_list = GetList()
-        self.bid = BidBase()
+        self.bid = Bid()
         self.tag = BidTag()
         self.brows = ListBrows()
         super().__init__(name)

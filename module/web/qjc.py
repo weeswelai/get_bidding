@@ -29,7 +29,7 @@ class GetList(get_url.GetList):
             self.open(url)
 
 
-class BidBase(web_brows.BidBase):
+class Bid(web_brows.Bid):
     pass
 
 
@@ -69,7 +69,7 @@ class ListBrows(web_brows.ListBrows):
 class Task(task.Task):
     def __init__(self, name) -> None:
         self.get_list = GetList()
-        self.bid = BidBase()
+        self.bid = Bid()
         self.tag = BidTag(tag_rule=TagRule)
         self.brows = ListBrows()
         super().__init__(name)

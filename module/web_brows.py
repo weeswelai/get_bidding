@@ -162,9 +162,9 @@ class BidTag:
         return self.infoList
 
 
-class BidBase:
+class Bid:
     # 解析后的bid信息
-    # BidBase: 用于 module.web 中的继承，保存一个网页列表中招标项目的最终信息
+    # Bid: 用于 module.web 中的继承，保存一个网页列表中招标项目的最终信息
     type: str
     url: str
     date: str
@@ -185,11 +185,11 @@ class BidBase:
         """
         logger.hr("Bid.__init__", 3)
         settings = settings if settings else config.get_task()
-        rule = settings["BidBase"]["re"]
+        rule = settings["Bid"]["re"]
         for k, v in rule.items():
             setattr(self, k, init_re(v))
             logger.debug(f"rule init {k}: {getattr(self, k)}")
-        self.url_root = settings["BidBase"]["urlRoot"]
+        self.url_root = settings["Bid"]["urlRoot"]
 
     def receive(self, *args):
         """ 接收BidTag.get()返回的list
@@ -302,7 +302,7 @@ if __name__ == "__main__":
 
     config.name = "zgzf"
     tag = BidTag()
-    bid = BidBase()
+    bid = Bid()
     list_brows = ListBrows()
     with open("./html_test/zgzf_test.html", "r", encoding="utf-8") as f:
         tag_li = list_brows.get_tag_list(f.read())
