@@ -12,7 +12,7 @@ class CutError(Exception):
     pass
 
 
-class BidReceiveError(Exception):
+class ParseTagError(Exception):
     pass
 
 

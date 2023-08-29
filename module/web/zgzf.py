@@ -2,24 +2,49 @@ import re
 from time import time
 from urllib.parse import urlencode
 
+from bs4 import BeautifulSoup as btfs
 from requests.utils import cookiejar_from_dict
 
-import module.get_url as get_url
-import module.task as task
-import module.web_brows as web_brows
-from module.config import config
 from module.exception import *
 from module.log import logger
+from module.task import Task
 from module.utils import *
+from module.web_brows import tag_find
 
 
-class GetList(get_url.GetList):
-
+class Zgzf(Task):
     set_cookie_r = re.compile(r"(?<=\s).{0,10}?=deleted")
     html_cookie_r = re.compile(r"(?<=document.cookie = \").*?(?=;)")
     url_r = re.compile(r"&start.*timeType=?\d")
     time_type_r = re.compile(r"(?<=timeType=)\d")
 
+    def cut_judge(self):
+        if self.response:
+            bs = btfs(self.response, "html.parser")
+            tag = tag_find(bs, "p", 0)
+            text = tag.text
+            if text.find("您的访问过于频繁,请稍后再试") > 0 or \
+                text.find("您的访问行为异常,请稍后再试") > 0:
+                raise WebTooManyVisits
+
+    # Task
+    def close(self):
+        for k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
+            if k in self.cookies:
+                logger.debug(f"cookie delete {k}:{self.cookies[k]}")
+                del(self.cookies[k])
+        super().close()
+
+    def get_date(self, date: str):
+        return date.replace(".", "-")
+
+    # def tag_filterate(self):
+    #     if self.bid.type.split("|")[0] in \
+    #         ("公开招标公告", "竞争性谈判公告", "邀请招标公告", "竞争性磋商公告"):
+    #         # logger.debug(self.bid.name)
+    #         return True
+
+    # GetList
     def url_extra(self, url):
         result = self.url_r.search(url)
         if result is None:
@@ -43,22 +68,22 @@ class GetList(get_url.GetList):
         """
         增加headers_deleted_cookie方法调用
         """
-        self.config.update_cookies(self.s.cookies.get_dict())
+        self.update_cookies(self.s.cookies.get_dict())
         cookies_html: dict = self.get_cookies_from_html()
         self.headers_deleted_cookie()
         if cookies_html:
-            self.config.update_cookies(cookies_html)
-        self.s.cookies = cookiejar_from_dict(self.config.cookies)
-        self.config.save_cookies()
+            self.update_cookies(cookies_html)
+        self.s.cookies = cookiejar_from_dict(self.cookies)
+        self.save_cookies()
 
     def get_cookies_from_html(self, **kwargs):
         """
         部分cookie保存在返回的html中,用正则进行搜索
         """
-        if not self.res.response:
+        if not self.response:
             return None
         cookies = {}
-        cookie_find = self.html_cookie_r.findall(self.res.response, re.S)
+        cookie_find = self.html_cookie_r.findall(self.response, re.S)
         logger.debug(f"html cookie: {cookie_find}")
         for cookie_add in cookie_find:
             key, value = cookie_add.split("=")
@@ -91,8 +116,8 @@ class GetList(get_url.GetList):
 
         """
         time_now = str(time())[:10]
-        self.config.cookies["Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd"] = time_now
-        self.s.cookies = cookiejar_from_dict(self.config.cookies)
+        self.cookies["Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd"] = time_now
+        self.s.cookies = cookiejar_from_dict(self.cookies)
 
     def headers_deleted_cookie(self):
         """
@@ -108,66 +133,17 @@ class GetList(get_url.GetList):
             logger.debug(f"deleted cookie: {deleted_cookie}")
             for cookie in deleted_cookie:
                 k, _ = cookie.split("=")
-                del(self.config.cookies[k])
-
-    def cut_judge(self):
-        from bs4 import BeautifulSoup as btfs
-
-        if self.res.response:
-            bs = btfs(self.res.response, "html.parser")
-            tag = web_brows.tag_find(bs, "p", 0)
-            text = tag.text
-            if text.find("您的访问过于频繁,请稍后再试") > 0 or \
-                text.find("您的访问行为异常,请稍后再试") > 0:
-                raise WebTooManyVisits
-
-
-class Bid(web_brows.Bid):
-    def date_get(self, date):
-        return date.replace(".", "-")
-
-
-class BidTag(web_brows.BidTag):
-    pass
-
-
-class ListBrows(web_brows.ListBrows):
-    pass
-
-
-class Task(task.Task):
-    def __init__(self, name) -> None:
-        self.get_list = GetList()
-        self.bid = Bid()
-        self.tag = BidTag()
-        self.brows = ListBrows()
-        super().__init__(name)
-
-    def close(self):
-        for k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
-            if k in self.get_list.config.cookies:
-                logger.debug(f"cookie delete {k}:{self.get_list.config.cookies[k]}")
-                del(self.get_list.config.cookies[k])
-        super().close()
-
-    # def tag_filterate(self):
-    #     if self.bid.type.split("|")[0] in \
-    #         ("公开招标公告", "竞争性谈判公告", "邀请招标公告", "竞争性磋商公告"):
-    #         # logger.debug(self.bid.name)
-    #         return True
+                del(self.cookies[k])
 
 
 if __name__ == "__main__":
     # test
-    self = Task("zgzf")
-    # self.get_list.res.get_response_from_file("./html_test/zgzf_test.html")
-    # self.brows.html_cut = self.get_list.res.cut_html()
-    # self.brows.get_tag_list()
-    # for i, t in enumerate(self.brows.tag_list):
-    #     self._bid_receive_bid_tag(t, i)
-    #     logger.info(self.bid.message())
-    
-    # bid_task test
-    # self.run_bid_task("公开招标")
+    self = Zgzf("zgzf")
+    self.get_response_from_file("./html_test/zgzf_test.html")
+    self.html_cut = self.cut_html()
+    self.get_tag_list()
+    for idx, tag in enumerate(self.tag_list):
+        self._parse_tag(tag, idx)
+        logger.info(self.message())
     
     pass

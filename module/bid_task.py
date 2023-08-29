@@ -36,17 +36,17 @@ class StopBid:
         self.date = datetime.strptime(self.date_str, "%Y-%m-%d %H:%M:%S") - \
                     timedelta(days=end_day)
 
-    def bid_is_end(self, bid_prj: Bid):
+    def bid_is_end(self, bid_prj: dict):
         """ 判断当前项目是否符合结束条件
         Args:
             bid_prj (<class> Bid): 当前Bid对象, 保存项目信息
         """
         # 名称和Url都相同时停止
-        if bid_prj.name == self.name \
-                and bid_prj.url == self.url:
+        if bid_prj["name"] == self.name \
+                and bid_prj["url"] == self.url:
             return True
         # 超出时间限制时停止
-        if self._date_is_end(bid_prj.date):
+        if self._date_is_end(bid_prj["date"]):
             return True
         return False
 
@@ -101,7 +101,7 @@ class BidTask:
                     f"interrupt: {self.interrupt}, "
                     f"start: {self.start}")
 
-    def bid_is_start(self, bid_prj: Bid):
+    def bid_is_start(self, bid_info: dict):
         """判断条件为: name, date, url 三个信息必须全部符合, 符合返回True 并
         将 self.state 置为 True, 若有一个不符合则返回 False .
         仅在 interrupt状态下执行
@@ -111,21 +111,21 @@ class BidTask:
         直到判断为end_rule 并结束state 时都没有符合开始条件
 
         Args:
-            bid_prj: self.bid
+            bid_info: self.bid
         """
         if self.start:
             return
         for key in self.interrupt_bid:  # name, date, url
-            if getattr(bid_prj, key) == self.interrupt_bid[key] \
+            if bid_info[key] == self.interrupt_bid[key] \
                     and self.interrupt_bid[key]:
                 continue
             else:  # 有一个不符合条件直接返回False
                 return False  # 不满足则退出判断
-        logger.info(f"bid is start, start at {bid_prj.name}")
+        logger.info(f"bid is start, start at {bid_info['name']}")
         self.start = True
         return True
 
-    def complete(self, bid: Bid = None):
+    def complete(self, bid_info: dict = None):
         """ 完成任务后, newestBid 设为 stopBid, 清除 newestBid 和 interruptBid
         将 BidTask.state 设为 "complete"
         """
@@ -136,17 +136,16 @@ class BidTask:
             self.set_task("stopBid", newestBid)
         self.set_task("newestBid", _bid_to_dict())
         self.set_task("state", "complete")
-        if bid:
-            logger.info(f"bid end at {bid.infoList}")
+        logger.info(f"bid end at {bid_info}")
         logger.info(f"stopBid: {self.stop_bid}")
 
-    def save_newest_and_interrupt(self, bid: Bid):
+    def save_newest_and_interrupt(self, bid_info: Bid):
         """ 保存最新的招标项目信息, 设置 compelete 为 interrupt
             仅执行一次, interrupt状态下不执行
         """
         if self.interrupt:
             return
-        bid_message = _bid_to_dict(bid)
+        bid_message = _bid_to_dict(bid_info)
         if len(bid_message["date"]) <= 10:
             bid_message["date"] = bid_message["date"] + " 00:00:00"
         self.set_task("newestBid", bid_message)
@@ -218,23 +217,24 @@ class BidTask:
         else:
             logger.info("not start")
 
-    def compare_last_first(self, idx, infoList):
+    def compare_last_first(self, idx, bid_info: dict):
         """ 比较每页第一个项目信息是否与上一页第一个完全相等, 若相等返回True
         """
-        if infoList == self.first_bid:
+        info = tuple(bid_info.values())
+        if info == self.first_bid:
             logger.info(f"open out of pages, bid is end")
             return True
         if not idx:
-            self.first_bid = infoList
-            logger.info(f"first bid: {infoList}")
+            self.first_bid = info
+            logger.info(f"first bid: {info}")
         return False
 
-    def bid_judge(self, bid: Bid, idx: int):
-        if self.compare_last_first(idx, bid.infoList) or self.stop_bid.bid_is_end(bid):
-            self.complete(bid)
+    def bid_judge(self, bid_info: dict, idx: int):
+        if self.compare_last_first(idx, bid_info) or self.stop_bid.bid_is_end(bid_info):
+            self.complete(bid_info)
             return True
         if not self.newest:  # complete 状态只执行一次, interrupt状态不执行
-            self.save_newest_and_interrupt(bid)
+            self.save_newest_and_interrupt(bid_info)
         return False
 
 
@@ -247,11 +247,5 @@ def _bid_to_dict(bid_prj=None):
         }
     elif isinstance(bid_prj, dict):
         return bid_prj
-    elif isinstance(bid_prj, Bid):
-        return {
-            "name": bid_prj.name,
-            "date": bid_prj.date,
-            "url": bid_prj.url
-        }
     else:
         return {key: "" for key in ("name", "date", "url")}

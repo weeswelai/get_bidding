@@ -7,8 +7,9 @@ from urllib.parse import urlencode
 
 import requests
 import requests.utils as requtils
+from bs4 import BeautifulSoup as btfs
 
-from module.config import config
+from module.config import TaskConfig, config
 from module.exception import *
 from module.log import logger
 from module.utils import *
@@ -24,31 +25,7 @@ VERIFY = False
 packet_capture = False  # 抓包开关
 system_proxies = False  # 是否系统代理
 
-class UrlConfig:
-    method = "GET"  # 默认
-    headers = {}
-    cookies = {}
-    cut_rule = None
-    time_out = 16
-    delay: tuple = (2, 3)
-    next_pages: str = ""
-    encoding = "utf-8"
-
-    def __init__(self, settings=None) -> None:
-        """
-        读 settings.json 获得method, delay, headers和cookies
-        """
-        settings = settings if settings else config.get_task()
-        openConfig = settings["OpenConfig"]
-        logger.info(f"UrlConfig:{jsdump(openConfig)}")
-        for k, v in openConfig.items():
-            if k == "cookies":
-                if isinstance(v, str):
-                    v = cookie_str_to_dict(v)
-            setattr(self, k, v)
-        if "User-Agent" not in self.headers:
-            self.headers["User-Agent"] = HEADERS["User-Agent"]
-
+class OpenConfig(TaskConfig):
     def params(self):
         kwargs = {
             "headers": self.headers,
@@ -81,12 +58,9 @@ class UrlConfig:
         self.headers["Referer"] = referer
 
 
-class Response:
+class ListWebResponse(OpenConfig):
     response: str = None
-
-    def __init__(self, rule):
-        self.cut = init_re(rule)
-        logger.info(f"cut_rule: {rule}")
+    bs = None
 
     def cut_html(self, rule: dict or str = None):
         """ 裁剪得到的html源码, 保存到 self.html_cut
@@ -97,9 +71,9 @@ class Response:
 
         Args:
             rule (dict, str): 仅在测试中使用,裁剪的规则
-                当 cut_rule 为str 时使用re.S 额外参数: . 匹配换行符 \n
+                当 html_cut 为str 时使用re.S 额外参数: . 匹配换行符 \n
                 为dict时如下所示 \n
-                cut_rule = {
+                html_cut = {
                     "re_rule": "正则表达式",
                     "rule_option": "re.compile额外参数, 默认为re.S, 
                         re.S无法保存在json中,所以使用re.S在python中的 int值,值为 16"
@@ -108,7 +82,7 @@ class Response:
             html_cut(str): 使用正则裁剪后的html源码,也有可能不裁剪
         """
         logger.info("get_list.res.cut_html")
-        rule = rule if rule else self.cut
+        rule = rule if rule else self.html_cut_rule
         if isinstance(rule, dict):
             html_cut = re.search(rule["re_rule"],
                                  self.response,
@@ -117,12 +91,33 @@ class Response:
             html_cut = re.search(rule, self.response, re.S) if rule else \
                        self.response 
         else:
-            html_cut = self.cut.search(self.response)
+            html_cut = self.html_cut_rule.search(self.response)
         if not html_cut:
             logger.debug(f"len response {len(self.response)}")
-            logger.debug(f"cut rule {self.cut.pattern}")
+            logger.debug(f"cut rule {self.html_cut_rule}")
             raise CutError
         return html_cut.group()
+
+    def get_tag_list(self, page=None, list_tag_rule=None, parse="html.parser"):
+        """
+        输入 str 调用 bs生成self.bs 从self.bs 里根据bs_tag提取list
+        Args:
+            list_tag_rule:
+            page:(str) html源码,解析获得self.bs,或从 self.url_response 或
+            parse (str): 解析html的bs4模式 默认为 html.parser
+        Returns:
+            bid_list (list): 提取到的list
+        """
+        logger.info("ListWebResponse.get_tag_list")
+        if not list_tag_rule:  # 仅测试中使用
+            list_tag_rule = self.list_tag_rule
+        if isinstance(page, str):
+            self.html_cut = page
+            logger.info(f"get tag list from \"{page.strip()[: 100]}\"")
+        # TODO 捕获错误判断
+        self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
+        self.tag_list = self.bs.find_all(list_tag_rule)
+        return self.tag_list
 
     def save_response(self, rps="", url="test.html", path="./html_error/",
                       save_date=False, extra=""):
@@ -179,15 +174,11 @@ class Response:
         setattr(self, save, response)
 
 
-class GetList:
+# TODO 将 open url 相关的函数和参数分开作一个类?
+class GetList(ListWebResponse):
     list_url = ""
     r: requests.models.Response = None
-
-    def __init__(self):
-        logger.hr("GetList init")
-        self.config = UrlConfig()
-        self.res = Response(self.config.cut_rule)
-        self.s: requests.Session = requests.Session()
+    s: requests.Session = None
 
     def url_extra(self, url, **kwargs):
         return url
@@ -196,7 +187,7 @@ class GetList:
         pass
 
     def set_cookie_time(self):
-        self.s.cookies = requtils.cookiejar_from_dict(self.config.cookies)
+        self.s.cookies = requtils.cookiejar_from_dict(self.cookies)
 
     def cut_judge(self):
         """
@@ -205,7 +196,9 @@ class GetList:
         pass
 
     def open(self, url, open_times=0, save_error=0):
-        self.res.response = ""
+        if not self.s:
+            self.s = requests.Session()
+        self.response = ""
         self.set_cookie_time()
         open_times += 1
         if open_times > MAX_ERROR_OPEN:
@@ -222,7 +215,7 @@ class GetList:
             html_cut, error, save_error = self._cut(save_error)
         if error:
             logger.error(error)
-            sleep_random(self.config.delay)
+            sleep_random(self.delay)
             html_cut = self.open(url, open_times, save_error)
         return html_cut
 
@@ -230,20 +223,20 @@ class GetList:
         error = ""
         html_cut = ""
         try:
-            html_cut = self.res.cut_html()
+            html_cut = self.cut_html()
         except Exception:  # html AttributeError json 
             error = f"cut error: {self.list_url}\n{traceback.format_exc()}"
             if save_error < MAX_ERROR_SAVE:
                 save_error += 1
-                self.res.save_response(url=self.list_url,
+                self.save_response(url=self.list_url,
                                        save_date=True, extra="cut_Error")
             self.cut_judge()
         return html_cut, error, save_error
 
     def _open(self, **kwargs):
-        method = self.config.method.upper()
+        method = self.method.upper()
         if not kwargs:
-            kwargs = self.config.params()
+            kwargs = self.params()
         if method == "GET":
             self.r = self.s.get(url=self.list_url, **kwargs)
         elif method == "POST":
@@ -252,21 +245,17 @@ class GetList:
         else:
             logger.warning(f"error method: {method}")
             # raise
-        self.r.encoding = self.config.encoding
-        self.res.response = self.r.text
+        self.r.encoding = self.encoding
+        self.response = self.r.text
         self.set_cookies()
 
     def set_cookies(self):
-        self.config.update_cookies(self.s.cookies.get_dict())
+        self.update_cookies(self.s.cookies.get_dict())
         cookies_html: dict = self.get_cookies_from_html()
         if cookies_html:
-            self.config.update_cookies(cookies_html)
-        self.s.cookies = requtils.cookiejar_from_dict(self.config.cookies)
-        self.config.save_cookies()
+            self.update_cookies(cookies_html)
+        self.s.cookies = requtils.cookiejar_from_dict(self.cookies)
+        self.save_cookies()
 
     def get_cookies_from_html(self):
         return None
-
-
-def add_test_kwargs(kwargs):
-    pass
