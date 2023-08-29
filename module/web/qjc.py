@@ -5,13 +5,36 @@ import re
 import module.get_url as get_url
 import module.task as task
 import module.web_brows as web_brows
+from module.exception import CutError
 from module.log import logger
 from module.utils import *
+
+
+class Response(get_url.Response):
+    def __init__(self):
+        pass
+
+    def cut_html(self, *argv):
+        logger.info("qjc.res.cut_html")
+        error = ""
+        if not self.response:
+            error = "response is \"\""
+        try:
+            loads(self.response)
+        except Exception:
+            error = "json loads error"
+        if error:
+            raise CutError  # exception is caught at GetList._cut()
+        return self.response
 
 
 class GetList(get_url.GetList):
 
     redirect_cut = re.compile(r"(?<=\|dynamicurl\|).*?(?=\|wzwsmethod\|)")
+
+    def __init__(self):
+        super().__init__()
+        self.res = Response()
 
     def url_extra(self, url):
         """ 只在以complete状态开始的任务获取开始网址时调用一次
