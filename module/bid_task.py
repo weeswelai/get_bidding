@@ -246,6 +246,6 @@ def _bid_to_dict(bid_prj=None):
             "url": bid_prj[2]
         }
     elif isinstance(bid_prj, dict):
-        return bid_prj
+        return {key: bid_prj[key] for key in ("name", "date", "url")}
     else:
         return {key: "" for key in ("name", "date", "url")}
