@@ -72,12 +72,14 @@ if pyw_name not in IGNORE:
             self = Config()
 
         def set_task(self, key, data):
-            self.set_(f"{self.name}.{key}", data)
+            if self.name:
+                key = f"{self.name}.{key}" if key else self.name
+            self.set_(key, data)
 
         def get_task(self, key=""):
-            if key:
-                return self.get_(f"{self.name}.{key}")
-            return self[self.name]
+            if self.name:
+                key = f"{self.name}.{key}" if key else self.name
+            return self.get_(key)
 
         def set_(self, key, data):
             deep_set(self, key, data)
