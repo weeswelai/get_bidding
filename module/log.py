@@ -3,7 +3,7 @@
 借鉴于 https://github.com/LmeSzinc/AzurLaneAutoScript/blob/master/module/logger.py
 """
 
-import datetime
+from datetime import date
 import logging
 import os
 import sys
@@ -98,7 +98,7 @@ def set_file_logger(name=pyw_name):
     """
     # if '_' in name:
     #     name = name.split('_', 1)[0]
-    log_file = f'./log/{datetime.date.today()}_{name}.txt'
+    log_file = f'./log/{date.today()}_{name}.txt'
 
     try:
         hdlr = logging.FileHandler(filename=log_file, mode="a",

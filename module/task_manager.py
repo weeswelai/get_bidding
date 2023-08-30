@@ -178,10 +178,10 @@ class TaskManager(TaskQueue):
         while 1:
             # self.web_break()
             if time_sleep > 5:
-                sleep(interval)
+                time.sleep(interval)
                 time_sleep -= interval
             elif 0 < time_sleep <= 5:
-                sleep(time_sleep)
+                time.sleep(time_sleep)
                 return
             else:
                 return

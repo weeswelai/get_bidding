@@ -5,14 +5,12 @@
 import json
 import os
 import re
+import time
 from datetime import datetime, timedelta
-from json import dumps, loads
 from random import uniform
-from time import sleep
 from urllib.parse import unquote
 
 from bs4 import Tag
-
 
 # json or file
 
@@ -66,7 +64,7 @@ def read_json(file) -> dict:
     with open(file, "r", encoding="utf-8") as settings_json_r:
         f_read = settings_json_r.read()
         logger.info(f"read {file}")
-        return loads(f_read)
+        return json.loads(f_read)
 
 
 def save_json(data, json_file, indent=2):
@@ -83,8 +81,8 @@ def save_json(data, json_file, indent=2):
     create_folder(json_file)
 
     with open(json_file, "w", encoding="utf-8") as json_file_w:
-        write_data = dumps(data, indent=indent, ensure_ascii=False,
-                           sort_keys=False, default=str)
+        write_data = json.dumps(data, indent=indent, ensure_ascii=False,
+                                sort_keys=False, default=str)
         json_file_w.write(write_data)
     logger.info(f"save {json_file}")
 
@@ -188,9 +186,9 @@ def sleep_random(time_range: tuple = (2, 3), message: str = None):
     sleep_idx = int(sleep_time)
     for idx in range(1, sleep_idx + 1):
         print(f"sleep {idx} now")
-        sleep(1)
+        time.sleep(1)
     print(f"sleep {sleep_time} now")
-    sleep(sleep_time - sleep_idx)
+    time.sleep(sleep_time - sleep_idx)
     print("sleep end")
 
 

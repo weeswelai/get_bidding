@@ -15,9 +15,9 @@
 调用Writer和Command
 """
 
+import json
 import sys
-from json import loads
-from os.path import exists, basename
+from os.path import basename, exists
 
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -41,7 +41,7 @@ WEB = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"]
 date_time = ""
 
 with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-    config =  loads(f.read())
+    config =  json.loads(f.read())
     TEST = True if config["test"]["switch"] else False
     DATAFOLDER = config["test"]["dataFolder"] if TEST else config["file"]["dataFolder"]
 

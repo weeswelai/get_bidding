@@ -1,9 +1,10 @@
-import os, sys
-from json import loads
+import json
+import os
+import sys
 from shutil import copyfile
 
 from module.log import logger
-from module.utils import deep_set, cookie_str_to_dict, init_re, jsdump
+from module.utils import cookie_str_to_dict, deep_set, init_re, jsdump
 
 # time
 COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
@@ -27,13 +28,13 @@ if not os.path.exists(CONFIG_FILE):
     copyfile(CONFIG_DEFAULT, CONFIG_FILE)
 
 with open(CONFIG_FILE, "r", encoding="utf-8") as c_json:
-    CONFIG = loads(c_json.read())
+    CONFIG = json.loads(c_json.read())
     TEST = True if CONFIG["test"]["switch"] else False
     logger.info(f"{CONFIG_FILE} test switch is {TEST}")
 
 IGNORE = ("lineAddLiTag")
 if pyw_name not in IGNORE:
-    from module.utils import save_json, deep_get
+    from module.utils import deep_get, save_json
 
     class Config(dict):
         name = ""
@@ -48,7 +49,7 @@ if pyw_name not in IGNORE:
             if not os.path.exists(self.file):
                 copyfile(SETTINGS_DEFAULT, self.file)
             with open(self.file, "r", encoding="utf-8") as f:
-                settings = loads(f.read())
+                settings = json.loads(f.read())
             for k, v in settings.items():
                 self[k] = v
             self.taskList = self["task"]["list"]
@@ -58,8 +59,9 @@ if pyw_name not in IGNORE:
                 self.set_new_json()
 
         def set_new_json(self):
-            from module.utils import date_now_s
             from os.path import splitext
+
+            from module.utils import date_now_s
             date = date_now_s(file_new=True)
             self.file = f"{splitext(self.file)[0]}{date}.json"
 

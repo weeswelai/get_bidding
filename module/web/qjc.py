@@ -30,7 +30,7 @@ class Qjc(Task):
             if isinstance(page, dict):
                 self.html_cut = page
             elif isinstance(page, str):
-                self.html_cut = loads(page)
+                self.html_cut = json.loads(page)
         self.bs = self.html_cut
         self.tag_list = deep_get(self.bs, li_tag)
         return self.tag_list
