@@ -371,6 +371,27 @@ def clear_json_file(json_file, task="", clear_bid=False, set_time=False, time=""
         save_json(json_d, json_file)
 
 
+def copy_settings(old, new, new_file_name=""):
+    with open(old, "r", encoding="utf-8") as old_file,\
+         open(new, "r", encoding="utf-8") as new_file:
+        old_json = json.loads(old_file.read())
+        new_json = json.loads(new_file.read())
+    # "task"
+    new_json["task"] = old_json["task"]
+    # BidTask
+    for name in old_json["task"]["list"]:
+        for task in old_json[name]:
+            if task in ("task", "BidTag", "brows", "Bid"):
+                continue
+            if task == "OpenConfig":
+                for config in ("headers", "cookies"):
+                    new_json[name][task][config] = old_json[name][task][config]
+                continue
+            new_json[name][task] = old_json[name][task]
+    new_file_name = new_file_name if new_file_name else new
+    save_json(new_json, new_file_name)
+
+
 # cookies
 def cookie_str_to_dict(cookie: str):
     cookie_dict = {}
@@ -392,5 +413,6 @@ if __name__ == "__main__":
     # 本模块测试
     # test code
     # clear_json_file("./bid_settings/bid_settings_default.json", clear_bid=True, set_time=True)
-    clear_json_file("./bid_settings/bid_settings.json", set_time=True, time="2023-07-21 13:30:34")
+    # clear_json_file("./bid_settings/bid_settings.json", set_time=True, time="2023-07-21 13:30:34")
+    copy_settings("./bid_settings/bid_settings.json", "./bid_settings/bid_settings_newClass.json")
     pass
