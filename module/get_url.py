@@ -98,25 +98,25 @@ class ListWebResponse(OpenConfig):
             raise CutError
         return html_cut.group()
 
-    def get_tag_list(self, page=None, list_tag_rule=None, parse="html.parser"):
+    def get_tag_list(self, page=None, li_tag=None, parse="html.parser"):
         """
         输入 str 调用 bs生成self.bs 从self.bs 里根据bs_tag提取list
         Args:
-            list_tag_rule:
+            li_tag:
             page:(str) html源码,解析获得self.bs,或从 self.url_response 或
             parse (str): 解析html的bs4模式 默认为 html.parser
         Returns:
             bid_list (list): 提取到的list
         """
         logger.info("ListWebResponse.get_tag_list")
-        if not list_tag_rule:  # 仅测试中使用
-            list_tag_rule = self.list_tag_rule
+        if not li_tag:  # 仅测试中使用
+            li_tag = self.li_tag
         if isinstance(page, str):
             self.html_cut = page
             logger.info(f"get tag list from \"{page.strip()[: 100]}\"")
         # TODO 捕获错误判断
         self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
-        self.tag_list = self.bs.find_all(list_tag_rule)
+        self.tag_list = self.bs.find_all(li_tag)
         return self.tag_list
 
     def save_response(self, rps="", url="test.html", path="./html_error/",

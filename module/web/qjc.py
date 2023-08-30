@@ -19,12 +19,12 @@ class Qjc(Task):
             return self.tag_fun(tag, self.tag_rule)
 
 
-    def get_tag_list(self, page=None, list_tag_rule=None, *args):
+    def get_tag_list(self, page=None, li_tag=None, *args):
         """ 得到json中的列表
         """
         logger.info("Qjc.get_tag_list")
-        if not list_tag_rule:
-            list_tag_rule = self.list_tag_rule
+        if not li_tag:
+            li_tag = self.li_tag
         page = page if page else self.html_cut
         if page:
             if isinstance(page, dict):
@@ -32,7 +32,7 @@ class Qjc(Task):
             elif isinstance(page, str):
                 self.html_cut = loads(page)
         self.bs = self.html_cut
-        self.tag_list = deep_get(self.bs, list_tag_rule)
+        self.tag_list = deep_get(self.bs, li_tag)
         return self.tag_list
 
     def open_extra(self, **kwargs):

@@ -109,7 +109,7 @@ class TaskBaseConfig:
     html_cut_rule = None  # regular expression or re.compile(html_cut_rule)
     html_cut: str = ""  # html_cut = cut_html()
     bs = None   # Tag or dict
-    list_tag_rule = None  # TODO rename ListTag to list_tag_rule
+    li_tag = None  # TODO rename ListTag to li_tag
     tag_list: list = None
     # BidTag
     tag_rules: dict = None
