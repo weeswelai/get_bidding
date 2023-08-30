@@ -213,9 +213,10 @@ def task_init(task: TaskNode):
     if exists(f"./module/web/{name}.py"):
         mod = import_module(f"module.web.{name}")
     else:
-        mod = import_module(f"module.web.base")
+        from module.task import Task
+        return Task(name)
     logger.hr(f"task {name}", 1)
-    return mod.Task(name)
+    return getattr(mod, name.title())(name)
 
 
 def during_runtime(time: datetime) -> datetime or None:

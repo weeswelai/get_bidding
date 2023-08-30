@@ -413,5 +413,6 @@ if __name__ == "__main__":
     # 本模块测试
     # test code
     # clear_json_file("./bid_settings/bid_settings_default.json", clear_bid=True, set_time=True)
-    clear_json_file("./bid_settings/bid_settings.json", set_time=True, time="2023-07-21 13:30:34")
+    # clear_json_file("./bid_settings/bid_settings.json", set_time=True, time="2023-07-21 13:30:34")
+    copy_settings("./bid_settings/bid_settings.json", "./bid_settings/bid_settings_newClass.json")
     pass

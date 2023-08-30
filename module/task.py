@@ -6,9 +6,8 @@ import traceback
 from io import TextIOWrapper
 
 from module.bid_task import BidTask
-from module.config import config
+from module.config import *
 from module.exception import *
-from module.get_url import GetList
 from module.judge_content import titleTrie
 from module.log import logger
 from module.task_manager import RUN_TIME_START, TaskNode, TaskQueue
@@ -18,9 +17,6 @@ from module.web_brows import *
 DATA_PATH = config.dataFolder
 RE_OPEN_MAX = 4  # 异常时最大重新打开次数
 SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
-COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
-ERROR_DELAY = "10m"  # 网页打开次数过多时延迟时间
-NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
 RESTART_TIME = -180  # 重新运行
 
 
@@ -64,40 +60,40 @@ class BidTaskQueue(TaskQueue):
 
 
 class DataFileTxt:
-    filePath = {
+    files_path = {
         "list": None,
         "match": None,
         "daymatch": None,
         "daylist": None
     }
-    file = {
+    files = {
         "list": None,
         "match": None,
         "daymatch": None,
         "daylist": None
     }
+    file_open = False
 
-    def __init__(self, name="test") -> None:
-        self.file_open = False
-        self.name = name
+    def data_file_init(self, name="test") -> None:
         self._file_init(name)
-        create_folder(self.filePath["list"])
+        create_folder(self.files_path["list"])
         log = ""
-        for k, v in self.filePath.items():
+        for k, v in self.files_path.items():
             log += f"{k}: {v}\n{' '*26}"
         logger.info(log.strip())
 
     def _file_init(self, name):
-        for k in self.filePath.keys():
+        for k in self.files_path.keys():
             if "day" in k:
-                self.filePath[k] = f"{DATA_PATH}/bid_{k}_{date_days(format='day')}.txt"
+                self.files_path[k] = f"{DATA_PATH}/bid_{k}_{date_days(format='day')}.txt"
             else:
-                self.filePath[k] = f"{DATA_PATH}/bid_{k}_{name}.txt"
+                self.files_path[k] = f"{DATA_PATH}/bid_{k}_{name}.txt"
 
     def data_file_open(self):
         if not self.file_open:
-            for k, v in self.filePath.items():
-                self.file[k] = open(v, "a", encoding="utf-8")
+            self.data_file_init()
+            for k, v in self.files_path.items():
+                self.files[k] = open(v, "a", encoding="utf-8")
             # 写入运行时间
             self.file_open = True
             self.write_all(f"{self.name} start at {date_now_s()}\n")
@@ -105,7 +101,7 @@ class DataFileTxt:
 
     def data_file_exit(self):
         if self.file_open:
-            for v in self.file.values():
+            for v in self.files.values():
                 v: TextIOWrapper
                 v.close()
             self.file_open = False
@@ -119,15 +115,15 @@ class DataFileTxt:
         if self.file_open:
             self._write("list", data)
 
-    def _write(self, file, data):
+    def _write(self, files, data):
         if not self.file_open:
             self.data_file_open()
         if "\n" in data:
             data = data.replace("\n", "")
         if data[-1] != "\n":
             data = f"{data}\n"
-        for k, v in self.file.items():
-            if file in k:
+        for k, v in self.files.items():
+            if files in k:
                 v: TextIOWrapper
                 v.write(data)
 
@@ -137,44 +133,18 @@ class DataFileTxt:
 
     def flush(self):
         if self.file_open:
-            for fi in self.file.values():
+            for fi in self.files.values():
                 fi: TextIOWrapper
                 fi.flush()
 
 
-class Task:
-    list_url = ""
+class Task(Bid, DataFileTxt):
     bid_task: BidTask
-    bid: Bid
-    tag: BidTag
-    get_list: GetList
-    brows: ListBrows
     # bid_web: BidHtml
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
-    txt: DataFileTxt
-    bid_task_queue: BidTaskQueue
     error = False
-
-    def __init__(self, name="default") -> None:
-        """ 初始化任务, 保存settings 和 name
-        Args:
-            name(str):
-        """
-        settings = config.get_task("task")
-        self.name = name  # 当前任务名
-        logger.hr(f"init task {self.name}")
-        logger.info(f"task settings:{dict2str(settings)}")
-        self.next_rule = init_re(settings["next_pages"])
-        self.error_delay = deep_get(settings, "errorDelay") or ERROR_DELAY
-        self.complete_delay = deep_get(settings, "completeDelay") or COMPLETE_DELAY
-        delay = deep_get(settings, "nextOpenDelay")
-        self.delay = [int(t) for t in delay.split(",")] if delay else NEXT_OPEN_DELAY
-        self.init()
-
-    def init(self):
-        self.txt = DataFileTxt(self.name)
-        self.bid_task_queue = BidTaskQueue()
+    bid_task_queue = None
 
     def get_next_pages_url(self, list_url="", next_rule=None, **kwargs) -> str:
         """
@@ -191,9 +161,21 @@ class Task:
             list_url = self.list_url
         pages = str(int(next_rule.search(list_url).group()) + 1)
         next_pages_url = next_rule.sub(pages, list_url)
-        self.get_list.config.update_referer(list_url)
+        self.update_referer(list_url)
         logger.info("get next pages url")
         return next_pages_url
+
+    def get_next_list_url(self):
+        """ 获得下次打开的 url 保存在self.list_url
+        """
+        if not self.list_url:
+            logger.hr("get start url")
+            list_url = self.bid_task.return_start_url()
+            self.list_url = self.url_extra(list_url)
+        else:
+            self.list_url = self.get_next_pages_url()
+        page = self.get_pages()
+        logger.info(f"pages: {page}, next_list_url: {self.list_url}")
 
     def process_next_list_web(self) -> bool:
         """ 打开项目列表页面,获得所有 项目的tag list, 并依次解析tag
@@ -203,14 +185,14 @@ class Task:
         # 下次要打开的项目列表url
         self.get_next_list_url()
 
-        # 打开项目列表页面, 获得 self.brows.html_list_match
-        self.brows.html_cut = self.get_list.open(url=self.list_url)
+        # 打开项目列表页面
+        self.html_cut = self.open(url=self.list_url)
 
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
-        tagList = self.brows.get_tag_list()
+        tagList = self.get_tag_list()
         logger.info(f"len tagList = {len(tagList)}")
         self.process_tag_list(tagList)
-        self.txt.flush()  # 刷新缓冲区写入文件
+        self.flush()  # 刷新缓冲区写入文件
 
         if not self.match_num:
             logger.info("no match")
@@ -218,18 +200,6 @@ class Task:
             self._complete_bid_task()
             return False  # state结束
         return True  # state继续
-
-    def get_next_list_url(self):
-        """ 获得下次打开的 url 保存在self.list_url
-        """
-        if not self.list_url:
-            logger.hr("get start url")
-            list_url = self.bid_task.return_start_url()
-            self.list_url = self.get_list.url_extra(list_url)
-        else:
-            self.list_url = self.get_next_pages_url()
-        page = self.get_pages()
-        logger.info(f"pages: {page}, next_list_url: {self.list_url}")
 
     def get_pages(self):
         return self.next_rule.search(self.list_url).group()
@@ -249,66 +219,67 @@ class Task:
             return
         for idx, tag in enumerate(tag_list):
             # bid对象接收bid_tag解析结果
-            if not self._bid_receive_bid_tag(tag, idx):
+            if not self._parse_tag(tag, idx):
                 continue
 
-            if self.bid_task.bid_judge(self.bid, idx):
+            if self.bid_task.bid_judge(self.bid_info, idx):
                 break
 
             if not self.bid_task.start:  # interrupt状态时判断项目是否开始记录
-                self.bid_task.bid_is_start(self.bid)
+                self.bid_task.bid_is_start(self.bid_info)
                 continue
 
             if self.tag_filterate():
-                self.txt.write_list(f"{self.bid.message()}\n")  # 写入文件
-                self._title_trie_search(self.bid)  # 使用title trie 查找关键词
+                self.write_list(f"{self.message()}\n")  # 写入文件
+                self._title_trie_search()  # 使用title trie 查找关键词
   
         logger.info(f"tag stop at {idx + 1}, tag counting from 1")
-        self.bid_task.set_interrupt(self.bid)  # 设置每次最后一个为interrupt
+        self.bid_task.set_interrupt(self.bid_info)  # 设置每次最后一个为interrupt
         self.bid_task.set_interrupt_url(self.list_url)
         self.bid_task.print_interrupt()
 
-    def _bid_receive_bid_tag(self, tag: Tag or dict, idx):
+    def _parse_tag(self, tag: Tag or dict, idx):
         """ 由BidTag.get 读取一个项目项目节点, Bid 接收并对信息进行处理
+        Save:
+            tag_info(list): 
+            bid_info(dict): 
+            info_list(list): 
         """
         err_flag = False
         try:
-            infoList = self.tag.get_info(tag)
+            tag_info = self.get_tag_info(tag)
             # logger.debug(str(infoList))  # 打印每次获得的项目信息
         except Exception:
             err_flag = True
             logger.error(f"tag get error: {tag},\nidx: {idx}, "
-                         f"tag rule: {self.tag.rule_now}\n"
+                         f"tag rule: {self.tag_key_now}\n"
                          f"{traceback.format_exc()}")
         if not err_flag:
             try:
-                self.bid.receive(*infoList)
-                # logger.debug(self.bid.infoList)
+                self.get_bid_info(*tag_info)
+                # logger.debug(self.bid_info)
             except Exception:
                 err_flag = True
-                logger.error(f"bid receive failed, idx: {idx}, rule: {self.bid.rule_now}, "
+                logger.error(f"bid receive failed, idx: {idx}, rule: {self.get_bid_now}, "
                              f"{traceback.format_exc()}")
         if err_flag:
             logger.error(f"error idx: {idx}")
             self.bid_tag_error += 1
             if self.bid_tag_error > 5:
                 logger.error("too many bid.receive error")
-                self.get_list.res.save_response(rps=self.brows.bs, url=self.list_url, save_date=True, extra="receiveError")
-                raise BidReceiveError
+                self.save_response(rps=self.bs, url=self.list_url, save_date=True, extra="parse_tag_error")
+                raise ParseTagError
             return False
         return True
 
-    def _title_trie_search(self, bid_prj: Bid):
-        """ 处理 bid对象
-
-        Args:
-            bid_prj (brows.Bid): 保存 bid 信息的对象
+    def _title_trie_search(self):
+        """ 判断招标标题信息
         """
-        result: list = titleTrie.search_all(bid_prj.name)
+        result: list = titleTrie.search_all(self.bid_info["name"])
         if result:
-            result = f"[{','.join(result)}]; {bid_prj.message()}"
+            result = f"[{','.join(result)}]; {self.message()}"
             logger.info(result)
-            self.txt.write_match(result)
+            self.write_match(result)
             self.match_num += 1
 
     def _complete_bid_task(self):
@@ -342,8 +313,10 @@ class Task:
 
     def run(self, restart=False) -> datetime:
         logger.hr(f"{self.name} run")
-        if not self.txt.file_open:
-            self.txt.data_file_open()
+        if not self.bid_task_queue:
+            self.bid_task_queue = BidTaskQueue()
+        if not self.file_open:
+            self.data_file_open()
         if restart:
             self.bid_task_queue.restart()
         while 1:
@@ -363,8 +336,8 @@ class Task:
         return self.bid_task_queue.first_runtime(), self.error
 
     def close(self):
-        self.txt.data_file_exit()
-        self.get_list.s.close()
+        self.data_file_exit()
+        self.s.close()
 
 
 if __name__ == "__main__":
