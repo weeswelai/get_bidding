@@ -37,24 +37,22 @@
         "Referer": "http://www.365trade.com.cn/zbgg/index.jhtml?typeId=102"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul class=\"searchList\">).*?(</ul>)",
         "rule_option": 16
-      }
+      },
+      "li_tag": "li"
     },
     "BidTag": {
-      "name_r": "span > title",
-      "date_r": "i",
-      "url_r": "a > href",
-      "type_r": "em"
-    },
-    "brows": {
-      "ListTag": "li"
+      "name": "span > title",
+      "date": "i",
+      "url": "a > href",
+      "type": "em"
     },
     "Bid": {
       "urlRoot": "http://www.365trade.com.cn",
       "re": {
-        "date_cut": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
+        "date": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
       }
     },
     "货物": {
@@ -115,24 +113,22 @@
         "Referer": "https://ebid.eavic.com/cms/channel/ywgg1/index.htm?pageNo=1"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul id=\"list1\">).*?(</ul>)",
         "rule_option": 16
-      }
+      },
+      "li_tag": "a"
     },
     "BidTag": {
-      "name_r": " > title",
-      "date_r": "em",
-      "url_r": " > href",
-      "type_r": ""
-    },
-    "brows": {
-      "ListTag": "a"
+      "name": " > title",
+      "date": "em",
+      "url": " > href",
+      "type": ""
     },
     "Bid": {
       "urlRoot": "https://ebid.eavic.com",
       "re": {
-        "date_cut": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
+        "date": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
       }
     },
     "招标公告": {
@@ -189,24 +185,22 @@
         "Referer": ""
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul class=\"categories li_square col-md-12 col-sm-12 col-xs-12 p0 list_new\">).*?(</ul>)",
         "rule_option": 16
-      }
+      },
+      "li_tag": "li"
     },
     "BidTag": {
-      "name_r": "a > title",
-      "date_r": "span,0,class=col-md-3 col-sm-3 col-xs-6 tc p0",
-      "url_r": "a > href",
-      "type_r": "span,0,class=col-md-2 col-sm-3 col-xs-6"
-    },
-    "brows": {
-      "ListTag": "li"
+      "name": "a > title",
+      "date": "span,0,class=col-md-3 col-sm-3 col-xs-6 tc p0",
+      "url": "a > href",
+      "type": "span,0,class=col-md-2 col-sm-3 col-xs-6"
     },
     "Bid": {
       "urlRoot": "https://www.plap.cn",
       "re": {
-        "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
+        "date": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
       }
     },
     "物资_公开招标": {
@@ -358,24 +352,22 @@
         "Referer": ""
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": ".*",
         "rule_option": 16
-      }
+      },
+      "li_tag": "list.contentList"
     },
     "BidTag": {
-      "name_r": "nonSecretTitle",
-      "date_r": "publishTime",
-      "url_r": "pcUrl",
-      "type_r": "purchaseType"
-    },
-    "brows": {
-      "ListTag": "list.contentList"
+      "name": "nonSecretTitle",
+      "date": "publishTime",
+      "url": "pcUrl",
+      "type": "purchaseType"
     },
     "Bid": {
       "urlRoot": "http://www.weain.mil.cn",
       "re": {
-        "date_cut": null
+        "date": null
       }
     },
     "公告1_公开招标": {
@@ -562,25 +554,23 @@
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "<li>.*?(?=,)",
         "rule_option": 16
-      }
+      },
+      "li_tag": "li"
     },
     "BidTag": {
-      "name_r": "a > title",
-      "date_r": "span",
-      "url_r": "a > href",
-      "type_r": ""
-    },
-    "brows": {
-      "ListTag": "li"
+      "name": "a > title",
+      "date": "span",
+      "url": "a > href",
+      "type": ""
     },
     "Bid": {
       "urlRoot": "http://bid.aited.cn",
       "re": {
-        "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)",
-        "url_cut": "(?<=\\.\\.).*?(?=\\\\)"
+        "date": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)",
+        "url": "(?<=\\.\\.).*?(?=\\\\)"
       }
     },
     "招标公告": {
@@ -648,24 +638,22 @@
         "Hm_lvt_9459d8c503dd3c37b526898ff5aacadd": "1684291341",
         "Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd": "1689897203"
       },
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul class=\"vT-srch-result-list-bid\">).*?(</ul>)",
         "rule_option": 16
-      }
+      },
+      "li_tag": "li"
     },
     "BidTag": {
-      "name_r": "a",
-      "date_r": "span",
-      "url_r": "a > href",
-      "type_r": "strong,ALL"
-    },
-    "brows": {
-      "ListTag": "li"
+      "name": "a",
+      "date": "span",
+      "url": "a > href",
+      "type": "strong,ALL"
     },
     "Bid": {
       "urlRoot": "",
       "re": {
-        "date_cut": "\\d{4}\\.\\d{1,2}\\.\\d{1,2}(日|) \\d{2}:\\d{2}:\\d{2}"
+        "date": "\\d{4}\\.\\d{1,2}\\.\\d{1,2}(日|) \\d{2}:\\d{2}:\\d{2}"
       }
     },
     "url参数解释": {
@@ -782,25 +770,23 @@
         "Referer": "https://bulletin.cebpubservice.com"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(?<=</tr>).*(?=</table>)",
         "rule_option": 16
-      }
+      },
+      "li_tag": "tr"
     },
     "BidTag": {
-      "name_r": "a > title",
-      "date_r": "td > id",
-      "url_r": "a > href",
-      "type_r": "span > title"
-    },
-    "brows": {
-      "ListTag": "tr"
+      "name": "a > title",
+      "date": "td > id",
+      "url": "a > href",
+      "type": "span > title"
     },
     "Bid": {
       "urlRoot": "",
       "re": {
-        "url_cut": "(?<=').*?(?=')",
-        "date_cut": null
+        "url": "(?<=').*?(?=')",
+        "date": null
       }
     },
     "公开招标": {
@@ -946,24 +932,22 @@
         "Connection": "keep-alive"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "",
         "rule_option": 16
-      }
+      },
+      "li_tag": "li"
     },
     "BidTag": {
-      "name_r": "",
-      "date_r": "",
-      "url_r": "",
-      "type_r": ""
-    },
-    "brows": {
-      "ListTag": "li"
+      "name": "",
+      "date": "",
+      "url": "",
+      "type": ""
     },
     "Bid": {
       "urlRoot": "",
       "re": {
-        "date_cut": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
+        "date": "\\d{4}([_|\\-|年])\\d{1,2}([_|\\-|月])\\d{1,2}(日|)"
       }
     },
     "公开招标": {
