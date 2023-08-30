@@ -48,7 +48,7 @@ class Qjc(Task):
         """
         if url[-13:].isdigit():  # 若url末尾有时间
             return url
-        return f"{url}&_t={str(time()).replace('.', '')[:13]}"
+        return f"{url}&_t={str(time.time()).replace('.', '')[:13]}"
 
 
 if __name__ == "__main__":

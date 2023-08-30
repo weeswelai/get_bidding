@@ -115,7 +115,7 @@ class Zgzf(Task):
         时间戳
 
         """
-        time_now = str(time())[:10]
+        time_now = str(time.time())[:10]
         self.cookies["Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd"] = time_now
         self.s.cookies = cookiejar_from_dict(self.cookies)
 
