@@ -371,6 +371,27 @@ def clear_json_file(json_file, task="", clear_bid=False, set_time=False, time=""
         save_json(json_d, json_file)
 
 
+def copy_settings(old, new, new_file_name=""):
+    with open(old, "r", encoding="utf-8") as old_file,\
+         open(new, "r", encoding="utf-8") as new_file:
+        old_json = json.loads(old_file.read())
+        new_json = json.loads(new_file.read())
+    # "task"
+    new_json["task"] = old_json["task"]
+    # BidTask
+    for name in old_json["task"]["list"]:
+        for task in old_json[name]:
+            if task in ("task", "BidTag", "brows", "Bid"):
+                continue
+            if task == "OpenConfig":
+                for config in ("headers", "cookies"):
+                    new_json[name][task][config] = old_json[name][task][config]
+                continue
+            new_json[name][task] = old_json[name][task]
+    new_file_name = new_file_name if new_file_name else new
+    save_json(new_json, new_file_name)
+
+
 # cookies
 def cookie_str_to_dict(cookie: str):
     cookie_dict = {}
