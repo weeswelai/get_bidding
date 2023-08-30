@@ -76,7 +76,7 @@ class ListWebResponse(OpenConfig):
                 html_cut = {
                     "re_rule": "正则表达式",
                     "rule_option": "re.compile额外参数, 默认为re.S, 
-                        re.S无法保存在json中,所以使用re.S在python中的 int值,值为 16"
+                    re.S无法保存在json中,所以使用re.S在python中的 int值,值为 16"
                 }
         Returns:
             html_cut(str): 使用正则裁剪后的html源码,也有可能不裁剪
