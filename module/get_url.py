@@ -28,7 +28,7 @@ class UrlConfig:
     method = "GET"  # 默认
     headers = {}
     cookies = {}
-    cut_rule = None
+    html_cut = None
     time_out = 16
     delay: tuple = (2, 3)
     next_pages: str = ""
@@ -86,7 +86,7 @@ class Response:
 
     def __init__(self, rule):
         self.cut = init_re(rule)
-        logger.info(f"cut_rule: {rule}")
+        logger.info(f"html_cut: {rule}")
 
     def cut_html(self, rule: dict or str = None):
         """ 裁剪得到的html源码, 保存到 self.html_cut
@@ -97,12 +97,12 @@ class Response:
 
         Args:
             rule (dict, str): 仅在测试中使用,裁剪的规则
-                当 cut_rule 为str 时使用re.S 额外参数: . 匹配换行符 \n
+                当 rule 为str 时使用re.S 额外参数: . 匹配换行符 \n
                 为dict时如下所示 \n
-                cut_rule = {
+                rule = {
                     "re_rule": "正则表达式",
                     "rule_option": "re.compile额外参数, 默认为re.S, 
-                        re.S无法保存在json中,所以使用re.S在python中的 int值,值为 16"
+                    re.S无法保存在json中,所以使用re.S在python中的 int值,值为 16"
                 }
         Returns:
             html_cut(str): 使用正则裁剪后的html源码,也有可能不裁剪
@@ -186,7 +186,7 @@ class GetList:
     def __init__(self):
         logger.hr("GetList init")
         self.config = UrlConfig()
-        self.res = Response(self.config.cut_rule)
+        self.res = Response(self.config.html_cut)
         self.s: requests.Session = requests.Session()
 
     def url_extra(self, url, **kwargs):
@@ -235,8 +235,8 @@ class GetList:
             error = f"cut error: {self.list_url}\n{traceback.format_exc()}"
             if save_error < MAX_ERROR_SAVE:
                 save_error += 1
-                self.res.save_response(url=self.list_url,
-                                       save_date=True, extra="cut_Error")
+                self.res.save_response(url=self.list_url, save_date=True, 
+                                       extra="cut_Error")
             self.cut_judge()
         return html_cut, error, save_error
 

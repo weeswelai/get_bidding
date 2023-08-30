@@ -72,12 +72,12 @@ class BidTag(web_brows.BidTag):
 
 class ListBrows(web_brows.ListBrows):
 
-    def get_tag_list(self, page=None, ListTag=None, *args):
+    def get_tag_list(self, page=None, li_tag=None, *args):
         """ 得到json中的列表
         """
         logger.info("Qjc.get_tag_list")
-        if not ListTag:
-            ListTag = self.ListTag
+        if not li_tag:
+            li_tag = self.li_tag
         page = page if page else self.html_cut
         if page:
             if isinstance(page, dict):
@@ -85,7 +85,7 @@ class ListBrows(web_brows.ListBrows):
             elif isinstance(page, str):
                 self.html_cut = loads(page)
         self.bs = self.html_cut
-        self.tag_list = deep_get(self.bs, ListTag)
+        self.tag_list = deep_get(self.bs, li_tag)
         return self.tag_list
 
 

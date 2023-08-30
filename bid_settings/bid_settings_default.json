@@ -37,7 +37,7 @@
         "Referer": "http://www.365trade.com.cn/zbgg/index.jhtml?typeId=102"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul class=\"searchList\">).*?(</ul>)",
         "rule_option": 16
       }
@@ -49,7 +49,7 @@
       "type_r": "em"
     },
     "brows": {
-      "ListTag": "li"
+      "li_tag": "li"
     },
     "Bid": {
       "urlRoot": "http://www.365trade.com.cn",
@@ -115,7 +115,7 @@
         "Referer": "https://ebid.eavic.com/cms/channel/ywgg1/index.htm?pageNo=1"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul id=\"list1\">).*?(</ul>)",
         "rule_option": 16
       }
@@ -127,7 +127,7 @@
       "type_r": ""
     },
     "brows": {
-      "ListTag": "a"
+      "li_tag": "a"
     },
     "Bid": {
       "urlRoot": "https://ebid.eavic.com",
@@ -189,7 +189,7 @@
         "Referer": ""
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul class=\"categories li_square col-md-12 col-sm-12 col-xs-12 p0 list_new\">).*?(</ul>)",
         "rule_option": 16
       }
@@ -201,7 +201,7 @@
       "type_r": "span,0,class=col-md-2 col-sm-3 col-xs-6"
     },
     "brows": {
-      "ListTag": "li"
+      "li_tag": "li"
     },
     "Bid": {
       "urlRoot": "https://www.plap.cn",
@@ -358,7 +358,7 @@
         "Referer": ""
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": ".*",
         "rule_option": 16
       }
@@ -370,7 +370,7 @@
       "type_r": "purchaseType"
     },
     "brows": {
-      "ListTag": "list.contentList"
+      "li_tag": "list.contentList"
     },
     "Bid": {
       "urlRoot": "http://www.weain.mil.cn",
@@ -562,7 +562,7 @@
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "<li>.*?(?=,)",
         "rule_option": 16
       }
@@ -574,7 +574,7 @@
       "type_r": ""
     },
     "brows": {
-      "ListTag": "li"
+      "li_tag": "li"
     },
     "Bid": {
       "urlRoot": "http://bid.aited.cn",
@@ -648,7 +648,7 @@
         "Hm_lvt_9459d8c503dd3c37b526898ff5aacadd": "1684291341",
         "Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd": "1689897203"
       },
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(<ul class=\"vT-srch-result-list-bid\">).*?(</ul>)",
         "rule_option": 16
       }
@@ -660,7 +660,7 @@
       "type_r": "strong,ALL"
     },
     "brows": {
-      "ListTag": "li"
+      "li_tag": "li"
     },
     "Bid": {
       "urlRoot": "",
@@ -782,7 +782,7 @@
         "Referer": "https://bulletin.cebpubservice.com"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "(?<=</tr>).*(?=</table>)",
         "rule_option": 16
       }
@@ -794,7 +794,7 @@
       "type_r": "span > title"
     },
     "brows": {
-      "ListTag": "tr"
+      "li_tag": "tr"
     },
     "Bid": {
       "urlRoot": "",
@@ -946,7 +946,7 @@
         "Connection": "keep-alive"
       },
       "cookies": {},
-      "cut_rule": {
+      "html_cut": {
         "re_rule": "",
         "rule_option": 16
       }
@@ -958,7 +958,7 @@
       "type_r": ""
     },
     "brows": {
-      "ListTag": "li"
+      "li_tag": "li"
     },
     "Bid": {
       "urlRoot": "",

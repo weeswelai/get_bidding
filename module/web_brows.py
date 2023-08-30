@@ -263,18 +263,18 @@ class ListBrows:
     """
     html_cut = ""  # cut_html 后保存
     bs: Tag or dict = None
-    ListTag = None
+    li_tag = None
     tag_list = None
 
     def __init__(self, settings=None):
         settings = settings if settings else config.get_task()
-        self.ListTag: str = settings["brows"]["ListTag"]
+        self.li_tag: str = settings["brows"]["li_tag"]
 
-    def get_tag_list(self, page=None, ListTag=None, parse="html.parser", t=""):
+    def get_tag_list(self, page=None, li_tag=None, parse="html.parser"):
         """
         输入 str 调用 bs生成self.bs 从self.bs 里根据bs_tag提取list
         Args:
-            ListTag:
+            li_tag:
             page:(str) html源码,解析获得self.bs,或从 self.url_response 或
             parse (str): 解析html的bs4模式 默认为 html.parser
             t ()
@@ -282,14 +282,14 @@ class ListBrows:
             bid_list (list): 提取到的list
         """
         logger.info("web_brows.Html.get_tag_list")
-        if not ListTag:  # 仅测试中使用
-            ListTag = self.ListTag
+        if not li_tag:  # 仅测试中使用
+            li_tag = self.li_tag
         if isinstance(page, str):
             self.html_cut = page
             logger.info(f"get tag list from \"{page.strip()[: 100]}\"")
         # TODO 捕获错误判断
         self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
-        self.tag_list = self.bs.find_all(ListTag)
+        self.tag_list = self.bs.find_all(li_tag)
         return self.tag_list
 
 
