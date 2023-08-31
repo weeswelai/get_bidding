@@ -29,7 +29,7 @@ if not os.path.exists(CONFIG_FILE):
 
 with open(CONFIG_FILE, "r", encoding="utf-8") as c_json:
     CONFIG = json.loads(c_json.read())
-    TEST = True if CONFIG["test"]["switch"] else False
+    TEST = CONFIG["test"]["switch"] or False
     logger.info(f"{CONFIG_FILE} test switch is {TEST}")
 
 IGNORE = ("lineAddLiTag")
@@ -129,8 +129,8 @@ class TaskBaseConfig:
 
 class TaskConfig(TaskBaseConfig):
     def __init__(self, name="", settings: dict=None) -> None:
-        self.name = name if name else config.name
-        settings = settings if settings else config.get_task()
+        self.name = name or self.name
+        settings = settings or config.get_task()
         logger.hr(f"init task {self.name}")
         for key in ("task", "OpenConfig", "BidTag", "Bid"):
             logger.info(f"{key}: {jsdump(settings[key])}")

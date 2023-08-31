@@ -25,7 +25,7 @@ class Qjc(Task):
         logger.info("Qjc.get_tag_list")
         if not li_tag:
             li_tag = self.li_tag
-        page = page if page else self.html_cut
+        page = page or self.html_cut
         if page:
             if isinstance(page, dict):
                 self.html_cut = page

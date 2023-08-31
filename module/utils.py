@@ -386,7 +386,7 @@ def copy_settings(old, new, new_file_name=""):
                     new_json[name][task][config] = old_json[name][task][config]
                 continue
             new_json[name][task] = old_json[name][task]
-    new_file_name = new_file_name if new_file_name else new
+    new_file_name = new_file_name or new
     save_json(new_json, new_file_name)
 
 

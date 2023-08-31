@@ -6,10 +6,10 @@ from module.utils import *
 
 class Zzlh(Task):
     def get_next_pages_url(self, list_url="", next_rule=None, **kwargs) -> str:
-        next_rule = next_rule if next_rule else self.next_rule
+        next_rule = next_rule or self.next_rule
         if isinstance(next_rule, str):
             next_rule = re.compile(next_rule)
-        list_url = list_url if list_url else self.list_url
+        list_url = list_url or self.list_url
         if "index.jhtml" in list_url:
             next_pages_url = list_url.replace("index.jhtml", "index_2.jhtml")
         else:

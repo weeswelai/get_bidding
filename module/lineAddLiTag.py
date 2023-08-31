@@ -42,7 +42,7 @@ date_time = ""
 
 with open(CONFIG_FILE, "r", encoding="utf-8") as f:
     config =  json.loads(f.read())
-    TEST = True if config["test"]["switch"] else False
+    TEST = config["test"]["switch"] or False
     DATAFOLDER = config["test"]["dataFolder"] if TEST else config["file"]["dataFolder"]
 
 

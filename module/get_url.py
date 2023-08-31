@@ -82,7 +82,7 @@ class ListWebResponse(OpenConfig):
             html_cut(str): 使用正则裁剪后的html源码,也有可能不裁剪
         """
         logger.info("get_list.res.cut_html")
-        rule = rule if rule else self.html_cut_rule
+        rule = rule or self.html_cut_rule
         if isinstance(rule, dict):
             html_cut = re.search(rule["re_rule"],
                                  self.response,
@@ -138,7 +138,7 @@ class ListWebResponse(OpenConfig):
             full_url = url["url"]
         else:
             full_url = url
-        rps = self.response if not rps else rps
+        rps = rps or self.response
         path = f"{path}/" if path[-1] != "/" else path
         file_name = path + url_to_filename(full_url)
         name_list = file_name.split(".")

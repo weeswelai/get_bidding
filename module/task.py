@@ -154,7 +154,7 @@ class Task(Bid, DataFileTxt):
         Returns:
             next_pages_url (str): 即将打开的url
         """
-        next_rule = next_rule if next_rule else self.next_rule
+        next_rule = next_rule or self.next_rule
         if isinstance(next_rule, str):
             next_rule = re.compile(next_rule)
         if not list_url:
