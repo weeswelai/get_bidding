@@ -252,8 +252,9 @@ def queue_restart(queue: TaskQueue):
 
 def import_web_module():
     from os import listdir
-    for module in listdir("./module/web") and module.endswith(".py"):
-        import_module(f"module.web.{module[:-3]}")
+    for module in listdir("./module/web"):
+        if module.endswith(".py"):
+            import_module(f"module.web.{module[:-3]}")
 
 
 def compare_nextRunTime(queue: TaskQueue, task_insert: TaskNode):
