@@ -66,7 +66,7 @@ if pyw_name not in IGNORE:
             self.file = f"{splitext(self.file)[0]}{date}.json"
 
         def save(self):
-            save_json(self, self.file)
+            save_json(self, self.file, logger=logger)
 
         def reload(self):
             self = Config()

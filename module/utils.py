@@ -53,21 +53,7 @@ def deep_get(d: dict, keys: list or str, default=None):
     return deep_get(d.get(keys[0]), keys[1:], default)
 
 
-def read_json(file) -> dict:
-    """ 读取json文件,并返回dict
-    Args:
-        file (str): josn文件路径
-    Returns:
-        dict : json.loads转换的dict
-    """
-    from module.log import logger
-    with open(file, "r", encoding="utf-8") as settings_json_r:
-        f_read = settings_json_r.read()
-        logger.info(f"read {file}")
-        return json.loads(f_read)
-
-
-def save_json(data, json_file, indent=2):
+def save_json(data, json_file, indent=2, logger=None):
     """ 覆写json文件
     Args:
         data (dict): 保存的数据
@@ -77,14 +63,14 @@ def save_json(data, json_file, indent=2):
     Returns:
         json_file (str): 保存的json文件路径
     """
-    from module.log import logger
     create_folder(json_file)
 
     with open(json_file, "w", encoding="utf-8") as json_file_w:
         write_data = json.dumps(data, indent=indent, ensure_ascii=False,
                                 sort_keys=False, default=str)
         json_file_w.write(write_data)
-    logger.info(f"save {json_file}")
+    if logger:
+        logger.info(f"save {json_file}")
 
 
 def jsdump(d, indent=2, ensure_ascii=False, sort_keys=False) -> str:
@@ -210,15 +196,6 @@ def time_difference(time1, time2, unit="second"):
         return dif.days
 
 
-def t1_slow_than_t2(time1, time2) -> bool:
-    """ 若time1 慢于 time2(time1在time2后) 返回True, 否则返回 False
-    """
-    if datetime.strptime(time1, _DATE_TIME_FORMAT) > \
-            datetime.strptime(time2, _DATE_TIME_FORMAT):
-        return True
-    return False
-
-
 def url_to_filename(url: str):
     """
     将url 转换为可创建的文件名,会删除 https http www , 将 / 替换为( , 将所有后缀替换为html
@@ -253,56 +230,11 @@ def url_to_filename(url: str):
     return url
 
 
-def str_list(output_list, level=1, add_idx=False):
-    """
-    打印多维list
-    Args:
-        output_list:
-        level
-        add_idx
-    """
-    output = ""
-
-    if level == 0:
-        output = f"{output}{str(output_list)}"
-    elif level == 1:
-        if add_idx:
-            for idx, li in enumerate(output_list, start=1):
-                output = f"{output}{idx}: {str(li)}\n"
-        else:
-            for li in output_list:
-                output = f"{output}{str(li)}\n"
-    # elif level == 2:
-    #     for li in output_list:
-    #         for i in li:
-    #             output = f"{output}{i}"
-    #         output = f"{output}\n"
-    return output, len(output)
-
-
-def dict2str(output_dict: dict):
-    data = "  "
-    for key, value in output_dict.items():
-        data = f"{data}{key}: {value}\n  "
-    return data.rstrip()
-
-
-def re_options_print(options):
-    """
-    打印 re.S re.M 的值
-    Args:
-        options (re.options): S M
-    """
-    from module.log import logger
-    logger.info(int(eval(f"re.{options}")))
-
-
 def init_re(re_rule, flag=16):
     """ 返回编译好的正则表达式
     Args:
         re_rule (dict or str): 
         flag (int): 默认为16, "." 将选取换行符, 16 = re.S
-        re.S 的值 可通过 utils.re_options_print 打印
     """
     if isinstance(re_rule, str):
         return re.compile(re_rule)
@@ -359,7 +291,8 @@ def clear_json_file(json_file, task="", clear_bid=False, set_time=False, time=""
         json_d = json_file    
     else:
         read_file = True
-        json_d = read_json(json_file)
+        with open(json_file, "r", encoding="utf-8") as f:
+            json_d = json.loads(f.read())
     if task:
         reset_task(json_d, task, clear_bid, set_time, time)
     else:
@@ -398,13 +331,6 @@ def cookie_str_to_dict(cookie: str):
             key, value = c.strip().split("=", 1)
             cookie_dict[key] = value
     return cookie_dict
-
-
-def cookie_dict_to_str(set_cookie: dict):
-    cookie = ()
-    for key, value in set_cookie.items():
-        cookie += (f"{key}={value}",)
-    return "; ".join(cookie).strip()
 
 
 if __name__ == "__main__":
