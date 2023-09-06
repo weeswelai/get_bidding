@@ -20,6 +20,9 @@ class Zgzf(Task):
 
     def cut_judge(self):
         if self.response:
+            if len(self.response) < 1000:  # website error: Sorry, Page Not Found
+                # return
+                raise WebTooManyVisits
             bs = btfs(self.response, "html.parser")
             tag = tag_find(bs, "p", 0)
             text = tag.text
