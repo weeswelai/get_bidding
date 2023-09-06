@@ -29,7 +29,7 @@ if not os.path.exists(CONFIG_FILE):
 
 with open(CONFIG_FILE, "r", encoding="utf-8") as c_json:
     CONFIG = json.loads(c_json.read())
-    TEST = CONFIG["test"]["switch"] or False
+    TEST = CONFIG["Test"]["Switch"] or False
     logger.info(f"{CONFIG_FILE} test switch is {TEST}")
 
 IGNORE = ("lineAddLiTag")
@@ -43,9 +43,9 @@ if pyw_name not in IGNORE:
 
         def __init__(self) -> None:
             self.command = []
-            path = CONFIG["test"] if TEST else CONFIG["file"]
-            self.dataFolder = path["dataFolder"]
-            self.file: str = path["jsonFIle"]
+            path = CONFIG["Test"] if TEST else CONFIG["File"]
+            self.dataFolder = path["DataFolder"]
+            self.file: str = path["JsonFile"]
             if not os.path.exists(self.file):
                 copyfile(SETTINGS_DEFAULT, self.file)
             with open(self.file, "r", encoding="utf-8") as f:
@@ -53,7 +53,7 @@ if pyw_name not in IGNORE:
             for k, v in settings.items():
                 self[k] = v
             self.taskList = self["task"]["list"]
-            for k, v in CONFIG["config"].items():
+            for k, v in CONFIG["Config"].items():
                 setattr(self, k, v)
             if self.creatNewJsonFile:
                 self.set_new_json()
