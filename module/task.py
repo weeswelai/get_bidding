@@ -60,6 +60,8 @@ class BidTaskQueue(TaskQueue):
 
 
 class DataFileTxt:
+    name: str
+
     files_path = {
         "list": None,
         "match": None,
@@ -74,20 +76,20 @@ class DataFileTxt:
     }
     file_open = False
 
-    def data_file_init(self, name="test") -> None:
-        self._file_init(name)
+    def data_file_init(self) -> None:
+        self._file_init()
         create_folder(self.files_path["list"])
         log = ""
         for k, v in self.files_path.items():
             log += f"{k}: {v}\n{' '*26}"
         logger.info(log.strip())
 
-    def _file_init(self, name):
+    def _file_init(self):
         for k in self.files_path.keys():
             if "day" in k:
                 self.files_path[k] = f"{DATA_PATH}/bid_{k}_{date_days(format='day')}.txt"
             else:
-                self.files_path[k] = f"{DATA_PATH}/bid_{k}_{name}.txt"
+                self.files_path[k] = f"{DATA_PATH}/bid_{k}_{self.name}.txt"
 
     def data_file_open(self):
         if not self.file_open:
