@@ -9,8 +9,8 @@
         "JsonFile": "./bid_settings/bid_settings_test.json"
     },
     "Config":{
-        "CreatNewJsonFile": false,
-        "Command": ["-h", "-i", "m", "l"],
-        "Run_at_today18": false
+        "creatNewJsonFile": false,
+        "command": ["-h", "-i", "m", "l"],
+        "run_at_today18": false
     }
 }
