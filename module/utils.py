@@ -230,7 +230,7 @@ def url_to_filename(url: str):
     return url
 
 
-def init_re(re_rule, flag=16):
+def init_re(re_rule, flag=re.S):
     """ 返回编译好的正则表达式
     Args:
         re_rule (dict or str): 
@@ -324,9 +324,11 @@ def copy_settings(old, new, new_file_name=""):
 
 
 # cookies
-def cookie_str_to_dict(cookie: str):
+def cookie_str_to_dict(cookies: str):
+    if not isinstance(cookies, dict) or cookies == {}:
+        return cookies
     cookie_dict = {}
-    for c in cookie.split(";"):
+    for c in cookies.split(";"):
         if c.strip():
             key, value = c.strip().split("=", 1)
             cookie_dict[key] = value
