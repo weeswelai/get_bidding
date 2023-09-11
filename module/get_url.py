@@ -2,6 +2,7 @@
 url打开模块
 打开网页, 保存html源码
 """
+import re
 import traceback
 from urllib.parse import urlencode
 
@@ -9,13 +10,13 @@ import requests
 import requests.utils as requtils
 from bs4 import BeautifulSoup as btfs
 
-from module.config import TaskConfig, config
 from module.exception import *
 from module.log import logger
 from module.utils import *
 
 HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    " (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
     }
 MAX_ERROR_OPEN = 3
 MAX_ERROR_SAVE = 2
@@ -24,49 +25,130 @@ NO_SYSTEM_PROXIES = {"http": None, "https": None}
 VERIFY = False
 packet_capture = False  # 抓包开关
 system_proxies = False  # 是否系统代理
+TIMEOUT = 16
 
-class OpenConfig(TaskConfig):
-    def params(self):
-        kwargs = {
-            "headers": self.headers,
-            "timeout": self.time_out
+class RequestBase:
+    """
+    Only GET and POST methods are supported
+    """
+    response: str = ""  # response
+    encoding = "utf-8"
+    system_proxies = False  # 是否系统代理(False时不经过梯子的代理)
+
+    def __init__(self, method="GET", headers=HEADERS, timeout=TIMEOUT):
+        self._response = requests.models.Response()
+        self._session = requests.Session()
+
+        method = method.upper()
+        assert method in ("GET", "POST"), f"{method} isn't GET or POST"
+        self._open = self._get if method == "GET" else self._post
+        # needful headers and params
+        self.params  = {
+            "headers": headers,
+            "timeout": timeout
         }
-        if packet_capture:  # 是否抓包
-            kwargs["proxies"] = PACKET_CAPTURE_PROXIES
-            kwargs["verify"] = VERIFY
+        if packet_capture:
+            self.params["proxies"] = PACKET_CAPTURE_PROXIES.copy()
+            self.params["verify"] = VERIFY
         if not system_proxies:  # 是否使用系统代理
-            kwargs['proxies'] = NO_SYSTEM_PROXIES
-            if "verify" in kwargs:
-                del(kwargs["verify"])
-        return kwargs
+            self.params['proxies'] = NO_SYSTEM_PROXIES.copy()
+            if "verify" in self.params:
+                del(self.params["verify"])
 
-    def save_cookies(self):
-        config.set_task("OpenConfig.cookies", self.cookies)
-        config.save()
+    def open(self, url, data=None, **kwargs) -> str:
+        """
+        if method is GET, ignore data param, if is POST, need data param.
+        """
+        if not kwargs:
+            kwargs = self.params
+        self._open(url=url, data=data, **kwargs)
+        self._response.encoding = self.encoding  # destination code base
+        self.response = self._response.text
+        return self.response
 
-    def update_cookies(self, cookies: dict):
+    def _open(self, url, **kwargs):
+        """
+        Reload in __init__, is _get or _post
+        """
+        pass
+
+    def _get(self, url, **kwargs):
+        self._response = self._session.get(url=url, **kwargs)
+
+    def _post(self, url, data=None, **kwargs):
+        if isinstance(url, dict) and not data:
+            url, data = url.values()
+        self._response = self._session.post(url=url, data=data, **kwargs)
+
+    def update_param(self, params: dict, cover=True):
+        for key, value in params.items():
+            if key in self.params and cover:
+                continue
+            self.params[key] = value
+
+    @property
+    def cookies_session(self) -> dict:
+        """
+        Cookies not stored in response but in session
+        """
+        cookies: dict = self._session.cookies.get_dict()
+        return cookies.copy()
+
+    @cookies_session.setter
+    def cookies_session(self, cookies:dict):
+        self._session.cookies = requtils.cookiejar_from_dict(cookies)
+
+
+class RequestHeaders:
+    config: dict
+    request: RequestBase
+
+    @property
+    def cookies(self) -> dict:
+        """
+        Cookies in json
+        """
+        return self.config["cookies"]
+
+    @cookies.setter
+    def cookies(self, cookies: dict):
+        """
+        Save cookies in json
+        """
         for k, v in cookies.items():
-            self._update_cookies(k, v)
+            if v == "deleted":
+                del(self.config["cookies"][k])
+            else:
+                self.config["cookies"][k] = v
 
-    def _update_cookies(self, k, v: str):
-        if v == "deleted":
-            del(self.cookies[k])
-        else:
-            self.cookies[k] = v
+    @property
+    def _referer(self):
+        return self.headers["Referer"]
 
-    def update_referer(self, referer: str):
-        self.headers["Referer"] = referer
+    @_referer.setter
+    def referer(self, referer: str):
+        self.config["headers"]["Referer"] = referer
+        self.request.params["headers"]["Referer"] = referer
 
 
-class ListWebResponse(OpenConfig):
-    response: str = None
+class ListWebResponse:
+    request: RequestBase
     bs = None
+    html_cut: str = ""
+    html_cut_rule: re.Pattern
+    config: dict
+    li_tag: str
 
-    def cut_html(self, rule: dict or str = None):
+    def __init__(self, html_cut_rule=None, file="") -> None:
+        if file:
+            self.request = RequestBase()
+            self.get_response_from_file(file)
+        self.html_cut_rule = init_re(html_cut_rule)
+
+    def cut_html(self, rule: dict or str or re.Pattern = None, response=""):
         """ 裁剪得到的html源码, 保存到 self.html_cut
         某些html含过多无用信息,使用bs解析会变得非常慢,
-        如zzlh的招标列表页面源码有一万多行的无用信息(目录页码),
-        需要删去部分无用信息
+        如zzlh的招标列表页面源码有一万多行的无用信息(目录页码), 需要删去部分无用信息
         Html对象使用 search方式获得group的值
 
         Args:
@@ -81,22 +163,24 @@ class ListWebResponse(OpenConfig):
         Returns:
             html_cut(str): 使用正则裁剪后的html源码,也有可能不裁剪
         """
-        logger.info("get_list.res.cut_html")
+        logger.info("ListWebResponse.cut_html")
         rule = rule or self.html_cut_rule
-        if isinstance(rule, dict):
-            html_cut = re.search(rule["re_rule"],
-                                 self.response,
-                                 rule["rule_option"])
-        elif isinstance(rule, str):
-            html_cut = re.search(rule, self.response, re.S) if rule else \
-                       self.response 
+        response = response or self.request.response
+        if isinstance(rule, re.Pattern):
+            html_cut = rule.search(response)
         else:
-            html_cut = self.html_cut_rule.search(self.response)
+            pattern = init_re(rule)
+            html_cut = pattern.search(response)
         if not html_cut:
-            logger.debug(f"len response {len(self.response)}")
-            logger.debug(f"cut rule {self.html_cut_rule}")
-            raise CutError
-        return html_cut.group()
+            self.cut_judge()
+            raise CutError(f"len response {len(response)}, cut rule {rule}")
+        self.html_cut = html_cut.group()
+
+    def cut_judge(self):
+        """
+        得到了网页,但是第一步cut出错
+        """
+        pass
 
     def get_tag_list(self, page=None, li_tag=None, parse="html.parser"):
         """
@@ -109,18 +193,19 @@ class ListWebResponse(OpenConfig):
             bid_list (list): 提取到的list
         """
         logger.info("ListWebResponse.get_tag_list")
-        if not li_tag:  # 仅测试中使用
-            li_tag = self.li_tag
-        if isinstance(page, str):
-            self.html_cut = page
-            logger.info(f"get tag list from \"{page.strip()[: 100]}\"")
+        li_tag = li_tag or self.li_tag
+        page = page or self.html_cut
         # TODO 捕获错误判断
         self.bs = btfs(self.html_cut, features=parse)  # bs解析结果
         self.tag_list = self.bs.find_all(li_tag)
+        logger.info(f"tag list len {len(self.tag_list)}")
+        if not self.tag_list:
+            raise CutError(f"tag list len {len(self.tag_list)}, "
+                           f"page len {len(page)}, bs len: {len(self.bs)}")
         return self.tag_list
 
-    def save_response(self, rps="", url="test.html", path="./html_error/",
-                      save_date=False, extra=""):
+    def save_response(self, rps="", url="test.html", extra="", save_date=True, 
+                      path="./html_error/",):
         """
         保存response，仅在浏览列表页面出错时或测试时保存使用
 
@@ -134,11 +219,11 @@ class ListWebResponse(OpenConfig):
             file_name (str): 保存的文件名
         """
         if isinstance(url, dict):
-            data = url["form"] if "from" in url else ""
+            data = url["form"] if "form" in url else ""
             full_url = url["url"]
         else:
             full_url = url
-        rps = rps or self.response
+        rps = rps or self.request.response
         path = f"{path}/" if path[-1] != "/" else path
         file_name = path + url_to_filename(full_url)
         name_list = file_name.split(".")
@@ -146,22 +231,20 @@ class ListWebResponse(OpenConfig):
         if isinstance(url, dict) and data:
             name_list[-2] = f"{name_list[-2]}_{urlencode(data)}"
         elif isinstance(url, dict) and data is None:
-            name_list[-2] = f"{name_list[-2]}_from={data}"
+            name_list[-2] = f"{name_list[-2]}_form={data}"
         if save_date:
             name_list[-2] = f"{name_list[-2]}{date_now_s(True)}"
         if extra:
             name_list[-2] = f"{name_list[-2]}_{extra}"
+
         file_name = ".".join(name_list)
         save_file(file_name, rps)
         logger.info(f"save html as {file_name}")
-        return file_name
 
-    def get_response_from_file(self, file, save="response"):
+    def get_response_from_file(self, file, html_cut=False):
         """ 将文件读取的数据赋给self.url_response_byte, 仅在测试中使用
         Args:
             file (str): file路径或html字符串
-            save (str): url_response_byte: 保存在 self.url_response中
-                        html_cut: 保存在 self.html_cut中
         """
         logger.hr("get_url.get_response_from_file", 3)
         try:
@@ -171,91 +254,113 @@ class ListWebResponse(OpenConfig):
         except (FileNotFoundError, OSError):
             response = file
             logger.info(f"read html from str: {file.strip()[:100]}...")
-        setattr(self, save, response)
+        self.request.response = response
+        if html_cut:
+            self.html_cut = response
 
 
-# TODO 将 open url 相关的函数和参数分开作一个类?
-class GetList(ListWebResponse):
-    list_url = ""
-    r: requests.models.Response = None
-    s: requests.Session = None
+class GetList(RequestHeaders, ListWebResponse):
+    """
+    Need config key: OpenConfig
+    """
+    config: dict
+    request: RequestBase = None
+    list_url: str
 
-    def url_extra(self, url, **kwargs):
+    def __init__(self, config: dict):
+        logger.info("GetList.__init__")
+
+        self.config = config["OpenConfig"]
+        
+        cookies = deep_get(self.config, "cookies")
+        self.config["cookies"] = cookie_str_to_dict(cookies)
+
+        self.html_cut_rule = init_re(deep_get(self.config, "html_cut"))
+
+        headers = deep_get(self.config, "headers")
+        if not headers:
+            logger.warning(f"OpenConfig headers is None, use deffault")
+            headers = HEADERS
+        if not deep_get(self.config, "headers"):
+            logger.warning(f"OpenConfig User-Agent is None, use deffault")
+            headers["User-Agent"] = HEADERS["User-Agent"]
+
+        self.li_tag = self.config["li_tag"]
+
+        self.request = RequestBase(self.config["method"], headers, 
+                                   deep_get(self.config, "time_out"))
+
+    def url_extra_params(self, url, **kwargs):
+        """
+        一些网址后面要加上时间戳等额外的参数
+        """
         return url
 
     def open_extra(self, **kwargs):
-        pass
-
-    def set_cookie_time(self):
-        self.s.cookies = requtils.cookiejar_from_dict(self.cookies)
-
-    def cut_judge(self):
-        """
-        得到了网页,但是第一步cut出错
+        """部分网址打开后需要额外做一些判断
+        如 qjc 打开重定向网址
         """
         pass
 
-    def open(self, url, open_times=0, save_error=0):
-        if not self.s:
-            self.s = requests.Session()
-        self.response = ""
-        self.set_cookie_time()
-        open_times += 1
-        if open_times > MAX_ERROR_OPEN:
-            raise TooManyErrorOpen
-        logger.info(f"{open_times} open {url}")
+    def get_url_tag_list(self, url="", file=""):
+        if file:
+            response = self.get_response_from_file(file)
+            return self.get_tag_list(response)
+
         self.list_url = url
-        error = ""
+        self.open_and_cut()
+        return self.get_tag_list()
+
+    def open_and_cut(self, count=0, save_count=0):
+        self.request.cookies_session = self.cookies  # reset cookies from json
+
+        count += 1
+        if count > MAX_ERROR_OPEN:
+            raise TooManyErrorOpen
+        logger.info(f"{count} open {self.list_url}")
+
         try:
-            self._open()
+            self.request.open(self.list_url)
             self.open_extra()
-        except Exception:
-            error = f"open error: {self.list_url}\n{traceback.format_exc()}"
-        if not error:
-            html_cut, error, save_error = self._cut(save_error)
-        if error:
-            logger.error(error)
-            sleep_random(self.delay)
-            html_cut = self.open(url, open_times, save_error)
-        return html_cut
+            self.cut_html()
+        except Exception as e:
+            logger.error(f"Error: {self.list_url}\n{traceback.format_exc()}")
+            if isinstance(e, CutError) and save_count < MAX_ERROR_SAVE:
+                self.save_response(url=self.list_url, save_date=True, extra="cut_Error")
+            sleep_random(self.config.delay)
+            self.open_and_cut(count, save_count + 1)
 
-    def _cut(self, save_error):
-        error = ""
-        html_cut = ""
-        try:
-            html_cut = self.cut_html()
-        except Exception:  # html AttributeError json 
-            error = f"cut error: {self.list_url}\n{traceback.format_exc()}"
-            if save_error < MAX_ERROR_SAVE:
-                save_error += 1
-                self.save_response(url=self.list_url,
-                                       save_date=True, extra="cut_Error")
-            self.cut_judge()
-        return html_cut, error, save_error
+        self.cookies = self.request.cookies_session  # set new cookies to json
+        self.referer = self.list_url
+        return self.html_cut
 
-    def _open(self, **kwargs):
-        method = self.method.upper()
-        if not kwargs:
-            kwargs = self.params()
-        if method == "GET":
-            self.r = self.s.get(url=self.list_url, **kwargs)
-        elif method == "POST":
-            url, data = self.list_url.values()
-            self.r = self.s.post(url=url, data=data, **kwargs)
-        else:
-            logger.warning(f"error method: {method}")
-            # raise
-        self.r.encoding = self.encoding
-        self.response = self.r.text
-        self.set_cookies()
 
-    def set_cookies(self):
-        self.update_cookies(self.s.cookies.get_dict())
-        cookies_html: dict = self.get_cookies_from_html()
-        if cookies_html:
-            self.update_cookies(cookies_html)
-        self.s.cookies = requtils.cookiejar_from_dict(self.cookies)
-        self.save_cookies()
+if __name__ == "__main__":
+    # test1
+    # request = RequestBase()
+    # request.open("http://127.0.0.1:23333/get")  # httpbin
 
-    def get_cookies_from_html(self):
-        return None
+    # test2
+    # config = {
+    #     "OpenConfig": {
+    #         "method": "GET",
+    #         "headers": {
+    #             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+    #         },
+    #         "cookies": {
+    #         },
+    #         "html_cut": {
+    #             "re_rule": "(<ul class=\"searchList\">).*?(</ul>)",
+    #             "rule_option": 16
+    #         },
+    #         "li_tag": "li"
+    #     }
+    # }
+    # url = "http://www.365trade.com.cn/jggs/index.jhtml?typeId=103"
+    # get_list = GetList(config)
+    # print(get_list.get_url_tag_list(url))
+
+    # TODO read config from files
+    # test3
+    # config_file = "./bid_settings/bid_settings_test.json"    
+    pass
