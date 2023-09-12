@@ -1,7 +1,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
 
-from module.config import config
+from module.config import CONFIG
 from module.utils import date_days, time_difference
 from module.web_brows import *
 
@@ -71,7 +71,7 @@ class BidTask:
 
     def __init__(self, name) -> None:
         self.name = name
-        settings = config.get_task(name)
+        settings = CONFIG.get_task(name)
         self.state = settings["state"]
         self.stop_bid = StopBid(settings["stopBid"])
         self.set_task("stopBid.date", self.stop_bid.date_str)
@@ -82,10 +82,10 @@ class BidTask:
         logger.info(f"stopBid: {self.stop_bid}")
 
     def set_task(self, key, data):
-        config.set_task(f"{self.name}.{key}", data)
+        CONFIG.set_task(f"{self.name}.{key}", data)
 
     def get_task(self, key=""):
-        return config.get_task(f"{self.name}.{key}")
+        return CONFIG.get_task(f"{self.name}.{key}")
 
     def get_state(self):
         if self.state in ["complete", ""]:
