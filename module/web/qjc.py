@@ -46,7 +46,7 @@ class Qjc(Task):
                   f"?wzwscspd=MC4wLjAuMA=="
             self.request.open(url)
 
-    def url_extra(self, url, **kwargs):
+    def url_extra_params(self, url, **kwargs):
         """ 只在以complete状态开始的任务获取开始网址时调用一次
             在qjc的网址后面
         """
@@ -58,7 +58,7 @@ class Qjc(Task):
 if __name__ == "__main__":
     # test code
     from module.config import CONFIG
-    CONFIG.name = "qjc"
+    CONFIG.task = "qjc"
     self = Qjc("qjc", CONFIG.task)
     self.get_response_from_file("./html_test/qjc_test.html")
     self.cut_html()
