@@ -19,16 +19,18 @@ class Zgzf(Task):
     time_type_r = re.compile(r"(?<=timeType=)\d")
 
     def cut_judge(self):
-        if self.request.response:
-            if len(self.request.response) < 1000:  # website error: Sorry, Page Not Found
-                # return
-                raise WebTooManyVisits
+        if self.request.response and len(self.request.response) < 5000:  # website error: Sorry, Page Not Found
             bs = btfs(self.request.response, "html.parser")
-            tag = tag_find(bs, "p", 0)
-            text = tag.text
-            if text.find("您的访问过于频繁") >= 0 or \
-                text.find("您的访问行为异常") >= 0:
-                raise WebTooManyVisits
+            text = tag_find(bs, "p", 0).text
+            if text.find("访问过于频繁") >= 0 or \
+                text.find("访问行为异常") >= 0:
+                logger.info("need reset cookies")
+                # TODO reset cookies
+            else:
+                text = tag_find(bs, "div", 0).text
+                if text.find("504") >= 0 or text.lower().find("time-out") >=0:
+                    logger.info("Web server error, try again later")
+            raise WebTooManyVisits
 
     # Task
     def close(self):
