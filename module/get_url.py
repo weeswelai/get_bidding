@@ -330,7 +330,7 @@ class GetList(RequestHeaders, ListWebResponse):
             logger.error(f"Error: {self.list_url}\n{traceback.format_exc()}")
             if isinstance(e, CutError) and save_count < MAX_ERROR_SAVE:
                 self.save_response(url=self.list_url, save_date=True, extra="cut_Error")
-            sleep_random(self.config.delay)
+            sleep_random((2, 3))
             self.open_and_cut(count, save_count + 1)
 
         self.cookies = self.request.cookies_session  # set new cookies to json
