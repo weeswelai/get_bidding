@@ -325,7 +325,7 @@ def copy_settings(old, new, new_file_name=""):
 
 # cookies
 def cookie_str_to_dict(cookies: str):
-    if not isinstance(cookies, dict) or cookies == {}:
+    if not isinstance(cookies, str) or cookies == {}:
         return cookies
     cookie_dict = {}
     for c in cookies.split(";"):
