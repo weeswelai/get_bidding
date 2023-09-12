@@ -8,10 +8,7 @@
 
 """
 from bs4 import Tag
-from config import TaskConfig
 
-from module.config import TaskConfig
-from module.get_url import GetList
 from module.log import logger
 from module.utils import *
 
@@ -180,6 +177,7 @@ class Bid:
     def __init__(self, config: dict = None):
         config = config["Bid"]
         self.url_root = config["urlRoot"]
+        logger.info(f"Bid __init__\nBid: {config}")
         self.bid_cut = {}
         for k, v in config["re"].items():
             self.bid_cut[k] = init_re(v)
