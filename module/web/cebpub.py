@@ -5,7 +5,7 @@ from module.utils import date_days
 
 
 class Cebpub(Task):
-    def url_extra(self, url, *argv, **kwargv):
+    def url_extra_params(self, url, *argv, **kwargv):
         # 暂时不知道规律，先用1998年加上今日日期
         date = date_days(0, "day")[-5:]
         url = url.replace("?", f"?searchDate=1998-{date}&")

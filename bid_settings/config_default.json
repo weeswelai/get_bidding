@@ -1,16 +1,16 @@
 {
-    "file":{
-        "dataFolder": "./data",
-        "jsonFIle": "./bid_settings/bid_settings.json"
+    "File":{
+        "DataFolder": "./data",
+        "JsonFile": "./bid_settings/bid_settings.json"
     },
-    "test": {
-        "switch": false,
-        "dataFolder": "./dataTest",
-        "jsonFIle": "./bid_settings/bid_settings_test.json"
+    "Test": {
+        "Switch": false,
+        "DataFolder": "./dataTest",
+        "JsonFile": "./bid_settings/bid_settings_test.json"
     },
-    "config":{
-        "creatNewJsonFile": false,
-        "command": ["-h", "-i", "m", "l"],
-        "run_at_today18": false
+    "Config":{
+        "CreatNewJsonFile": false,
+        "Command": ["-h", "-i", "m", "l"],
+        "Run_at_today18": false
     }
 }

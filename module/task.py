@@ -1,24 +1,26 @@
 """
-task.config: nextRunTime(datetime), errorDelay(str), bidTask(list)
-bidTask.config: 货物:{}
+
 """
 import traceback
 from io import TextIOWrapper
 
 from module.bid_task import BidTask
-from module.config import *
+from module.config import CONFIG
 from module.exception import *
+from module.get_url import GetList
 from module.judge_content import titleTrie
 from module.log import logger
 from module.task_manager import RUN_TIME_START, TaskNode, TaskQueue
 from module.utils import *
 from module.web_brows import *
 
-DATA_PATH = config.dataFolder
 RE_OPEN_MAX = 4  # 异常时最大重新打开次数
 SAVE_ERROR_MAX = 2  # 最多保存错误url response次数
 RESTART_TIME = -180  # 重新运行
-
+# time
+COMPLETE_DELAY = 180  # 默认延迟时间 180分钟
+ERROR_DELAY = "10m"  # 网页打开次数过多时延迟时间
+NEXT_OPEN_DELAY = (2, 3)  # 默认下次打开的随机时间
 
 class BidTaskState(TaskNode):
     """
@@ -30,20 +32,20 @@ class BidTaskState(TaskNode):
     """
     def __init__(self, name) -> None:
         self.name = name
-        nextRunTime = config.get_task(f"{name}.nextRunTime")
+        nextRunTime = CONFIG.get_task(f"{name}.nextRunTime")
         self.nextRunTime = str2time(nextRunTime) if nextRunTime else \
             str2time(RUN_TIME_START)
 
     def set_time(self, nextRunTime: datetime):
         self.nextRunTime = nextRunTime
-        config.set_task(f"{self.name}.nextRunTime", str(nextRunTime)[0: 19])
+        CONFIG.set_task(f"{self.name}.nextRunTime", str(nextRunTime)[0: 19])
 
 
 class BidTaskQueue(TaskQueue):
     task: BidTaskState = None
 
     def __init__(self, run_error=False):
-        for name in config.get_task("TaskList"):
+        for name in CONFIG.get_task("TaskList"):
             task_node = BidTaskState(name)
             self.insert(task_node)
 
@@ -51,7 +53,7 @@ class BidTaskQueue(TaskQueue):
         if self.first_runtime() < datetime.now():
             return self.pop()
         return
-    
+
     def restart(self):
         t: BidTaskState = self.head
         while t:
@@ -74,20 +76,22 @@ class DataFileTxt:
     }
     file_open = False
 
-    def data_file_init(self, name="test") -> None:
-        self._file_init(name)
+    def __init__(self, name):
+        self.data_file_open()
+        self.name = name
+
+    def data_file_init(self):
+        for k in self.files_path.keys():
+            if "day" in k:  # dayList.txt or dayMatch.txt
+                self.files_path[k] = f"{CONFIG.DATA_FOLDER}/bid_{k}_{date_days(format='day')}.txt"
+            else:
+                self.files_path[k] = f"{CONFIG.DATA_FOLDER}/bid_{k}_{self.name}.txt"
+
         create_folder(self.files_path["list"])
         log = ""
         for k, v in self.files_path.items():
             log += f"{k}: {v}\n{' '*26}"
         logger.info(log.strip())
-
-    def _file_init(self, name):
-        for k in self.files_path.keys():
-            if "day" in k:
-                self.files_path[k] = f"{DATA_PATH}/bid_{k}_{date_days(format='day')}.txt"
-            else:
-                self.files_path[k] = f"{DATA_PATH}/bid_{k}_{name}.txt"
 
     def data_file_open(self):
         if not self.file_open:
@@ -138,13 +142,34 @@ class DataFileTxt:
                 fi.flush()
 
 
-class Task(Bid, DataFileTxt):
+class Task(DataFileTxt, BidTag, Bid, GetList):
     bid_task: BidTask
     # bid_web: BidHtml
     bid_tag_error = 0
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     error = False
     bid_task_queue = None
+
+    def __init__(self, name= "", config: dict = None):
+        self.name = name
+        logger.hr(f"init task {self.name}")
+        # for key in ("task", "OpenConfig", "BidTag", "Bid"):
+        #     logger.info(f"{key}: {jsdump(config[key])}")
+        # config = config["Task"]
+
+        super().__init__(name)
+        super(DataFileTxt, self).__init__(config)
+        super(BidTag, self).__init__(config)
+        super(Bid, self).__init__(config)
+
+        config = config["task"]
+        self.next_rule = init_re(config["next_pages"])
+        self.error_delay = deep_get(config, "errorDelay") or ERROR_DELAY
+        self.complete_delay = deep_get(config, "completeDelay") or COMPLETE_DELAY
+        delay = deep_get(config, "nextOpenDelay")
+        self.delay = tuple(int(t) for t in delay.split(",")) if delay else NEXT_OPEN_DELAY
+        self.bid_task_queue = BidTaskQueue()
+
 
     def get_next_pages_url(self, list_url="", next_rule=None, **kwargs) -> str:
         """
@@ -161,7 +186,6 @@ class Task(Bid, DataFileTxt):
             list_url = self.list_url
         pages = str(int(next_rule.search(list_url).group()) + 1)
         next_pages_url = next_rule.sub(pages, list_url)
-        self.update_referer(list_url)
         logger.info("get next pages url")
         return next_pages_url
 
@@ -171,7 +195,7 @@ class Task(Bid, DataFileTxt):
         if not self.list_url:
             logger.hr("get start url")
             list_url = self.bid_task.return_start_url()
-            self.list_url = self.url_extra(list_url)
+            self.list_url = self.url_extra_params(list_url)
         else:
             self.list_url = self.get_next_pages_url()
         page = self.get_pages()
@@ -186,11 +210,11 @@ class Task(Bid, DataFileTxt):
         self.get_next_list_url()
 
         # 打开项目列表页面
-        self.html_cut = self.open(url=self.list_url)
+        self.html_cut = self.open_and_cut()
 
         # 解析 html_list_match 源码, 遍历并判断项目列表的项目
         tagList = self.get_tag_list()
-        logger.info(f"len tagList = {len(tagList)}")
+
         self.process_tag_list(tagList)
         self.flush()  # 刷新缓冲区写入文件
 
@@ -297,7 +321,7 @@ class Task(Bid, DataFileTxt):
     def run_bid_task(self, name) -> datetime:
         self.list_url = None
         self.bid_task = BidTask(name)
-        state = config.get_task(f"{name}.state")
+        state = CONFIG.get_task(f"{name}.state")
         try:
             self._run_bid_task()
             time_add = RESTART_TIME if self.bid_task.interrupt else self.complete_delay
@@ -313,10 +337,6 @@ class Task(Bid, DataFileTxt):
 
     def run(self, restart=False) -> datetime:
         logger.hr(f"{self.name} run")
-        if not self.bid_task_queue:
-            self.bid_task_queue = BidTaskQueue()
-        if not self.file_open:
-            self.data_file_open()
         if restart:
             self.bid_task_queue.restart()
         while 1:
@@ -328,20 +348,18 @@ class Task(Bid, DataFileTxt):
             logger.hr(f"bid task: {self.name} {bid_task.name}", 2)
             nextRunTime = self.run_bid_task(bid_task.name)
             bid_task.set_time(nextRunTime)
-            config.save()
+            CONFIG.save()
             self.bid_task_queue.insert(bid_task)
         self.close()
         if not self.error:
-            reset_task(config, self.name, set_time=True, time=time2str(self.bid_task_queue.head.nextRunTime))
+            reset_task(CONFIG.record, self.name, set_time=True, time=time2str(self.bid_task_queue.head.nextRunTime))
         return self.bid_task_queue.first_runtime(), self.error
 
     def close(self):
         self.data_file_exit()
-        self.s.close()
+        self.request._session.close()
 
 
 if __name__ == "__main__":
-    config.name = "zgzf"
-    from module.web.zgzf import Task
-    self = Task(config.name)
-    self.run()
+
+    pass

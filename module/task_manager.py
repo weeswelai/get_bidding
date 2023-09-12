@@ -9,7 +9,7 @@ from datetime import datetime
 from importlib import import_module
 from os.path import exists
 
-from module.config import config
+from module.config import CONFIG
 from module.exception import *
 from module.log import logger
 from module.utils import *
@@ -27,7 +27,7 @@ class TaskNode:
         self.error = False
         if task:
             self.name = task
-            self.nextRunTime = deep_get(config, f"{task}.nextRunTime")
+            self.nextRunTime = deep_get(CONFIG.record, f"{task}.nextRunTime")
         if not self.nextRunTime:
             self.nextRunTime = RUN_TIME_START
         self.nextRunTime = str2time(self.nextRunTime)
@@ -38,7 +38,7 @@ class TaskQueue:
     restart = False
 
     def __init__(self) -> None:
-        for t in config.taskList:
+        for t in CONFIG.taskList:
             self.insert(t)
         self.print()
 
@@ -116,7 +116,7 @@ class TaskManager(TaskQueue):
 
         """
         logger.hr("TaskManager.__init__", 3)
-        config.set_("task.run_time", date_now_s())  # 写入运行时间
+        CONFIG.set_("task.run_time", date_now_s())  # 写入运行时间
         import_web_module()
         super().__init__()
 
@@ -129,7 +129,7 @@ class TaskManager(TaskQueue):
     def exit(self):
         """关闭任务中占用的文件,保存settings"""
         logger.hr("TaskManager.exit")
-        config.save()
+        CONFIG.save()
 
     def loop(self):
         """ 死循环, 等待、完成 task.list内的任务
@@ -138,10 +138,10 @@ class TaskManager(TaskQueue):
         if self.restart:
             queue_restart(self)
         logger.hr("loop start", 0)
-        logger.info(f"task.list: {config['task']['list']}")
+        logger.info(f"task.list: {CONFIG.record['task']['list']}")
 
         if self.is_empty():
-            logger.info(f"json: task.list is {config.taskList}")
+            logger.info(f"json: task.list is {CONFIG.taskList}")
             raise WebBreak
         while 1:
             if self.next_task_ready():
@@ -156,19 +156,19 @@ class TaskManager(TaskQueue):
             taskNode.nextRunTime, taskNode.error = task.run()
             taskNode.nextRunTime, reset_time = compare_nextRunTime(self, taskNode)
             if reset_time:
-                reset_task(config, taskNode.name, set_time=True, time=time2str(taskNode.nextRunTime))
+                reset_task(CONFIG.record, taskNode.name, set_time=True, time=time2str(taskNode.nextRunTime))
             else:
-                config.set_task("nextRunTime", time2str(taskNode.nextRunTime))
+                CONFIG.set_task("nextRunTime", time2str(taskNode.nextRunTime))
 
-            config.save()
+            CONFIG.save()
             self.insert(taskNode)
-            writer = Writer(argv=config.command)
+            writer = Writer(argv=CONFIG.command)
             writer.output()
 
     def sleep(self, nextRunTime: datetime):
         """阻塞的定时器,阻塞间隔为5秒"""
         logger.hr("task manager sleep")
-        config.save()
+        CONFIG.save()
         # self.sleep_now = True
         time_sleep = (nextRunTime - datetime.now()).total_seconds() + 1
         if time_sleep <= 0:
@@ -196,7 +196,7 @@ class TaskManager(TaskQueue):
         nextRunTime = during_runtime(now)
         if nextRunTime:
             task.nextRunTime = nextRunTime
-            deep_set(config, f"{task.name}.nextRunTime", str(nextRunTime))
+            deep_set(CONFIG, f"{task.name}.nextRunTime", str(nextRunTime))
             logger.info(f"set {task.name} nextRunTime {nextRunTime}")
             self.re_insert()
             return False
@@ -208,29 +208,29 @@ class TaskManager(TaskQueue):
 
 
 def task_init(task: TaskNode):
-    config.name = task.name
+    CONFIG.task = task.name
     name = task.name
     if exists(f"./module/web/{name}.py"):
         mod = import_module(f"module.web.{name}")
     else:
         from module.task import Task
-        return Task(name)
+        return Task(name, CONFIG.task)
     logger.hr(f"task {name}", 1)
-    return getattr(mod, name.title())(name)
+    return getattr(mod, name.title())(name, CONFIG.task)
 
 
 def during_runtime(time: datetime) -> datetime or None:
-    oneDay = timedelta(days=1)
+    ONEDAY = timedelta(days=1)
     today07_30 = datetime.now().replace(hour=7 , minute=30, second=0, microsecond=0)
-    today18 = datetime.now().replace(hour=18 , minute=0, second=0, microsecond=0)
-    yesterday18 = today18 - oneDay
-    tomorrow00 = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + oneDay
-    if config.run_at_today18:
-        today18 = time
-    if yesterday18 < time < today07_30:
+    today21 = datetime.now().replace(hour=21 , minute=0, second=0, microsecond=0)
+    yesterday21 = today21 - ONEDAY
+    tomorrow00 = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + ONEDAY
+    if CONFIG.run_at_today21:
+        today21 = time
+    if yesterday21 < time < today07_30:
         return today07_30
-    elif today18 < time < tomorrow00:
-        return today07_30 + oneDay
+    elif today21 < time < tomorrow00:
+        return today07_30 + ONEDAY
     return None
 
 
@@ -239,15 +239,15 @@ def queue_restart(queue: TaskQueue):
         return
     queue.restart = False
     queue.head = None
-    for t in config.taskList:
-        config.set_(f"{t}.nextRunTime", RUN_TIME_START)
-        TaskList = config.get_(f"{t}.TaskList")
+    for t in CONFIG.taskList:
+        CONFIG.set_(f"{t}.nextRunTime", RUN_TIME_START)
+        TaskList = CONFIG.get_(f"{t}.TaskList")
         for bid_task in TaskList:
-            config.set_(f"{t}.{bid_task}.nextRunTime", RUN_TIME_START)
+            CONFIG.set_(f"{t}.{bid_task}.nextRunTime", RUN_TIME_START)
         t = TaskNode(t)        
         queue.insert(t)
     queue.print()
-    config.save()
+    CONFIG.save()
 
 
 def import_web_module():
@@ -275,5 +275,6 @@ def compare_nextRunTime(queue: TaskQueue, task_insert: TaskNode):
 
 if __name__ == "__main__":
     bidTaskManager = TaskManager()
-    bidTaskManager.restart = True
-    queue_restart(bidTaskManager)
+    # bidTaskManager.restart = True
+    # queue_restart(bidTaskManager)
+    bidTaskManager.loop()
