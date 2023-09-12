@@ -314,6 +314,7 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
         while 1:
             result = self.process_next_list_web()
             sleep_random(self.delay, message=" you can use 'Ctrl  C' stop now")
+            CONFIG.save()
             if not result:
                 break
         logger.info(f"{self.name} {self.bid_task.name} is complete")
