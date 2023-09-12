@@ -139,7 +139,9 @@ class ListWebResponse:
     config: dict
     li_tag: str
 
-    def __init__(self, html_cut_rule=None, file="") -> None:
+    def __init__(self, config=None, html_cut_rule=None, file=""):
+        if config:
+            html_cut_rule = config["OpenConfig"]["html_cut"]
         if file:
             self.request = RequestBase()
             self.get_response_from_file(file)
@@ -271,7 +273,8 @@ class GetList(RequestHeaders, ListWebResponse):
         logger.info("GetList.__init__")
 
         self.config = config["OpenConfig"]
-        
+        logger.info(f"OpenConfig: {self.config}")
+
         cookies = deep_get(self.config, "cookies")
         self.config["cookies"] = cookie_str_to_dict(cookies)
 
