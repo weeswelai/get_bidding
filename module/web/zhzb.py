@@ -23,9 +23,11 @@ class Zhzb(Task):
 
 if __name__ == "__main__":
     # test code
-    self = Zhzb("zhzb")
+    from module.config import CONFIG
+    CONFIG.task = "zhzb"
+    self = Zhzb("zhzb", CONFIG.task)
     self.get_response_from_file("./html_test/zhzb_test.html")
-    self.html_cut = self.cut_html()
+    self.cut_html()
     self.get_tag_list()
     for idx, tag in enumerate(self.tag_list):
         self._parse_tag(tag, idx)

@@ -9,8 +9,6 @@
 """
 from bs4 import Tag
 
-from module.config import config
-from module.get_url import GetList
 from module.log import logger
 from module.utils import *
 
@@ -19,7 +17,18 @@ INDEX_RULE = 1
 ATTR_RULE = 2
 
 
-def tag_get(tag: Tag, rule, *argv) -> Tag or None:
+class BidObj:
+    _name = None
+    _date = None
+    _url = None
+    def __init__(self, message) -> None:
+        if isinstance(message, (list, tuple)):
+            self._name, self._date, self._url = message
+        elif isinstance(message, dict):
+            pass
+
+
+def tag_get(tag: Tag, rule, *args) -> Tag or None:
     """ rule: "tag1.tag2.tag3 > attr1"
     from https://stackoverflow.com/questions/25833613/safe-method-to-get-value-of-nested-dictionary
     Args:
@@ -38,7 +47,7 @@ def tag_get(tag: Tag, rule, *argv) -> Tag or None:
     return tag_get(tag.find(rule[0]), rule[1:])
 
 
-def tag_find(tag: Tag, name, index=0, attr={}, *argv):
+def tag_find(tag: Tag, name, index=0, attr={}, *args):
     # rule: "tag1 > attr1"
     if not name:
         return tag
@@ -72,17 +81,19 @@ def return_none(*args):
 
 
 # 仅对li_tag中的元素(可能为Tag或dict)进行处理
-class BidTag(GetList):
+class BidTag:
     class TagGet:
+        """
+        Can be overloaded
+        """
         tag_rule = None
         attr_rule = None
 
-        def __init__(self, name, rule) -> None:
-            self.name = name
+        def __init__(self, name=None, rule=None):
             self.rule = rule
             self.tag_fun = tag_find
             self.attr_fun = get_tag_content
-            logger.info(f"{self.name}: {self.rule}")
+            logger.info(f"{name}: {self.rule}")
             self.init_rule(rule)
             logger.info(f"tag: {self.tag_rule} {self.tag_fun.__name__} ,"
                 f"attr: {self.attr_rule} {self.attr_fun.__name__}")
@@ -129,14 +140,14 @@ class BidTag(GetList):
             return self.attr_fun(tag, self.attr_rule)
 
 
-    tag_info: list = None
-    tag_get: dict = None  # {name: TagGet(), ...}
+    tag_info: list = None  # get info in tag
     tag: Tag
     tag_key_now = None
 
-    def tag_get_init(self):
-        self.tag_get = {}
-        logger.info("bid tag get init")
+    def __init__(self, config: dict = None):
+        logger.info("BidTag.__init__")
+        self.tag_rules = config["BidTag"]
+        self.tag_get = {}  # {name: TagGet(), ...}  get a tag
         for key in ("name", "date", "url", "type"):
             self.tag_get[key] = self.TagGet(key, self.tag_rules[key])
 
@@ -146,8 +157,6 @@ class BidTag(GetList):
         Args:
             bid_tag (Tag or dict): 招标项目对象
         """
-        if not self.tag_get:
-            self.tag_get_init()
         self.tag = tag
         self.tag_info = []
         for key in ("name", "date", "url", "type"):
@@ -157,13 +166,22 @@ class BidTag(GetList):
         return self.tag_info
 
 
-class Bid(BidTag):
+class Bid:
     # 解析后的bid信息
     # Bid: 用于 module.web 中的继承，保存一个网页列表中招标项目的最终信息
     bid_info: dict = None
     url_root: str
     info_list: list = None
     get_bid_now: str
+
+    def __init__(self, config: dict = None):
+        config = config["Bid"]
+        self.url_root = config["urlRoot"]
+        logger.info(f"Bid __init__\nBid: {config}")
+        self.bid_cut = {}
+        for k, v in config["re"].items():
+            self.bid_cut[k] = init_re(v)
+            logger.debug(f"rule init {k}: {self.bid_cut[k]}")
 
     def get_bid_info(self, *args):
         """ 接收BidTag.get()返回的list
@@ -236,11 +254,46 @@ def _re_get_str(obj: str, rule: re.Pattern = None, cut_rule=None):
 
 
 if __name__ == "__main__":
-    from module.get_url import GetList
-    config.name = "zzlh"
-    bid = Bid()
-    with open("./html_test/365_test.html", "r", encoding="utf-8") as f:
-        tag_li = bid.get_tag_list(f.read())
+    # test
+    # from module.get_url import ListWebResponse
 
-    for tag in tag_li:
-        print(bid.get_bid_info(tag))
+    # html_cut_rule = {
+    #     "re_rule": "(<ul class=\"searchList\">).*?(</ul>)",
+    #     "rule_option": 16
+    #   }
+    # li_tag = "li"
+    # html_file = "./html_test/365_test.html"
+    # brows = ListWebResponse(file=html_file)
+    # brows.cut_html(html_cut_rule)
+
+    # bid_tag_rule = {
+    #     "BidTag": {
+    #         "name": "span > title",
+    #         "date": "i",
+    #         "url": "a > href",
+    #         "type": "em"
+    #     }
+    # }
+    # bid_tag = BidTag(bid_tag_rule)
+
+    # bid_rule = {
+    #     "Bid": {
+    #         "urlRoot": "http://www.365trade.com.cn",
+    #         "re": {
+    #             "date": "\\d{4}([_\\-年])\\d{2}([_\\-月])\\d{2}(|日)"
+    #         }
+    #     }
+    # }
+    # bid = Bid(bid_rule)
+
+    # tag_list = brows.get_tag_list(li_tag=li_tag)
+
+    # for tag in tag_list:
+    #     # test BidTag
+    #     tag_info = bid_tag.get_tag_info(tag)
+    #     logger.debug(tag_info)
+
+    #     # test Bid
+    #     bid_info = bid.get_bid_info(*tag_info)
+    #     logger.debug(bid_info)
+    pass

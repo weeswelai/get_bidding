@@ -13,21 +13,21 @@ from module.web_brows import tag_find
 
 
 class Zgzf(Task):
-    set_cookie_r = re.compile(r"(?<=\s).{0,10}?=deleted")
+    delete_cookie_r = re.compile(r"(?<=\s).{0,10}?=deleted")
     html_cookie_r = re.compile(r"(?<=document.cookie = \").*?(?=;)")
     url_r = re.compile(r"&start.*timeType=?\d")
     time_type_r = re.compile(r"(?<=timeType=)\d")
 
     def cut_judge(self):
-        if self.response:
-            if len(self.response) < 1000:  # website error: Sorry, Page Not Found
+        if self.request.response:
+            if len(self.request.response) < 1000:  # website error: Sorry, Page Not Found
                 # return
                 raise WebTooManyVisits
-            bs = btfs(self.response, "html.parser")
+            bs = btfs(self.request.response, "html.parser")
             tag = tag_find(bs, "p", 0)
             text = tag.text
-            if text.find("您的访问过于频繁,请稍后再试") > 0 or \
-                text.find("您的访问行为异常,请稍后再试") > 0:
+            if text.find("您的访问过于频繁") >= 0 or \
+                text.find("您的访问行为异常") >= 0:
                 raise WebTooManyVisits
 
     # Task
@@ -48,7 +48,7 @@ class Zgzf(Task):
     #         return True
 
     # GetList
-    def url_extra(self, url):
+    def url_extra_params(self, url):
         result = self.url_r.search(url)
         if result is None:
             # 加上今天日期和类型
@@ -67,26 +67,24 @@ class Zgzf(Task):
                 url = self.time_type_r.sub("6", url)
         return url
 
-    def set_cookies(self):
+    def open_extra(self):
         """
-        增加headers_deleted_cookie方法调用
+        在打开网址后处理 cookies
         """
-        self.update_cookies(self.s.cookies.get_dict())
+        self.cookies = self.request.cookies_session
         cookies_html: dict = self.get_cookies_from_html()
         self.headers_deleted_cookie()
         if cookies_html:
-            self.update_cookies(cookies_html)
-        self.s.cookies = cookiejar_from_dict(self.cookies)
-        self.save_cookies()
+            self.cookies = cookies_html
 
     def get_cookies_from_html(self, **kwargs):
         """
         部分cookie保存在返回的html中,用正则进行搜索
         """
-        if not self.response:
+        if not self.request.response:
             return None
         cookies = {}
-        cookie_find = self.html_cookie_r.findall(self.response, re.S)
+        cookie_find = self.html_cookie_r.findall(self.request.response, re.S)
         logger.debug(f"html cookie: {cookie_find}")
         for cookie_add in cookie_find:
             key, value = cookie_add.split("=")
@@ -119,31 +117,33 @@ class Zgzf(Task):
 
         """
         time_now = str(time.time())[:10]
-        self.cookies["Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd"] = time_now
-        self.s.cookies = cookiejar_from_dict(self.cookies)
+        self.cookies = {"Hm_lpvt_9459d8c503dd3c37b526898ff5aacadd": time_now}
 
     def headers_deleted_cookie(self):
         """
-        删除self.r.headers里value为deleted的cookie,因为这个cookie无法被session和
-        requests.Response 捕获到,所以用正则进行查找
+        找到 self.request._response.headers 里value为deleted的cookie
+        并在 json 中删除该cookie
 
         """
-        deleted_cookie = None
-        set_cookies = self.r.headers.get("set-cookie")
+        set_cookies = self.request._response.headers.get("set-cookie")
         if set_cookies:
-            deleted_cookie = self.set_cookie_r.findall(set_cookies)
-        if deleted_cookie:
-            logger.debug(f"deleted cookie: {deleted_cookie}")
-            for cookie in deleted_cookie:
-                k, _ = cookie.split("=")
-                del(self.cookies[k])
+            deleted_cookie: list = self.delete_cookie_r.findall(set_cookies)
+            if deleted_cookie:
+                logger.debug(f"deleted cookie: {deleted_cookie}")
+                self.cookies = {k: "deleted" for k in deleted_cookie}
+
+    def open_and_cut(self, count=0, save_count=0):
+        self.set_cookie_time()
+        return super().open_and_cut(count, save_count)
 
 
 if __name__ == "__main__":
     # test
-    self = Zgzf("zgzf")
+    from module.config import CONFIG
+    CONFIG.task = "zgzf"
+    self = Zgzf("zgzf", CONFIG.task)
     self.get_response_from_file("./html_test/zgzf_test.html")
-    self.html_cut = self.cut_html()
+    self.cut_html()
     self.get_tag_list()
     for idx, tag in enumerate(self.tag_list):
         self._parse_tag(tag, idx)

@@ -36,13 +36,17 @@ class Qjc(Task):
         return self.tag_list
 
     def open_extra(self, **kwargs):
-        url_redirect = self.redirect_cut.search(self.response)
+        """
+        处理qjc的重定向
+        """
+        logger.info("Qjc url redirect")
+        url_redirect = self.redirect_cut.search(self.request.response)
         if url_redirect:
             url = f"http://www.weain.mil.cn{url_redirect.group()}" \
                   f"?wzwscspd=MC4wLjAuMA=="
-            self.open(url)
+            self.request.open(url)
 
-    def url_extra(self, url, **kwargs):
+    def url_extra_params(self, url, **kwargs):
         """ 只在以complete状态开始的任务获取开始网址时调用一次
             在qjc的网址后面
         """
@@ -53,9 +57,11 @@ class Qjc(Task):
 
 if __name__ == "__main__":
     # test code
-    self = Qjc("qjc")
+    from module.config import CONFIG
+    CONFIG.task = "qjc"
+    self = Qjc("qjc", CONFIG.task)
     self.get_response_from_file("./html_test/qjc_test.html")
-    self.html_cut = self.cut_html()
+    self.cut_html()
     self.get_tag_list()
     for idx, tag in enumerate(self.tag_list):
         self._parse_tag(tag, idx)

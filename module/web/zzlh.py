@@ -15,7 +15,7 @@ class Zzlh(Task):
         else:
             pages = str(int(next_rule.search(list_url).group()) + 1)
             next_pages_url = next_rule.sub(pages, list_url)
-        self.update_referer(list_url)
+        self.referer = list_url
         logger.info("get next pages url")
         return next_pages_url
 
@@ -28,9 +28,11 @@ class Zzlh(Task):
 
 if __name__ == "__main__":
     # test code
-    self = Zzlh("zhzb")
+    from module.config import CONFIG
+    CONFIG.task = "zzlh"
+    self = Zzlh("zzlh", CONFIG.task)
     self.get_response_from_file("./html_test/365_test.html")
-    self.html_cut = self.cut_html()
+    self.cut_html()
     self.get_tag_list()
     for idx, tag in enumerate(self.tag_list):
         self._parse_tag(tag, idx)
