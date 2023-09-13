@@ -324,6 +324,8 @@ class GetList(RequestHeaders, ListWebResponse):
 
         try:
             self.request.open(self.list_url)
+            self.cookies = self.request.cookies_session  # set new cookies to json
+            self.referer = self.list_url
             self.open_extra()
             self.cut_html()
         except Exception as e:
@@ -333,8 +335,6 @@ class GetList(RequestHeaders, ListWebResponse):
             sleep_random((2, 3))
             self.open_and_cut(count, save_count + 1)
 
-        self.cookies = self.request.cookies_session  # set new cookies to json
-        self.referer = self.list_url
         return self.html_cut
 
 

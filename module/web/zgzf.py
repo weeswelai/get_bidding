@@ -73,7 +73,6 @@ class Zgzf(Task):
         """
         在打开网址后处理 cookies
         """
-        self.cookies = self.request.cookies_session
         cookies_html: dict = self.get_cookies_from_html()
         self.headers_deleted_cookie()
         if cookies_html:
@@ -125,14 +124,18 @@ class Zgzf(Task):
         """
         找到 self.request._response.headers 里value为deleted的cookie
         并在 json 中删除该cookie
-
+        set_cookies 中其他的cookie会在session中自动设置, 只有 value=deleted 的cookie要单独删除
         """
         set_cookies = self.request._response.headers.get("set-cookie")
         if set_cookies:
             deleted_cookie: list = self.delete_cookie_r.findall(set_cookies)
             if deleted_cookie:
-                logger.debug(f"deleted cookie: {deleted_cookie}")
-                self.cookies = {k: "deleted" for k in deleted_cookie}
+                cookies = {}
+                logger.debug(f"deleted cookies: {deleted_cookie}")
+                for cookie in deleted_cookie:
+                    key, value = cookie.split("=")
+                    cookies[key] = value
+                self.cookies = cookies
 
     def open_and_cut(self, count=0, save_count=0):
         self.set_cookie_time()
@@ -144,11 +147,15 @@ if __name__ == "__main__":
     from module.config import CONFIG
     CONFIG.task = "zgzf"
     self = Zgzf("zgzf", CONFIG.task)
-    self.get_response_from_file("./html_test/zgzf_test.html")
-    self.cut_html()
-    self.get_tag_list()
-    for idx, tag in enumerate(self.tag_list):
-        self._parse_tag(tag, idx)
-        logger.info(self.message())
     
+    # test 1
+    # self.get_response_from_file("./html_test/zgzf_test.html")
+    # self.cut_html()
+    # self.get_tag_list()
+    # for idx, tag in enumerate(self.tag_list):
+    #     self._parse_tag(tag, idx)
+    #     logger.info(self.message())
+    
+    # test 2
+    self.run()
     pass
