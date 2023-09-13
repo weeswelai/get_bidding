@@ -19,9 +19,11 @@ pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # 入口程序所
 #     os.chdir(os.path.dirname(sys.argv[0]))
     # print(os.getcwd())
 
-def _get_dict(file: str) -> dict:
+def load_json(file: str) -> dict:
+    logger.info(f"load {file}")
     if file in (RECORD_FILE, CONFIG_FILE):
         if not os.path.exists(file):
+            logger.warning(f"{file} was not found")
             default = f"{file[:-5]}_default.json"
             copyfile(default, file)
     with open(file, "r", encoding="utf-8") as f:
@@ -35,13 +37,13 @@ class Config(object):
     def __init__(self, config=CONFIG_FILE, name="test"):
         self.name = name
         self.data_file = config
-        self.config = _get_dict(config)
+        self.config = load_json(config)
         self.command = []
         test = self.config["Test"]["Switch"]
         path = self.config["Test"] if test else self.config["File"]
         self.DATA_FOLDER = path["DataFolder"]
         self.record_file = path["JsonFile"]
-        self.record = _get_dict(self.record_file)
+        self.record = load_json(self.record_file)
         self.taskList = self.record["task"]["list"]
 
         if self.creatNewJsonFile:
