@@ -7,14 +7,11 @@ import traceback
 from module.log import logger
 from module.task_manager import TaskManager
 
-bidTaskManager = TaskManager()
-
 
 def main(argv: list):
+    restart = True if "-r" in argv else False
+    bidTaskManager = TaskManager(restart=restart)
     try:
-        if "-r" in argv:
-            logger.hr("task restart", 3)
-            bidTaskManager.restart = True
         bidTaskManager.loop()
     except KeyboardInterrupt:
         pass
