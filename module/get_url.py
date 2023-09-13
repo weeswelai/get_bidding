@@ -44,8 +44,8 @@ class RequestBase:
         self._open = self._get if method == "GET" else self._post
         # needful headers and params
         self.params  = {
-            "headers": headers,
-            "timeout": timeout
+            "headers": headers or HEADERS,
+            "timeout": timeout or TIMEOUT
         }
         if packet_capture:
             self.params["proxies"] = PACKET_CAPTURE_PROXIES.copy()
@@ -123,7 +123,7 @@ class RequestHeaders:
 
     @property
     def _referer(self):
-        return self.headers["Referer"]
+        return self.config["headers"]["Referer"]
 
     @_referer.setter
     def referer(self, referer: str):
