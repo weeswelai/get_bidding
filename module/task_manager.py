@@ -35,7 +35,6 @@ class TaskNode:
 
 class TaskQueue:
     head = None
-    restart = False
 
     def __init__(self) -> None:
         for t in CONFIG.taskList:
@@ -110,7 +109,7 @@ class TaskManager(TaskQueue):
     break_ = False
     sleep_now = False
 
-    def __init__(self):
+    def __init__(self, restart=False):
         """
         读取json_file; 设置 settings, json_file , queue
 
@@ -119,6 +118,8 @@ class TaskManager(TaskQueue):
         CONFIG.set_("task.run_time", date_now_s())  # 写入运行时间
         import_web_module()
         super().__init__()
+        if restart:
+            queue_restart(self)
 
     # def web_break(self):
     #     """判断 break_属性,若为True,抛出WebBreak异常"""
@@ -135,8 +136,6 @@ class TaskManager(TaskQueue):
         """ 死循环, 等待、完成 task.list内的任务
         """
         from module.task import Task
-        if self.restart:
-            queue_restart(self)
         logger.hr("loop start", 0)
         logger.info(f"task.list: {CONFIG.record['task']['list']}")
 
@@ -235,9 +234,7 @@ def during_runtime(time: datetime) -> datetime or None:
 
 
 def queue_restart(queue: TaskQueue):
-    if not queue.restart:
-        return
-    queue.restart = False
+    logger.hr("task restart", 3)
     queue.head = None
     for t in CONFIG.taskList:
         CONFIG.set_(f"{t}.nextRunTime", RUN_TIME_START)
