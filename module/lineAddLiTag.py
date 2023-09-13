@@ -22,7 +22,6 @@ from os.path import basename, exists
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from module.config import CONFIG_FILE
 from module.utils import date_days
 
 DATAPATH = "./data"
@@ -39,6 +38,8 @@ TYPE = -1
 WEB = ["jdcg", "zzlh", "hkgy", "zhzb", "qjc", "cebpub"]
 
 date_time = ""
+
+CONFIG_FILE = "./bid_settings/config.json"
 
 with open(CONFIG_FILE, "r", encoding="utf-8") as f:
     config =  json.loads(f.read())
