@@ -21,6 +21,16 @@ class Zhzb(Task):
     def get_name(self, name:str):
         return name.replace("\\\"", "")
 
+    @property
+    def _referer(self):
+        return super()._referer
+
+    @_referer.setter
+    def referer(self, referer):
+        self.config["headers"]["Referer"] = "http://bid.aited.cn/bid/index.html"
+        self.request.params["headers"]["Referer"] = "http://bid.aited.cn/bid/index.html"
+
+
 if __name__ == "__main__":
     # test code
     from module.config import CONFIG

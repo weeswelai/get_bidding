@@ -555,7 +555,7 @@
       },
       "cookies": {},
       "html_cut": {
-        "re_rule": "<li>.*?(?=,)",
+        "re_rule": "<li>.*</li>",
         "rule_option": 16
       },
       "li_tag": "li"
