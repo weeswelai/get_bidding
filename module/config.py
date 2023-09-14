@@ -24,34 +24,39 @@ def load_json(file: str) -> dict:
     if file in (RECORD_FILE, CONFIG_FILE):
         if not os.path.exists(file):
             logger.warning(f"{file} was not found")
-            default = f"{file[:-5]}_default.json"
+            default = f"{file[:-5]}_default.json"  # [:-5]: get json file name
             copyfile(default, file)
     with open(file, "r", encoding="utf-8") as f:
         return json.loads(f.read())
 
 
 class Config(object):
+    # json key Config
     creatNewJsonFile = False
     run_at_today21 = False
+    command: list
 
     def __init__(self, config=CONFIG_FILE, name="test"):
         self.name = name
         self.data_file = config
         self.config = load_json(config)
-        self.command = []
+
         test = self.config["Test"]["Switch"]
+
         path = self.config["Test"] if test else self.config["File"]
         self.DATA_FOLDER = path["DataFolder"]
         self.record_file = path["JsonFile"]
         self.record = load_json(self.record_file)
         self.taskList = self.record["task"]["list"]
 
+        # json key Config
+        for k, v in self.config["Config"].items():
+            setattr(self, k.lower(), v)
         if self.creatNewJsonFile:
             self.set_new_json()
+
         logger.info(f"{config} test switch is {test}")
 
-    def set_new_json(self):
-        pass
 
     def set_new_json(self):
         date = date_now_s(file_new=True)
