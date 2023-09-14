@@ -78,17 +78,17 @@ class Zgzf(Task):
         if cookies_html:
             self.cookies = cookies_html
 
-    def get_cookies_from_html(self, **kwargs):
+    def get_cookies_from_html(self, **kwargs) -> dict:
         """
         部分cookie保存在返回的html中,用正则进行搜索
         """
         if not self.request.response:
-            return None
+            return
         cookies = {}
-        cookie_find = self.html_cookie_r.findall(self.request.response, re.S)
-        logger.debug(f"html cookie: {cookie_find}")
-        for cookie_add in cookie_find:
-            key, value = cookie_add.split("=")
+        cookies_find = self.html_cookie_r.findall(self.request.response, re.S)
+        logger.debug(f"html cookies: {cookies_find}")
+        for cookie in cookies_find:
+            key, value = cookie.split("=")
             if key == "HOY_TR":
                 value = self.cookies_HOY_TR(value)
             value = value.replace(',"+"', "")
