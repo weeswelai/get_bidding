@@ -202,6 +202,8 @@ class ListWebResponse:
         self.tag_list = self.bs.find_all(li_tag)
         logger.info(f"tag list len {len(self.tag_list)}")
         if not self.tag_list:
+            logger.debug(f"Requests headers: {self.request._session.headers}\n"
+                         f"Response headers: {self.request._response.headers} ")
             raise CutError(f"tag list len {len(self.tag_list)}, "
                            f"page len {len(page)}, bs len: {len(self.bs)}")
         return self.tag_list
@@ -305,16 +307,7 @@ class GetList(RequestHeaders, ListWebResponse):
         """
         pass
 
-    def get_url_tag_list(self, url="", file=""):
-        if file:
-            response = self.get_response_from_file(file)
-            return self.get_tag_list(response)
-
-        self.list_url = url
-        self.open_and_cut()
-        return self.get_tag_list()
-
-    def open_and_cut(self, count=0, save_count=0):
+    def open_url_get_list(self, count=0, save_count=0):
         self.request.cookies_session = self.cookies  # reset cookies from json
 
         count += 1
@@ -328,12 +321,13 @@ class GetList(RequestHeaders, ListWebResponse):
             self.referer = self.list_url
             self.open_extra()
             self.cut_html()
+            self.get_tag_list()
         except Exception as e:
             logger.error(f"Error: {self.list_url}\n{traceback.format_exc()}")
             if isinstance(e, CutError) and save_count < MAX_ERROR_SAVE:
                 self.save_response(url=self.list_url, save_date=True, extra="cut_Error")
             sleep_random((2, 3))
-            self.open_and_cut(count, save_count + 1)
+            self.open_url_get_list(count, save_count + 1)
 
         return self.html_cut
 

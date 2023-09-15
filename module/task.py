@@ -210,12 +210,9 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
         self.get_next_list_url()
 
         # 打开项目列表页面
-        self.html_cut = self.open_and_cut()
+        self.html_cut = self.open_url_get_list()
 
-        # 解析 html_list_match 源码, 遍历并判断项目列表的项目
-        tagList = self.get_tag_list()
-
-        self.process_tag_list(tagList)
+        self.process_tag_list(self.tag_list)
         self.flush()  # 刷新缓冲区写入文件
 
         if not self.match_num:
@@ -326,7 +323,7 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
         try:
             self._run_bid_task()
             time_add = RESTART_TIME if self.bid_task.interrupt else self.complete_delay
-        except (WebTooManyVisits, TooManyErrorOpen):
+        except (WebTooManyVisits, TooManyErrorOpen, CutError):
             # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
             self.bid_task.set_task("state", "error")
             logger.error(f"{traceback.format_exc()}")
