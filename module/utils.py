@@ -272,19 +272,19 @@ def _clear_bid_task(d, keys=None):
     _set_time(d)
 
 
-def reset_task(task_d: dict, name="", clear_bid=False, set_time=False, time=""):
+def reset_task(task_d: dict, name="", clear_bid=False, time=None):
     """ 重置一个任务的 nextRunTime 和 bid_task """
     task = task_d[name] if name else task_d
-    if set_time:
+    if time:
         _set_time(task, time=time)
     for bid_task in  task["TaskList"]:
-        if set_time:
+        if time:
             _set_time(task[bid_task], time=time)
         if clear_bid:
             _clear_bid_task(task[bid_task])
 
 
-def clear_json_file(json_file, task="", clear_bid=False, set_time=False, time=""):
+def clear_json_file(json_file, task="", clear_bid=False, time=None):
     """ 重置一个json文件task.list里所有任务"""
     read_file = False
     if isinstance(json_file, dict):
@@ -294,10 +294,10 @@ def clear_json_file(json_file, task="", clear_bid=False, set_time=False, time=""
         with open(json_file, "r", encoding="utf-8") as f:
             json_d = json.loads(f.read())
     if task:
-        reset_task(json_d, task, clear_bid, set_time, time)
+        reset_task(json_d, task, clear_bid, time)
     else:
         for name in json_d["task"]["list"]:
-            reset_task(json_d, name, clear_bid, set_time, time)
+            reset_task(json_d, name, clear_bid, time)
     if read_file:
         save_json(json_d, json_file)
 
@@ -339,6 +339,6 @@ if __name__ == "__main__":
     # 本模块测试
     # test code
     # clear_json_file("./bid_settings/bid_settings_default.json", clear_bid=True, set_time=True)
-    # clear_json_file("./bid_settings/bid_settings.json", set_time=True, time="2023-07-21 13:30:34")
-    copy_settings("./bid_settings/bid_settings.json", "./bid_settings/bid_settings_newClass.json")
+    # clear_json_file("./bid_settings/bid_settings.json", time="2023-07-21 13:30:34")
+    # copy_settings("./bid_settings/bid_settings.json", "./bid_settings/bid_settings_newClass.json")
     pass
