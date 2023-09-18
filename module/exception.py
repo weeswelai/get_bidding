@@ -1,14 +1,20 @@
 
 
 class WebTooManyVisits(Exception):
-    pass
+    def __init__(self, delay=None, *args: object) -> None:
+        self.delay = delay
+        super().__init__(*args)
 
 
-class TooManyErrorOpen(Exception):
+class TooManyErrorOpen(WebTooManyVisits):
     pass
 
 
 class CutError(Exception):
+    delay = None
+
+
+class TaskError(WebTooManyVisits):
     pass
 
 
