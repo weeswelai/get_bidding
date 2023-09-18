@@ -155,7 +155,7 @@ class TaskManager(TaskQueue):
             taskNode.nextRunTime, taskNode.error = task.run()
             taskNode.nextRunTime, reset_time = compare_nextRunTime(self, taskNode)
             if reset_time:
-                reset_task(CONFIG.record, taskNode.name, set_time=True, time=time2str(taskNode.nextRunTime))
+                reset_task(CONFIG.record, taskNode.name, time=time2str(taskNode.nextRunTime))
             else:
                 CONFIG.set_task("nextRunTime", time2str(taskNode.nextRunTime))
 

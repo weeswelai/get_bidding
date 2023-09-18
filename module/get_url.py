@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 
 import requests
 import requests.utils as requtils
+from requests.exceptions import ReadTimeout
 from bs4 import BeautifulSoup as btfs
 
 from module.exception import *
@@ -322,7 +323,7 @@ class GetList(RequestHeaders, ListWebResponse):
             self.open_extra()
             self.cut_html()
             self.get_tag_list()
-        except Exception as e:
+        except (CutError, ReadTimeout) as e:
             logger.error(f"Error: {self.list_url}\n{traceback.format_exc()}")
             if isinstance(e, CutError) and save_count < MAX_ERROR_SAVE:
                 self.save_response(url=self.list_url, save_date=True, extra="cut_Error")

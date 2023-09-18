@@ -9,7 +9,7 @@ from module.exception import *
 from module.log import logger
 from module.task import Task
 from module.utils import *
-from module.web_brows import tag_find
+from module.web_brows import get_tag_list_content, tag_find
 
 
 class Zgzf(Task):
@@ -19,25 +19,32 @@ class Zgzf(Task):
     time_type_r = re.compile(r"(?<=timeType=)\d")
 
     def cut_judge(self):
-        if self.request.response and len(self.request.response) < 5000:  # website error: Sorry, Page Not Found
-            bs = btfs(self.request.response, "html.parser")
-            text = tag_find(bs, "p", 0).text
-            if text.find("访问过于频繁") >= 0 or \
-                text.find("访问行为异常") >= 0:
-                logger.info("need reset cookies")
-                # TODO reset cookies
-            else:
-                text = tag_find(bs, "div", 0).text
-                if text.find("504") >= 0 or text.lower().find("time-out") >=0:
-                    logger.info("Web server error, try again later")
-            raise WebTooManyVisits
+        bs = btfs(self.request.response, "html.parser")
+        text = bs.text
+        if "Sorry, Page Not Found" in text:
+            return
+        if text.find("访问过于频繁") >= 0 or text.find("访问行为异常") >= 0:
+            logger.info(f"Need reset cookies, '{tag_find(bs, 'p', 0).text}'")
+            if "HMY_JC" not in self.cookies:
+                raise TaskError("20m", "TaskError: zgzf IP blocked")
+            self._delete_cookies()
+            return
+        else:
+            tag_list = tag_find(bs, "div", slice=(1,2))
+            text = get_tag_list_content(tag_list)
+            logger.info(f"Web server error, try again later, error: '{text}'")
+        raise WebTooManyVisits("1h", text)
 
-    # Task
-    def close(self):
+    def _delete_cookies(self):
+        logger.info(f"Delete {self.name} cookies")
         for k in ("HMF_CI", "HOY_TR", "HBB_HC", "JSESSIONID", "HMY_JC"):
             if k in self.cookies:
                 logger.debug(f"cookie delete {k}:{self.cookies[k]}")
                 del(self.cookies[k])
+
+    # Task
+    def close(self):
+        self._delete_cookies()
         super().close()
 
     def get_date(self, date: str):
@@ -137,9 +144,9 @@ class Zgzf(Task):
                     cookies[key] = value
                 self.cookies = cookies
 
-    def open_and_cut(self, count=0, save_count=0):
+    def open_url_get_list(self, count=0, save_count=0):
         self.set_cookie_time()
-        return super().open_and_cut(count, save_count)
+        return super().open_url_get_list(count, save_count)
 
 
 if __name__ == "__main__":
@@ -149,7 +156,10 @@ if __name__ == "__main__":
     self = Zgzf("zgzf", CONFIG.task)
     
     # test 1
-    # self.get_response_from_file("./html_test/zgzf_test.html")
+    self.get_response_from_file("./html_error/search.ccgp.gov.cn bxsearch searchtype=1&start_time=2023 09 04&end_time=2023 08 29_2023_09_05-07_30_56_cut_Error.html")
+    print(len(self.request.response))
+    self.get_response_from_file("./html_error/search.ccgp.gov.cn bxsearch searchtype=1&start_time=2023 09 04&end_time=2023 08 29_2023_09_05-07_30_56_cut_Error.html")
+    print(len(self.request.response))
     # self.cut_html()
     # self.get_tag_list()
     # for idx, tag in enumerate(self.tag_list):
@@ -157,5 +167,5 @@ if __name__ == "__main__":
     #     logger.info(self.message())
     
     # test 2
-    self.run()
+    # self.run()
     pass
