@@ -323,11 +323,11 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
         try:
             self._run_bid_task()
             time_add = RESTART_TIME if self.bid_task.interrupt else self.complete_delay
-        except (WebTooManyVisits, TooManyErrorOpen, CutError):
+        except (WebTooManyVisits, TooManyErrorOpen, CutError) as e:
             # TODO 这里需要一个文件保存额外错误日志以记录当前出错的网址, 以及上个成功打开的列表的最后一个项目
             self.bid_task.set_task("state", "error")
             logger.error(f"{traceback.format_exc()}")
-            time_add = self.error_delay
+            time_add = e.delay or self.error_delay
             self.error = True
         if state in ("error", "interrupt") and self.bid_task.state == "complete":
             return str2time(RUN_TIME_START)
@@ -344,13 +344,19 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
                 logger.info("no bid task ready")
                 break
             logger.hr(f"bid task: {self.name} {bid_task.name}", 2)
-            nextRunTime = self.run_bid_task(bid_task.name)
+            try:
+                nextRunTime = self.run_bid_task(bid_task.name)
+            except TaskError as e:
+                self.error = True
+                nextRunTime = datetime.now() + get_time_add(e.delay)
+                reset_task(CONFIG.record, self.name, time=time2str(nextRunTime))
+                break
             bid_task.set_time(nextRunTime)
             CONFIG.save()
             self.bid_task_queue.insert(bid_task)
         self.close()
         if not self.error:
-            reset_task(CONFIG.record, self.name, set_time=True, time=time2str(self.bid_task_queue.head.nextRunTime))
+            reset_task(CONFIG.record, self.name, time=time2str(self.bid_task_queue.head.nextRunTime))
         return self.bid_task_queue.first_runtime(), self.error
 
     def close(self):
