@@ -47,12 +47,20 @@ def tag_get(tag: Tag, rule, *args) -> Tag or None:
     return tag_get(tag.find(rule[0]), rule[1:])
 
 
-def tag_find(tag: Tag, name, index=0, attr={}, *args):
+def tag_find(tag: Tag, name, index=None, attr={}, slice=None, *args):
     # rule: "tag1 > attr1"
     if not name:
         return tag
     if isinstance(index, int):
         return tag.find_all(name, limit=index+1, attrs=attr)[index]
+    if isinstance(slice, (list, tuple)):
+        tag_list = []
+        list_find = tag.find_all(name, attrs=attr)
+        length = len(list_find)
+        for idx in slice:
+            if idx < length:
+                tag_list.append(list_find[idx])
+        return tag_list
     else:
         """ rule: "tag1,ALL,attr=value" """
         return tag.find_all(name, attrs=attr)
@@ -62,8 +70,8 @@ def get_tag_list_content(tag_list, attr_name=None):
     """ rule: "tag1,ALL,attr=value" """
     text = ""
     for t in tag_list:
-        text += f"{get_tag_content(t, attr_name)}"
-    return text
+        text += f"{get_tag_content(t, attr_name)} "
+    return text.strip()
 
 
 def get_tag_content(tag: Tag, attr_name=None):
