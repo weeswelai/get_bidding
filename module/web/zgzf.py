@@ -1,3 +1,4 @@
+import json
 import re
 from time import time
 from urllib.parse import urlencode
@@ -6,10 +7,26 @@ from bs4 import BeautifulSoup as btfs
 from requests.utils import cookiejar_from_dict
 
 from module.exception import *
+from module.get_url import RequestBase
 from module.log import logger
 from module.task import Task
 from module.utils import *
 from module.web_brows import get_tag_list_content, tag_find
+
+"  - DOMAIN,search.ccgp.gov.cn,节点选择"
+
+class Clash(RequestBase):
+
+    def __init__(self, config):
+        self.controller = config["controller"]
+        self.headers = {"Authorization": f"Bearer {config['secret']}"}
+        self.proxies_key = ""
+
+    def get_proxies_dict(self, key=""):
+        key
+        url = f"http://{self.controller}/proxies"
+        self._get(url, headers=self.headers)
+        return self._response
 
 
 class Zgzf(Task):
