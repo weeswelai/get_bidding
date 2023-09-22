@@ -98,7 +98,7 @@ def save_file(file, data, mode="w", bytes=False):
 
 
 # time
-
+RUN_TIME_START = "2023-01-01 00:00:00"  # 默认下次运行时间
 _DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -272,9 +272,10 @@ def _clear_bid_task(d, keys=None):
     _set_time(d)
 
 
-def reset_task(task_d: dict, name="", clear_bid=False, time=None):
+def reset_task(task_d: dict, name="", clear_bid=False, time=""):
     """ 重置一个任务的 nextRunTime 和 bid_task """
     task = task_d[name] if name else task_d
+    time = RUN_TIME_START if isinstance(time, bool) else time
     if time:
         _set_time(task, time=time)
     for bid_task in  task["TaskList"]:
