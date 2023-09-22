@@ -35,11 +35,10 @@ class RequestBase:
     response: str = ""  # response
     encoding = "utf-8"
     system_proxies = False  # 是否系统代理(False时不经过梯子的代理)
+    _response = requests.models.Response()
+    _session = requests.Session()
 
-    def __init__(self, method="GET", headers=HEADERS, timeout=TIMEOUT):
-        self._response = requests.models.Response()
-        self._session = requests.Session()
-
+    def __init__(self, method="GET", headers=HEADERS, timeout=TIMEOUT, proxies=None):
         method = method.upper()
         assert method in ("GET", "POST"), f"{method} isn't GET or POST"
         self._open = self._get if method == "GET" else self._post
@@ -51,10 +50,12 @@ class RequestBase:
         if packet_capture:
             self.params["proxies"] = PACKET_CAPTURE_PROXIES.copy()
             self.params["verify"] = VERIFY
-        if not system_proxies:  # 是否使用系统代理
-            self.params['proxies'] = NO_SYSTEM_PROXIES.copy()
-            if "verify" in self.params:
-                del(self.params["verify"])
+
+        self.params['proxies'] = (proxies
+                                  if system_proxies and proxies
+                                  else NO_SYSTEM_PROXIES.copy())
+        # if "verify" in self.params:
+        #     del(self.params["verify"])
 
     def open(self, url, data=None, **kwargs) -> str:
         """
@@ -293,8 +294,10 @@ class GetList(RequestHeaders, ListWebResponse):
 
         self.li_tag = self.config["li_tag"]
 
-        self.request = RequestBase(self.config["method"], headers, 
-                                   deep_get(self.config, "time_out"))
+        self.request = RequestBase(method=self.config["method"],
+                                   headers=headers, 
+                                   timeout=deep_get(self.config, "time_out"),
+                                   proxies=deep_get(self.config, "proxies"))
 
     def url_extra_params(self, url, **kwargs):
         """
