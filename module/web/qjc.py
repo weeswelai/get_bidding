@@ -1,7 +1,9 @@
 
 import re
+from json.decoder import JSONDecodeError
 from time import time
 
+from module.exception import CutError
 from module.log import logger
 from module.task import Task
 from module.utils import *
@@ -19,18 +21,22 @@ class Qjc(Task):
             return self.tag_fun(tag, self.tag_rule)
 
 
-    def get_tag_list(self, page=None, li_tag=None, *args):
+    def get_tag_list(self, response=None, li_tag=None, *args):
         """ 得到json中的列表
         """
         logger.info("Qjc.get_tag_list")
         if not li_tag:
             li_tag = self.li_tag
-        page = page or self.html_cut
-        if page:
-            if isinstance(page, dict):
-                self.html_cut = page
-            elif isinstance(page, str):
-                self.html_cut = json.loads(page)
+        response = response or self.html_cut
+        if not response:
+            raise CutError("Response is ''")
+        if isinstance(response, dict):
+            self.html_cut = response
+        elif isinstance(response, str):
+            try:
+                self.html_cut = json.loads(response)
+            except JSONDecodeError:
+                self.save_response(url=self.list_url, save_date=True, extra="cut_Error")
         self.bs = self.html_cut
         self.tag_list = deep_get(self.bs, li_tag)
         return self.tag_list
