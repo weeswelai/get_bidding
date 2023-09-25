@@ -3,12 +3,6 @@ from get_url import HEADERS, TIMEOUT
 from module.get_url import RequestBase
 
 
-"""
-伪代码
-"""
-
-
-
 class Clash(RequestBase):
 
     def __init__(self, config):
