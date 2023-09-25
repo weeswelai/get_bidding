@@ -23,7 +23,7 @@ MAX_ERROR_OPEN = 3
 MAX_ERROR_SAVE = 2
 PACKET_CAPTURE_PROXIES = {"http": "127.0.0.1:8888", "https": "127.0.0.1:8888"}
 NO_SYSTEM_PROXIES = {"http": None, "https": None}
-VERIFY = False
+# VERIFY = False # True: https 请求时验证 SSL 证书
 packet_capture = False  # 抓包开关
 system_proxies = False  # 是否系统代理
 TIMEOUT = 16
@@ -47,15 +47,12 @@ class RequestBase:
             "headers": headers or HEADERS,
             "timeout": timeout or TIMEOUT
         }
-        if packet_capture:
-            self.params["proxies"] = PACKET_CAPTURE_PROXIES.copy()
-            self.params["verify"] = VERIFY
+        # if packet_capture:
+        #     self.params["proxies"] = PACKET_CAPTURE_PROXIES.copy()
+        #     self.params["verify"] = VERIFY
 
-        self.params['proxies'] = (proxies
-                                  if system_proxies and proxies
-                                  else NO_SYSTEM_PROXIES.copy())
-        # if "verify" in self.params:
-        #     del(self.params["verify"])
+        # 要么显示地指定 proxies , 要么不过系统代理, 使用 proxies=None 会使用系统当前代理
+        self.params['proxies'] = proxies or NO_SYSTEM_PROXIES.copy()
 
     def open(self, url, data=None, **kwargs) -> str:
         """
