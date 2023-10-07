@@ -203,9 +203,9 @@ class ListWebResponse:
         if not self.tag_list:
             logger.debug(f"Requests headers: {self.request._session.headers}\n"
                          f"Response headers: {self.request._response.headers} ")
-            raise CutError(f"tag list len {len(self.tag_list)}, "
-                           f"page len {len(page)}, bs len: {len(self.bs)}")
-        return self.tag_list
+            if hasattr(self, "pages") and getattr(self, "pages") == "1":
+                raise CutError(f"tag list len {len(self.tag_list)}, "
+                            f"page len {len(page)}, bs len: {len(self.bs)}")
 
     def save_response(self, rps="", url="test.html", extra="", save_date=True, 
                       path="./html_error/",):

@@ -149,6 +149,7 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
     match_num = 0  # 当次符合条件的项目个数, 仅用于日志打印
     error = False
     bid_task_queue = None
+    pages = ""
 
     def __init__(self, name= "", config: dict = None):
         self.name = name
@@ -223,7 +224,8 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
         return True  # state继续
 
     def get_pages(self):
-        return self.next_rule.search(self.list_url).group()
+        self.pages = self.next_rule.search(self.list_url).group()
+        return self.pages
 
     def tag_filterate(self):
         return True
