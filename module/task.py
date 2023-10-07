@@ -7,7 +7,7 @@ from io import TextIOWrapper
 from module.bid_task import BidTask
 from module.config import CONFIG
 from module.exception import *
-from module.get_url import GetList
+from module.get_url import GetList, MAX_ERROR_OPEN
 from module.judge_content import titleTrie
 from module.log import logger
 from module.task_manager import RUN_TIME_START, TaskNode, TaskQueue
@@ -211,7 +211,19 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
         self.get_next_list_url()
 
         # 打开项目列表页面
-        self.html_cut = self.open_url_get_list()
+        count = 0
+        while 1:
+            self.tag_list = []
+            self.open_url_get_list(count=count)
+            count += 1
+            if (self.tag_list == [] and self.pages == "1") or self.tag_list:
+                break
+            if  count > MAX_ERROR_OPEN:
+                logger.debug(f"Requests headers: {self.request._session.headers}\n"
+                            f"Response headers: {self.request._response.headers} ")
+                raise CutError(f"tag list len {len(self.tag_list)}, "
+                            f"page len {len(self.request.response)}, bs len: {len(self.bs)}")
+
 
         self.process_tag_list(self.tag_list)
         self.flush()  # 刷新缓冲区写入文件
