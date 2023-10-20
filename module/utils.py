@@ -276,10 +276,10 @@ def reset_task(task_d: dict, name="", clear_bid=False, time=""):
     """ 重置一个任务的 nextRunTime 和 bid_task """
     task = task_d[name] if name else task_d
     time = RUN_TIME_START if isinstance(time, bool) else time
-    if time:
+    if time or time == "":
         _set_time(task, time=time)
     for bid_task in  task["TaskList"]:
-        if time:
+        if time or time == "":
             _set_time(task[bid_task], time=time)
         if clear_bid:
             _clear_bid_task(task[bid_task])
@@ -340,6 +340,6 @@ if __name__ == "__main__":
     # 本模块测试
     # test code
     # clear_json_file("./bid_settings/bid_settings_default.json", clear_bid=True, set_time=True)
-    # clear_json_file("./bid_settings/bid_settings.json", time="2023-07-21 13:30:34")
+    clear_json_file("./bid_settings/bid_settings.json", task="zgzf", time="")
     # copy_settings("./bid_settings/bid_settings.json", "./bid_settings/bid_settings_newClass.json")
     pass
