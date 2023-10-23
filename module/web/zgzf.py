@@ -46,7 +46,8 @@ class Zgzf(Task):
     def close(self):
         self._delete_cookies()
         super().close()
-        self.clash.switch_proxy()
+        if self.clash:
+            self.clash.switch_proxy()
 
     def get_date(self, date: str):
         return date.replace(".", "-")
