@@ -39,9 +39,7 @@ class RequestBase:
     _session = requests.Session()
 
     def __init__(self, method="GET", headers=HEADERS, timeout=TIMEOUT, proxies=None):
-        method = method.upper()
-        assert method in ("GET", "POST"), f"{method} isn't GET or POST"
-        self._open = self._get if method == "GET" else self._post
+        self.method = method.upper()
         # needful headers and params
         self.params  = {
             "headers": headers or HEADERS,
@@ -54,30 +52,19 @@ class RequestBase:
         # 要么显示地指定 proxies , 要么不过系统代理, 使用 proxies=None 会使用系统当前代理
         self.params['proxies'] = proxies or NO_SYSTEM_PROXIES.copy()
 
-    def open(self, url, data=None, **kwargs) -> str:
+    def open(self, url, data=None, method=None, **kwargs) -> str:
         """
         if method is GET, ignore data param, if is POST, need data param.
         """
-        if not kwargs:
-            kwargs = self.params
-        self._open(url=url, data=data, **kwargs)
+        method = method or self.method
+        kwargs = kwargs or self.params
+        if isinstance(url, dict) and not data:
+            url, data, *_ = url.values()
+        self._response = self._session.request(method=method, url=url,
+                                               data=data, **kwargs)
         self._response.encoding = self.encoding  # destination code base
         self.response = self._response.text
         return self.response
-
-    def _open(self, url, **kwargs):
-        """
-        Reload in __init__, is _get or _post
-        """
-        pass
-
-    def _get(self, url, **kwargs):
-        self._response = self._session.get(url=url, **kwargs)
-
-    def _post(self, url, data=None, **kwargs):
-        if isinstance(url, dict) and not data:
-            url, data = url.values()
-        self._response = self._session.post(url=url, data=data, **kwargs)
 
     def update_param(self, params: dict, cover=True):
         for key, value in params.items():

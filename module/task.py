@@ -4,6 +4,7 @@
 import traceback
 from io import TextIOWrapper
 
+from module.bid_proxy import Clash
 from module.bid_task import BidTask
 from module.config import CONFIG
 from module.exception import *
@@ -170,7 +171,7 @@ class Task(DataFileTxt, BidTag, Bid, GetList):
         delay = deep_get(config, "nextOpenDelay")
         self.delay = tuple(int(t) for t in delay.split(",")) if delay else NEXT_OPEN_DELAY
         self.bid_task_queue = BidTaskQueue()
-
+        self.clash = Clash(CONFIG.config) if deep_get(config, "clash") else None
 
     def get_next_pages_url(self, list_url="", next_rule=None, **kwargs) -> str:
         """
