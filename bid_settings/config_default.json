@@ -11,6 +11,12 @@
     "Config":{
         "CreatNewJsonFile": false,
         "Command": ["-h", "-i", "m", "l"],
-        "Run_at_today18": false
+        "Run_at_today21": false,
+        "Clash":{
+            "group": "",
+            "proxy_list": [],
+            "secret": "",
+            "controller": "127.0.0.1:9090"
+        }
     }
 }
