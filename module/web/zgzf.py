@@ -46,6 +46,7 @@ class Zgzf(Task):
     def close(self):
         self._delete_cookies()
         super().close()
+        self.clash.switch_proxy()
 
     def get_date(self, date: str):
         return date.replace(".", "-")
@@ -156,10 +157,6 @@ if __name__ == "__main__":
     self = Zgzf("zgzf", CONFIG.task)
     
     # test 1
-    self.get_response_from_file("./html_error/search.ccgp.gov.cn bxsearch searchtype=1&start_time=2023 09 04&end_time=2023 08 29_2023_09_05-07_30_56_cut_Error.html")
-    print(len(self.request.response))
-    self.get_response_from_file("./html_error/search.ccgp.gov.cn bxsearch searchtype=1&start_time=2023 09 04&end_time=2023 08 29_2023_09_05-07_30_56_cut_Error.html")
-    print(len(self.request.response))
     # self.cut_html()
     # self.get_tag_list()
     # for idx, tag in enumerate(self.tag_list):

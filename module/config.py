@@ -39,24 +39,27 @@ class Config(object):
     def __init__(self, config=CONFIG_FILE, name="test"):
         self.name = name
         self.data_file = config
-        self.config = load_json(config)
+        self._config = load_json(config)
 
-        test = self.config["Test"]["Switch"]
+        test = self._config["Test"]["Switch"]
 
-        path = self.config["Test"] if test else self.config["File"]
+        path = self._config["Test"] if test else self._config["File"]
         self.DATA_FOLDER = path["DataFolder"]
         self.record_file = path["JsonFile"]
         self.record = load_json(self.record_file)
         self.taskList = self.record["task"]["list"]
 
         # json key Config
-        for k, v in self.config["Config"].items():
+        for k, v in self.config.items():
             setattr(self, k.lower(), v)
         if self.creatNewJsonFile:
             self.set_new_json()
 
         logger.info(f"{config} test switch is {test}")
 
+    @property
+    def config(self) -> dict:
+        return self._config["Config"]
 
     def set_new_json(self):
         date = date_now_s(file_new=True)
